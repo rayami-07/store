@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAYAMI Store · Productos nuevos y usados</title>
+  <meta name="description" content="Encuentra tenis, ropa, deportes, mascotas y más. Productos nuevos y usados al mejor precio." />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Google Fonts: Barlow Condensed (display) + DM Sans (body) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+  <!-- ============================================
+       NAVBAR
+  ============================================ -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">RAYAMI<span>STORE</span></a>
+
+      <!-- Búsqueda -->
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" />
+        <span class="search-icon">⌕</span>
+      </div>
+
+      <!-- Links desktop -->
+      <ul class="nav-links" id="navLinks">
+        <li><a href="#categorias">Categorías</a></li>
+        <li><a href="#destacados">Destacados</a></li>
+        <li><a href="#catalogo">Catálogo</a></li>
+        <li><a href="#contacto" class="btn-nav-wa">WhatsApp</a></li>
+      </ul>
+
+      <!-- Hamburger -->
+      <button class="hamburger" id="hamburger" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+
+    <!-- Mobile menu -->
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#categorias" class="mm-link">Categorías</a>
+      <a href="#destacados" class="mm-link">Destacados</a>
+      <a href="#catalogo" class="mm-link">Catálogo</a>
+      <a href="#contacto" class="mm-link mm-wa">💬 WhatsApp</a>
+    </div>
+  </nav>
+
+  <!-- ============================================
+       HERO
+  ============================================ -->
+  <section class="hero" id="inicio">
+    <div class="hero-bg-text">STORE</div>
+    <div class="hero-content">
+      <span class="hero-tag">🔥 Nuevos y usados</span>
+      <h1 class="hero-title">
+        Encuentra<br />
+        <span class="accent">buenas oportunidades</span>
+      </h1>
+      <p class="hero-sub">Tenis · Ropa · Deportes · Mascotas · Accesorios · Ofertas</p>
+      <div class="hero-btns">
+        <a href="#catalogo" class="btn-primary">Ver catálogo</a>
+        <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="btn-wa">💬 WhatsApp</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card-float">
+        <div class="hcf-inner">
+          <div class="hcf-tag">NUEVO</div>
+          <div class="hcf-emoji">👟</div>
+          <div class="hcf-name">Tenis streetwear</div>
+          <div class="hcf-price">$850</div>
+        </div>
+      </div>
+      <div class="hero-card-float" style="--d:0.2s; --r:-6deg; top:55%; left:55%;">
+        <div class="hcf-inner">
+          <div class="hcf-tag used">USADO</div>
+          <div class="hcf-emoji">🥊</div>
+          <div class="hcf-name">Guantes box</div>
+          <div class="hcf-price">$300</div>
+        </div>
+      </div>
+      <div class="hero-card-float" style="--d:0.4s; --r:4deg; top:25%; left:65%;">
+        <div class="hcf-inner">
+          <div class="hcf-tag">OFERTA</div>
+          <div class="hcf-emoji">🐶</div>
+          <div class="hcf-name">Acc. mascotas</div>
+          <div class="hcf-price">$150</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-scroll-hint">scroll ↓</div>
+  </section>
+
+  <!-- ============================================
+       CATEGORÍAS
+  ============================================ -->
+  <section class="section" id="categorias">
+    <div class="container">
+      <h2 class="section-title">Categorías</h2>
+      <div class="cat-grid">
+        <!-- Cada data-cat debe coincidir con los productos en script.js -->
+        <button class="cat-card active" data-cat="todos">
+          <span class="cat-emoji">🛒</span>
+          <span class="cat-label">Todos</span>
+        </button>
+        <button class="cat-card" data-cat="tenis">
+          <span class="cat-emoji">👟</span>
+          <span class="cat-label">Tenis</span>
+        </button>
+        <button class="cat-card" data-cat="deportes">
+          <span class="cat-emoji">🥊</span>
+          <span class="cat-label">Deportes</span>
+        </button>
+        <button class="cat-card" data-cat="ropa">
+          <span class="cat-emoji">👕</span>
+          <span class="cat-label">Ropa</span>
+        </button>
+        <button class="cat-card" data-cat="mascotas">
+          <span class="cat-emoji">🐶</span>
+          <span class="cat-label">Mascotas</span>
+        </button>
+        <button class="cat-card" data-cat="usados">
+          <span class="cat-emoji">♻️</span>
+          <span class="cat-label">Usados</span>
+        </button>
+        <button class="cat-card" data-cat="ofertas">
+          <span class="cat-emoji">🔥</span>
+          <span class="cat-label">Ofertas</span>
+        </button>
+        <button class="cat-card" data-cat="accesorios">
+          <span class="cat-emoji">🎒</span>
+          <span class="cat-label">Accesorios</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       DESTACADOS
+  ============================================ -->
+  <section class="section section-dark" id="destacados">
+    <div class="container">
+      <h2 class="section-title">⭐ Destacados</h2>
+      <p class="section-sub">Los más populares del momento</p>
+      <div class="product-grid" id="featuredGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       CATÁLOGO COMPLETO
+  ============================================ -->
+  <section class="section" id="catalogo">
+    <div class="container">
+      <div class="cat-header">
+        <h2 class="section-title">Catálogo completo</h2>
+        <span class="cat-count" id="productCount">0 productos</span>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <span>😕</span>
+        <p>Sin resultados para esa búsqueda</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       ÚLTIMOS AGREGADOS
+  ============================================ -->
+  <section class="section section-accent" id="recientes">
+    <div class="container">
+      <h2 class="section-title">🆕 Últimos agregados</h2>
+      <div class="product-grid" id="recentGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============================================
+       CONTACTO / CTA
+  ============================================ -->
+  <section class="section cta-section" id="contacto">
+    <div class="container cta-inner">
+      <div class="cta-badge">💬</div>
+      <h2 class="cta-title">¿Te interesa algo?</h2>
+      <p class="cta-sub">Escríbeme directo por WhatsApp y te doy más info, fotos o acordamos envío.</p>
+      <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20quiero%20preguntar%20por%20un%20producto%20🔥" target="_blank" class="btn-primary btn-xl">
+        💬 Escribir por WhatsApp
+      </a>
+      <p class="cta-note">Respondo rápido · Envíos disponibles · Precios negociables</p>
+    </div>
+  </section>
+
+  <!-- ============================================
+       FOOTER
+  ============================================ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-logo">RAYAMI<span>STORE</span></span>
+      <p>Productos nuevos y usados · México</p>
+      <p>WhatsApp: <a href="https://wa.me/5581074978" target="_blank">55 8107 4978</a></p>
+    </div>
+  </footer>
+
+  <!-- Botón flotante WhatsApp -->
+  <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="wa-float" aria-label="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+  </a>
+
+  <script src="script.js"></script>
+</body>
+</html>
