@@ -1,68 +1,84 @@
 /* ============================================
    RAYAMI STORE + ADMIN — script.js
-   ============================================
-
-   ┌─────────────────────────────────────────┐
-   │  CONFIGURACIÓN RÁPIDA                   │
-   ├─────────────────────────────────────────┤
-   │  1. ADMIN_USER  → tu usuario            │
-   │  2. ADMIN_PASS  → tu contraseña         │
-   │  3. WA_NUMBER   → tu WhatsApp           │
-   │                                         │
-   │  Los productos se guardan en el         │
-   │  navegador (localStorage) y persisten   │
-   │  aunque cierres la página.              │
-   │                                         │
-   │  Para agregar productos: haz login como │
-   │  admin y usa el panel.                  │
-   └─────────────────────────────────────────┘
-*/
+   Firebase Realtime Database
+   ============================================ */
 
 /* ============================================
-   ⚙️ CONFIGURACIÓN — CAMBIA ESTO
+   🔥 FIREBASE CONFIG
 ============================================================ */
-const ADMIN_USER  = "rayami";          // ← Tu usuario admin
-const ADMIN_PASS  = "rayami2025";      // ← Tu contraseña admin
-const WA_NUMBER   = "5581074978";      // ← Tu WhatsApp (sin espacios ni +)
-const STORAGE_KEY = "rayami_products"; // clave en localStorage
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, remove, onValue, push }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey:            "AIzaSyDDVxmRmKb9yIZSV0ZxkPKvQPOK-oAGMWU",
+  authDomain:        "rayami-store.firebaseapp.com",
+  databaseURL:       "https://rayami-store-default-rtdb.firebaseio.com",
+  projectId:         "rayami-store",
+  storageBucket:     "rayami-store.firebasestorage.app",
+  messagingSenderId: "57542479161",
+  appId:             "1:57542479161:web:425e75300b964e1f526ce8",
+  measurementId:     "G-THQTMWFBWM"
+};
+
+const app = initializeApp(firebaseConfig);
+const db  = getDatabase(app);
+
+/* ============================================
+   ⚙️ CONFIGURACIÓN
+============================================================ */
+const ADMIN_USER = "rayami";
+const ADMIN_PASS = "rayami2025";
+const WA_NUMBER  = "5581074978";
 
 /* ============================================
    ESTADO GLOBAL
 ============================================================ */
 let currentCategory = "todos";
 let currentSearch   = "";
-let editingId       = null;   // id del producto que se está editando
-let deletingId      = null;   // id del producto a eliminar
-let currentPhotoTab = "url";  // 'url' o 'file'
-let currentPhotoB64 = "";     // base64 de la imagen subida
+let editingId       = null;
+let deletingId      = null;
+let currentPhotoTab = "url";
+let currentPhotoB64 = "";
 let isLoggedIn      = false;
+let allProducts     = [];   // caché local de Firebase
 
 /* ============================================
-   STORAGE — guardar y cargar productos
+   FIREBASE — escuchar cambios en tiempo real
 ============================================================ */
-function loadProducts() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
+function initFirebase() {
+  const productsRef = ref(db, "products");
+  onValue(productsRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // Convertir objeto Firebase a array
+      allProducts = Object.entries(data).map(([fbKey, p]) => ({ ...p, fbKey }));
+      // Ordenar por createdAt descendente
+      allProducts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    } else {
+      allProducts = [];
+    }
+    renderAll();
+    if (isLoggedIn) {
+      renderAdminTable();
+      renderAdminStats();
+    }
+  });
 }
 
-function saveProducts(products) {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(products));
-  } catch(e) {
-    showToast("⚠️ Error al guardar. La imagen puede ser muy grande.");
+async function fbSaveProduct(product) {
+  if (product.fbKey) {
+    // Editar existente
+    const { fbKey, ...data } = product;
+    await set(ref(db, `products/${fbKey}`), data);
+  } else {
+    // Nuevo producto
+    await push(ref(db, "products"), product);
   }
 }
 
-function getProducts() {
-  return loadProducts();
-}
-
-function nextId() {
-  const products = loadProducts();
-  if (products.length === 0) return 1;
-  return Math.max(...products.map(p => p.id)) + 1;
+async function fbDeleteProduct(fbKey) {
+  await remove(ref(db, `products/${fbKey}`));
 }
 
 /* ============================================
@@ -103,6 +119,18 @@ function renderCard(product) {
   const original = product.originalPrice > 0
     ? `<span class="pc-original">${formatPrice(product.originalPrice)}</span>` : "";
 
+  const e = product.extras || {};
+  const tags = [
+    e.marca    ? `<span class="pc-tag">${e.marca}</span>`       : "",
+    e.talla    ? `<span class="pc-tag">Talla ${e.talla}</span>` : "",
+    e.color    ? `<span class="pc-tag">${e.color}</span>`       : "",
+    e.peso     ? `<span class="pc-tag">${e.peso}</span>`        : "",
+    e.genero   ? `<span class="pc-tag">${e.genero}</span>`      : "",
+    e.material ? `<span class="pc-tag">${e.material}</span>`    : "",
+    e.mascota  ? `<span class="pc-tag">🐾 ${e.mascota}</span>`  : "",
+  ].filter(Boolean).join("");
+  const tagsHTML = tags ? `<div class="pc-tags">${tags}</div>` : "";
+
   return `
     <div class="product-card">
       <div class="pc-img-wrap">
@@ -113,6 +141,7 @@ function renderCard(product) {
       <div class="pc-info">
         <span class="pc-cat">${product.category}</span>
         <h3 class="pc-name">${product.name}</h3>
+        ${tagsHTML}
         <p class="pc-desc">${product.desc || ""}</p>
         <div class="pc-price">${formatPrice(product.price)}${original}</div>
       </div>
@@ -124,8 +153,7 @@ function renderCard(product) {
    RENDER SECCIONES CLIENTE
 ============================================================ */
 function getFiltered() {
-  const products = loadProducts();
-  return products.filter(p => {
+  return allProducts.filter(p => {
     const matchCat    = currentCategory === "todos" || p.category === currentCategory;
     const matchSearch = p.name.toLowerCase().includes(currentSearch.toLowerCase()) ||
                         (p.desc || "").toLowerCase().includes(currentSearch.toLowerCase());
@@ -153,7 +181,7 @@ function renderCatalog() {
 function renderFeatured() {
   const grid    = document.getElementById("featuredGrid");
   const emptyEl = document.getElementById("emptyFeatured");
-  const featured = loadProducts().filter(p => p.featured);
+  const featured = allProducts.filter(p => p.featured);
 
   if (featured.length === 0) {
     grid.innerHTML = "";
@@ -269,18 +297,17 @@ function showAdmin() {
 }
 
 function renderAdminStats() {
-  const products = loadProducts();
-  document.getElementById("statTotal").textContent    = products.length;
-  document.getElementById("statFeatured").textContent = products.filter(p => p.featured).length;
-  document.getElementById("statNuevo").textContent    = products.filter(p => p.condition === "Nuevo").length;
-  document.getElementById("statUsado").textContent    = products.filter(p => p.condition !== "Nuevo").length;
+  document.getElementById("statTotal").textContent    = allProducts.length;
+  document.getElementById("statFeatured").textContent = allProducts.filter(p => p.featured).length;
+  document.getElementById("statNuevo").textContent    = allProducts.filter(p => p.condition === "Nuevo").length;
+  document.getElementById("statUsado").textContent    = allProducts.filter(p => p.condition !== "Nuevo").length;
 }
 
 function renderAdminTable() {
-  const tbody   = document.getElementById("adminTableBody");
-  const empty   = document.getElementById("adminEmpty");
-  const search  = (document.getElementById("adminSearch")?.value || "").toLowerCase();
-  const products = loadProducts().filter(p =>
+  const tbody  = document.getElementById("adminTableBody");
+  const empty  = document.getElementById("adminEmpty");
+  const search = (document.getElementById("adminSearch")?.value || "").toLowerCase();
+  const products = allProducts.filter(p =>
     p.name.toLowerCase().includes(search) || (p.category || "").includes(search)
   );
 
@@ -308,8 +335,8 @@ function renderAdminTable() {
         <td>${featuredIcon}</td>
         <td>
           <div class="admin-actions">
-            <button class="btn-edit" onclick="openEditModal(${p.id})">✏️ Editar</button>
-            <button class="btn-delete" onclick="openDeleteModal(${p.id})">🗑</button>
+            <button class="btn-edit" onclick="openEditModal('${p.fbKey}')">✏️ Editar</button>
+            <button class="btn-delete" onclick="openDeleteModal('${p.fbKey}')">🗑</button>
           </div>
         </td>
       </tr>`;
@@ -317,32 +344,38 @@ function renderAdminTable() {
 }
 
 /* ============================================
-   MODAL PRODUCTO — abrir/cerrar
+   MODAL PRODUCTO
 ============================================================ */
-function openProductModal(id = null) {
-  editingId = id;
+function openProductModal(fbKey = null) {
+  editingId       = fbKey;
   currentPhotoB64 = "";
 
-  const modal = document.getElementById("productModal");
   const title = document.getElementById("productModalTitle");
 
   // Reset form
-  document.getElementById("pName").value          = "";
-  document.getElementById("pPrice").value         = "";
-  document.getElementById("pOriginalPrice").value = "";
-  document.getElementById("pCategory").value      = "deportes";
-  document.getElementById("pCondition").value     = "Nuevo";
-  document.getElementById("pEmoji").value         = "";
-  document.getElementById("pFeatured").value      = "false";
-  document.getElementById("pDesc").value          = "";
-  document.getElementById("pImageUrl").value      = "";
+  ["pName","pPrice","pOriginalPrice","pEmoji","pDesc","pImageUrl"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  document.getElementById("pCategory").value  = "deportes";
+  document.getElementById("pCondition").value = "Nuevo";
+  document.getElementById("pFeatured").value  = "false";
   document.getElementById("photoPreview").style.display = "none";
-  document.getElementById("photoPreviewImg").src  = "";
+  document.getElementById("photoPreviewImg").src = "";
   switchPhotoTab("url");
 
-  if (id !== null) {
+  document.getElementById("pCategory").onchange = () => {
+    updateExtraFields(document.getElementById("pCategory").value);
+  };
+
+  const extraInputs = ["pTalla","pColor","pMarca","pPeso","pGenero","pMaterial","pMascota"];
+  extraInputs.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  if (fbKey !== null) {
     title.textContent = "Editar producto";
-    const product = loadProducts().find(p => p.id === id);
+    const product = allProducts.find(p => p.fbKey === fbKey);
     if (product) {
       document.getElementById("pName").value          = product.name;
       document.getElementById("pPrice").value         = product.price;
@@ -353,9 +386,18 @@ function openProductModal(id = null) {
       document.getElementById("pFeatured").value      = product.featured ? "true" : "false";
       document.getElementById("pDesc").value          = product.desc || "";
 
+      if (product.extras) {
+        const map = {pTalla:"talla",pColor:"color",pMarca:"marca",pPeso:"peso",pGenero:"genero",pMaterial:"material",pMascota:"mascota"};
+        Object.entries(map).forEach(([elId, key]) => {
+          const el = document.getElementById(elId);
+          if (el && product.extras[key]) el.value = product.extras[key];
+        });
+      }
+
+      updateExtraFields(product.category);
+
       if (product.image) {
         if (product.image.startsWith("data:")) {
-          // base64
           currentPhotoB64 = product.image;
           switchPhotoTab("file");
           showPhotoPreview(product.image);
@@ -367,14 +409,13 @@ function openProductModal(id = null) {
     }
   } else {
     title.textContent = "Agregar producto";
+    updateExtraFields("deportes");
   }
 
-  modal.classList.add("open");
+  document.getElementById("productModal").classList.add("open");
 }
 
-function openEditModal(id) {
-  openProductModal(id);
-}
+function openEditModal(fbKey) { openProductModal(fbKey); }
 
 function closeProductModal() {
   document.getElementById("productModal").classList.remove("open");
@@ -383,7 +424,39 @@ function closeProductModal() {
 }
 
 /* ============================================
-   FOTO — tabs, preview, file
+   CAMPOS EXTRA
+============================================================ */
+const EXTRA_FIELDS_BY_CAT = {
+  tenis:     ["fieldTalla","fieldColor","fieldMarca","fieldGenero"],
+  ropa:      ["fieldTalla","fieldColor","fieldMarca","fieldGenero"],
+  deportes:  ["fieldMarca","fieldPeso","fieldColor","fieldMaterial"],
+  mascotas:  ["fieldMascota","fieldColor","fieldMarca"],
+  usados:    ["fieldMarca","fieldColor","fieldTalla"],
+  ofertas:   ["fieldMarca","fieldColor","fieldTalla"],
+  accesorios:["fieldMarca","fieldColor","fieldMaterial"],
+};
+
+function updateExtraFields(category) {
+  const allFields = ["fieldTalla","fieldColor","fieldMarca","fieldPeso","fieldGenero","fieldMaterial","fieldMascota"];
+  const show = EXTRA_FIELDS_BY_CAT[category] || [];
+  allFields.forEach(f => {
+    const el = document.getElementById(f);
+    if (el) el.style.display = "none";
+  });
+  const container = document.getElementById("extraFields");
+  if (show.length > 0) {
+    container.style.display = "block";
+    show.forEach(f => {
+      const el = document.getElementById(f);
+      if (el) el.style.display = "flex";
+    });
+  } else {
+    container.style.display = "none";
+  }
+}
+
+/* ============================================
+   FOTO
 ============================================================ */
 function switchPhotoTab(tab) {
   currentPhotoTab = tab;
@@ -396,70 +469,32 @@ function switchPhotoTab(tab) {
 function showPhotoPreview(src) {
   const preview = document.getElementById("photoPreview");
   const img     = document.getElementById("photoPreviewImg");
-  if (src) {
-    img.src = src;
-    preview.style.display = "flex";
-  } else {
-    preview.style.display = "none";
-  }
+  if (src) { img.src = src; preview.style.display = "flex"; }
+  else      { preview.style.display = "none"; }
 }
 
 function previewFromUrl() {
   const url = document.getElementById("pImageUrl").value.trim();
   showPhotoPreview(url);
-  currentPhotoB64 = ""; // clear file if URL typed
+  currentPhotoB64 = "";
 }
 
 function triggerFileInput() {
   document.getElementById("pImageFile").click();
 }
 
-/* Drag & drop sobre el área */
-document.addEventListener("DOMContentLoaded", () => {
-  const drop = document.getElementById("fileDrop");
-  if (!drop) return;
-
-  drop.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    drop.style.borderColor = "var(--accent)";
-    drop.style.color = "var(--accent)";
-  });
-  drop.addEventListener("dragleave", () => {
-    drop.style.borderColor = "";
-    drop.style.color = "";
-  });
-  drop.addEventListener("drop", (e) => {
-    e.preventDefault();
-    drop.style.borderColor = "";
-    drop.style.color = "";
-    const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith("image/")) {
-      handleFileFromObject(file);
-    } else {
-      showToast("⚠️ Solo se aceptan imágenes");
-    }
-  });
-});
-
 function handleFileFromObject(file) {
   document.getElementById("fileDropText").textContent = "⏳ Procesando imagen...";
-
   const reader = new FileReader();
   reader.onload = (e) => {
     const img = new Image();
     img.onload = () => {
-      /* Comprimir con canvas: máx 800px de ancho, calidad 0.7 */
       const MAX = 800;
-      let w = img.width;
-      let h = img.height;
+      let w = img.width, h = img.height;
       if (w > MAX) { h = Math.round(h * MAX / w); w = MAX; }
-
       const canvas = document.createElement("canvas");
-      canvas.width  = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, w, h);
-
+      canvas.width = w; canvas.height = h;
+      canvas.getContext("2d").drawImage(img, 0, 0, w, h);
       const compressed = canvas.toDataURL("image/jpeg", 0.72);
       currentPhotoB64 = compressed;
       document.getElementById("pImageUrl").value = "";
@@ -474,8 +509,7 @@ function handleFileFromObject(file) {
 
 function handleFileSelect(event) {
   const file = event.target.files[0];
-  if (!file) return;
-  handleFileFromObject(file);
+  if (file) handleFileFromObject(file);
 }
 
 function removePhoto() {
@@ -487,25 +521,20 @@ function removePhoto() {
 }
 
 /* ============================================
-   GUARDAR PRODUCTO
+   GUARDAR PRODUCTO → Firebase
 ============================================================ */
-function saveProduct() {
+async function saveProduct() {
   const name  = document.getElementById("pName").value.trim();
   const price = parseFloat(document.getElementById("pPrice").value);
 
-  if (!name) { showToast("⚠️ Escribe el nombre del producto"); return; }
+  if (!name)                      { showToast("⚠️ Escribe el nombre del producto"); return; }
   if (isNaN(price) || price < 0) { showToast("⚠️ Escribe un precio válido"); return; }
 
-  // Determinar imagen
-  let image = "";
-  if (currentPhotoTab === "file" && currentPhotoB64) {
-    image = currentPhotoB64;
-  } else {
-    image = document.getElementById("pImageUrl").value.trim();
-  }
+  let image = currentPhotoTab === "file" && currentPhotoB64
+    ? currentPhotoB64
+    : document.getElementById("pImageUrl").value.trim();
 
-  const product = {
-    id:            editingId !== null ? editingId : nextId(),
+  const productData = {
     name,
     price,
     originalPrice: parseFloat(document.getElementById("pOriginalPrice").value) || 0,
@@ -515,33 +544,41 @@ function saveProduct() {
     featured:      document.getElementById("pFeatured").value === "true",
     desc:          document.getElementById("pDesc").value.trim(),
     image,
-    createdAt:     editingId !== null
-                     ? (loadProducts().find(p => p.id === editingId)?.createdAt || Date.now())
-                     : Date.now()
+    extras: {
+      talla:    document.getElementById("pTalla")?.value.trim()    || "",
+      color:    document.getElementById("pColor")?.value.trim()    || "",
+      marca:    document.getElementById("pMarca")?.value.trim()    || "",
+      peso:     document.getElementById("pPeso")?.value.trim()     || "",
+      genero:   document.getElementById("pGenero")?.value          || "",
+      material: document.getElementById("pMaterial")?.value.trim() || "",
+      mascota:  document.getElementById("pMascota")?.value.trim()  || "",
+    },
+    createdAt: editingId !== null
+      ? (allProducts.find(p => p.fbKey === editingId)?.createdAt || Date.now())
+      : Date.now()
   };
 
-  let products = loadProducts();
+  // Si editando, incluir fbKey
+  if (editingId !== null) productData.fbKey = editingId;
 
-  if (editingId !== null) {
-    products = products.map(p => p.id === editingId ? product : p);
-    showToast("✅ Producto actualizado");
-  } else {
-    products.push(product);
-    showToast("✅ Producto agregado");
+  showToast("⏳ Guardando...");
+
+  try {
+    await fbSaveProduct(productData);
+    showToast(editingId !== null ? "✅ Producto actualizado" : "✅ Producto agregado");
+    closeProductModal();
+  } catch(err) {
+    showToast("❌ Error al guardar. Intenta de nuevo.");
+    console.error(err);
   }
-
-  saveProducts(products);
-  closeProductModal();
-  renderAdminTable();
-  renderAdminStats();
 }
 
 /* ============================================
-   ELIMINAR PRODUCTO
+   ELIMINAR PRODUCTO → Firebase
 ============================================================ */
-function openDeleteModal(id) {
-  deletingId = id;
-  const product = loadProducts().find(p => p.id === id);
+function openDeleteModal(fbKey) {
+  deletingId = fbKey;
+  const product = allProducts.find(p => p.fbKey === fbKey);
   document.getElementById("deleteProductName").textContent = product?.name || "";
   document.getElementById("deleteModal").classList.add("open");
 }
@@ -551,14 +588,16 @@ function closeDeleteModal() {
   deletingId = null;
 }
 
-function confirmDelete() {
-  if (deletingId === null) return;
-  const products = loadProducts().filter(p => p.id !== deletingId);
-  saveProducts(products);
+async function confirmDelete() {
+  if (!deletingId) return;
+  try {
+    await fbDeleteProduct(deletingId);
+    showToast("🗑 Producto eliminado");
+  } catch(err) {
+    showToast("❌ Error al eliminar");
+    console.error(err);
+  }
   closeDeleteModal();
-  renderAdminTable();
-  renderAdminStats();
-  showToast("🗑 Producto eliminado");
 }
 
 /* ============================================
@@ -567,16 +606,62 @@ function confirmDelete() {
 document.addEventListener("click", (e) => {
   if (e.target.classList.contains("modal-overlay")) {
     e.target.classList.remove("open");
-    if (e.target.id === "deleteModal") deletingId = null;
+    if (e.target.id === "deleteModal")  deletingId = null;
     if (e.target.id === "productModal") { editingId = null; currentPhotoB64 = ""; }
   }
 });
 
 /* ============================================
+   DRAG & DROP
+============================================================ */
+document.addEventListener("DOMContentLoaded", () => {
+  const drop = document.getElementById("fileDrop");
+  if (!drop) return;
+  drop.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    drop.style.borderColor = "var(--accent)";
+    drop.style.color = "var(--accent)";
+  });
+  drop.addEventListener("dragleave", () => {
+    drop.style.borderColor = "";
+    drop.style.color = "";
+  });
+  drop.addEventListener("drop", (e) => {
+    e.preventDefault();
+    drop.style.borderColor = "";
+    drop.style.color = "";
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) handleFileFromObject(file);
+    else showToast("⚠️ Solo se aceptan imágenes");
+  });
+});
+
+/* ============================================
+   EXPONER FUNCIONES GLOBALES
+============================================================ */
+window.showLogin        = showLogin;
+window.hideLogin        = hideLogin;
+window.doLogin          = doLogin;
+window.doLogout         = doLogout;
+window.openProductModal = openProductModal;
+window.openEditModal    = openEditModal;
+window.closeProductModal= closeProductModal;
+window.openDeleteModal  = openDeleteModal;
+window.closeDeleteModal = closeDeleteModal;
+window.confirmDelete    = confirmDelete;
+window.saveProduct      = saveProduct;
+window.switchPhotoTab   = switchPhotoTab;
+window.previewFromUrl   = previewFromUrl;
+window.triggerFileInput = triggerFileInput;
+window.handleFileSelect = handleFileSelect;
+window.removePhoto      = removePhoto;
+window.renderAdminTable = renderAdminTable;
+
+/* ============================================
    INIT
 ============================================================ */
 document.addEventListener("DOMContentLoaded", () => {
-  renderAll();
+  initFirebase();
   initCategories();
   initSearch();
   initNavbar();
