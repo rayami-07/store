@@ -1,0 +1,495 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>RAYAMI Store · Productos nuevos y usados</title>
+  <meta name="description" content="Encuentra deportes, tenis, ropa, mascotas y más. Productos nuevos y usados al mejor precio." />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+</head>
+<body>
+
+<!-- ============================================================
+     VISTA CLIENTE
+============================================================ -->
+<div id="clientView">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" id="navbar">
+    <div class="nav-inner">
+      <a href="#" class="nav-logo">RAYAMI<span>STORE</span></a>
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" />
+        <span class="search-icon">⌕</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#categorias">Categorías</a></li>
+        <li><a href="#catalogo">Catálogo</a></li>
+        <li><a href="#contacto" class="btn-nav-wa">WhatsApp</a></li>
+        <li><button class="btn-admin-nav" onclick="showLogin()">🔐 Admin</button></li>
+        <li>
+          <button class="btn-cart-nav" onclick="openCart()" id="cartNavBtn">
+            🛒 <span id="cartBadge" class="cart-badge" style="display:none;">0</span>
+          </button>
+        </li>
+      </ul>
+      <button class="hamburger" id="hamburger" aria-label="Menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+    <div class="mobile-menu" id="mobileMenu">
+      <a href="#categorias" class="mm-link">Categorías</a>
+      <a href="#catalogo" class="mm-link">Catálogo</a>
+      <a href="#contacto" class="mm-link mm-wa">💬 WhatsApp</a>
+      <button class="mm-link mm-admin" onclick="showLogin()">🔐 Admin</button>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero" id="inicio">
+    <div class="hero-bg-text">STORE</div>
+    <div class="hero-content">
+      <span class="hero-tag">🔥 Nuevos y usados</span>
+      <h1 class="hero-title">Encuentra<br /><span class="accent">buenas oportunidades</span></h1>
+      <p class="hero-sub">Deportes · Tenis · Ropa · Mascotas · Accesorios · Ofertas</p>
+      <div class="hero-btns">
+        <a href="#catalogo" class="btn-primary">Ver catálogo</a>
+        <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="btn-wa">💬 WhatsApp</a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-card-float">
+        <div class="hcf-inner">
+          <div class="hcf-tag">DEPORTES</div>
+          <div class="hcf-emoji">🥊</div>
+          <div class="hcf-name">Equipo de box</div>
+          <div class="hcf-price">¡Míralo!</div>
+        </div>
+      </div>
+      <div class="hero-card-float" style="--d:.2s;--r:-6deg;top:55%;left:55%">
+        <div class="hcf-inner">
+          <div class="hcf-tag used">USADO</div>
+          <div class="hcf-emoji">🏋️</div>
+          <div class="hcf-name">Mancuernas</div>
+          <div class="hcf-price">Oferta</div>
+        </div>
+      </div>
+      <div class="hero-card-float" style="--d:.4s;--r:4deg;top:25%;left:65%">
+        <div class="hcf-inner">
+          <div class="hcf-tag">NUEVO</div>
+          <div class="hcf-emoji">👟</div>
+          <div class="hcf-name">Tenis</div>
+          <div class="hcf-price">¡Míralo!</div>
+        </div>
+      </div>
+    </div>
+    <div class="hero-scroll-hint">scroll ↓</div>
+  </section>
+
+  <!-- CATEGORÍAS -->
+  <section class="section" id="categorias">
+    <div class="container">
+      <h2 class="section-title">Categorías</h2>
+      <div class="cat-grid">
+        <button class="cat-card active" data-cat="todos"><span class="cat-emoji">🛒</span><span class="cat-label">Todos</span></button>
+        <button class="cat-card" data-cat="deportes"><span class="cat-emoji">🥊</span><span class="cat-label">Deportes</span></button>
+        <button class="cat-card" data-cat="tenis"><span class="cat-emoji">👟</span><span class="cat-label">Tenis</span></button>
+        <button class="cat-card" data-cat="ropa"><span class="cat-emoji">👕</span><span class="cat-label">Ropa</span></button>
+        <button class="cat-card" data-cat="mascotas"><span class="cat-emoji">🐶</span><span class="cat-label">Mascotas</span></button>
+        <button class="cat-card" data-cat="usados"><span class="cat-emoji">♻️</span><span class="cat-label">Usados</span></button>
+        <button class="cat-card" data-cat="ofertas"><span class="cat-emoji">🔥</span><span class="cat-label">Ofertas</span></button>
+        <button class="cat-card" data-cat="accesorios"><span class="cat-emoji">🎒</span><span class="cat-label">Accesorios</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DESTACADOS -->
+  <section class="section section-dark" id="destacados">
+    <div class="container">
+      <h2 class="section-title">⭐ Destacados</h2>
+      <p class="section-sub">Los más populares del momento</p>
+      <div class="product-grid" id="featuredGrid"></div>
+      <p id="emptyFeatured" style="display:none;color:var(--text-muted);font-size:14px;text-align:center;padding:20px 0;">Sin productos destacados por ahora.</p>
+    </div>
+  </section>
+
+  <!-- CATÁLOGO -->
+  <section class="section" id="catalogo">
+    <div class="container">
+      <div class="cat-header">
+        <h2 class="section-title">Catálogo completo</h2>
+        <span class="cat-count" id="productCount">0 productos</span>
+      </div>
+      <div class="product-grid" id="productGrid"></div>
+      <div class="empty-state" id="emptyState" style="display:none;">
+        <span>😕</span><p>Sin resultados para esa búsqueda</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="section cta-section" id="contacto">
+    <div class="container cta-inner">
+      <div class="cta-badge">💬</div>
+      <h2 class="cta-title">¿Te interesa algo?</h2>
+      <p class="cta-sub">Escríbeme directo por WhatsApp y te doy más info, fotos o acordamos envío.</p>
+      <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20quiero%20preguntar%20por%20un%20producto%20🔥" target="_blank" class="btn-primary btn-xl">💬 Escribir por WhatsApp</a>
+      <p class="cta-note">Respondo rápido · Envíos disponibles · Precios negociables</p>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <span class="footer-logo">RAYAMI<span>STORE</span></span>
+      <p>Productos nuevos y usados · México</p>
+      <p>WhatsApp: <a href="https://wa.me/5581074978" target="_blank">55 8107 4978</a></p>
+    </div>
+  </footer>
+
+  <!-- Botón flotante WhatsApp -->
+  <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="wa-float" aria-label="WhatsApp">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+  </a>
+
+  <!-- Botón flotante CARRITO -->
+  <button class="cart-fab" id="cartFab" onclick="openCart()" style="display:none;">
+    🛒 <span id="cartFabCount">0</span>
+  </button>
+
+  <!-- DRAWER CARRITO -->
+  <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+  <div class="cart-drawer" id="cartDrawer">
+    <div class="cart-header">
+      <h2 class="cart-title">🛒 Tu carrito</h2>
+      <button class="cart-close" onclick="closeCart()">✕</button>
+    </div>
+    <div class="cart-body">
+      <p class="cart-empty-msg" id="cartEmpty">Aún no has agregado productos.<br/>Dale clic a "🛒 Al carrito" en cualquier producto.</p>
+      <div id="cartList"></div>
+    </div>
+    <div class="cart-footer">
+      <div class="cart-total-row" id="cartTotalRow" style="display:none;">
+        <span>Total estimado:</span>
+        <span class="cart-total-amount" id="cartTotalAmount">$0</span>
+      </div>
+      <button class="cart-wa-btn" id="cartOrderBtn" onclick="openOrderModal()" style="display:none;">
+        📋 Ver resumen del pedido
+      </button>
+      <button class="cart-clear-btn" id="cartClearBtn" onclick="clearCart()" style="display:none;">🗑 Vaciar carrito</button>
+    </div>
+  </div>
+
+</div><!-- /clientView -->
+
+
+<!-- ============================================================
+     MODAL LOGIN
+============================================================ -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal-box login-box">
+    <button class="modal-close" onclick="hideLogin()">✕</button>
+    <div class="login-logo">RAYAMI<span>ADMIN</span></div>
+    <p class="login-sub">Acceso solo para administrador</p>
+    <div class="form-group">
+      <label>Usuario</label>
+      <input type="text" id="loginUser" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <div class="form-group">
+      <label>Contraseña</label>
+      <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
+    </div>
+    <p class="login-error" id="loginError"></p>
+    <button class="btn-primary w100" onclick="doLogin()">Entrar al panel</button>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     PANEL ADMIN
+============================================================ -->
+<div id="adminView" style="display:none;">
+
+  <div class="admin-navbar">
+    <span class="admin-logo">RAYAMI <span>ADMIN</span></span>
+    <div class="admin-nav-right">
+      <button class="btn-view-store" onclick="doLogout()">👁 Ver tienda</button>
+      <button class="btn-migrate" onclick="migrateAllPhotos()" id="btnMigrate">⚡ Migrar fotos a ImgBB</button>
+      <button class="btn-add-product" onclick="openProductModal()">+ Agregar producto</button>
+    </div>
+  </div>
+
+  <div class="admin-container">
+
+    <!-- Stats -->
+    <div class="admin-stats">
+      <div class="stat-card"><span class="stat-num" id="statTotal">0</span><span class="stat-label">Total productos</span></div>
+      <div class="stat-card"><span class="stat-num" id="statFeatured">0</span><span class="stat-label">Destacados</span></div>
+      <div class="stat-card"><span class="stat-num" id="statNuevo">0</span><span class="stat-label">Nuevos</span></div>
+      <div class="stat-card"><span class="stat-num" id="statUsado">0</span><span class="stat-label">Usados/Seminuevos</span></div>
+    </div>
+
+    <div class="admin-search-wrap">
+      <input type="text" id="adminSearch" placeholder="🔍 Buscar en admin..." oninput="renderAdminTable()" />
+    </div>
+
+    <div class="admin-table-wrap">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Foto</th>
+            <th>Nombre</th>
+            <th>Categoría</th>
+            <th>Estado</th>
+            <th>Precio</th>
+            <th>⭐</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody id="adminTableBody"></tbody>
+      </table>
+      <div class="admin-empty" id="adminEmpty" style="display:none;">
+        <p>😕 No hay productos aún. Agrega el primero con el botón de arriba.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============================================================
+     MODAL PRODUCTO (agregar / editar)
+============================================================ -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal-box product-box">
+    <button class="modal-close" onclick="closeProductModal()">✕</button>
+    <h2 class="modal-title" id="productModalTitle">Agregar producto</h2>
+
+    <div class="form-grid">
+      <div class="form-group full">
+        <label>Nombre del producto *</label>
+        <input type="text" id="pName" placeholder="Ej: Guantes Everlast 12oz" />
+      </div>
+      <div class="form-group">
+        <label>Precio MXN *</label>
+        <input type="number" id="pPrice" placeholder="350" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Precio original (tachado)</label>
+        <input type="number" id="pOriginalPrice" placeholder="700 (opcional)" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Categoría *</label>
+        <select id="pCategory">
+          <option value="deportes">🥊 Deportes</option>
+          <option value="tenis">👟 Tenis</option>
+          <option value="ropa">👕 Ropa</option>
+          <option value="mascotas">🐶 Mascotas</option>
+          <option value="usados">♻️ Usados</option>
+          <option value="ofertas">🔥 Ofertas</option>
+          <option value="accesorios">🎒 Accesorios</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Estado *</label>
+        <select id="pCondition">
+          <option value="Nuevo">Nuevo</option>
+          <option value="Seminuevo">Seminuevo</option>
+          <option value="Usado">Usado</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Emoji (sin foto)</label>
+        <input type="text" id="pEmoji" placeholder="🥊" maxlength="4" />
+      </div>
+      <div class="form-group">
+        <label>¿Destacado?</label>
+        <select id="pFeatured">
+          <option value="false">No</option>
+          <option value="true">Sí ⭐</option>
+        </select>
+      </div>
+
+      <!-- OFERTA -->
+      <div class="form-group">
+        <label>🔥 Precio de oferta <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+        <input type="number" id="pSalePrice" placeholder="Precio rebajado" min="0" />
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Si lo llenas, el precio normal se tacha y este aparece como precio final</p>
+      </div>
+
+      <!-- DURACIÓN DE PROMO -->
+      <div class="form-group">
+        <label>⏳ Promo termina el <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
+        <input type="datetime-local" id="pPromoEnd" />
+        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Deja vacío si la oferta no tiene fecha límite</p>
+      </div>
+
+      <!-- VENDIDO -->
+      <div class="form-group">
+        <label>¿Artículo vendido?</label>
+        <select id="pSold">
+          <option value="false">No — visible al público</option>
+          <option value="true">Sí — oculto al público 🔒</option>
+        </select>
+      </div>
+      <div class="form-group full">
+        <label>Descripción corta</label>
+        <input type="text" id="pDesc" placeholder="Ej: Cuero genuino, 12oz, poco uso" />
+      </div>
+
+      <!-- CAMPOS EXTRA según categoría -->
+      <div class="form-group full extra-fields" id="extraFields" style="display:none;">
+        <div class="extra-fields-grid">
+
+          <!-- Talla (tenis, ropa) -->
+          <div class="form-group" id="fieldTalla" style="display:none;">
+            <label>Talla</label>
+            <input type="text" id="pTalla" placeholder="Ej: 27, M, L, XL" />
+          </div>
+
+          <!-- Color -->
+          <div class="form-group" id="fieldColor" style="display:none;">
+            <label>Color</label>
+            <input type="text" id="pColor" placeholder="Ej: Negro, Blanco, Gris" />
+          </div>
+
+          <!-- Marca -->
+          <div class="form-group" id="fieldMarca" style="display:none;">
+            <label>Marca</label>
+            <input type="text" id="pMarca" placeholder="Ej: Nike, Adidas, Everlast" />
+          </div>
+
+          <!-- Peso / medida (deportes) -->
+          <div class="form-group" id="fieldPeso" style="display:none;">
+            <label>Peso / Medida</label>
+            <input type="text" id="pPeso" placeholder="Ej: 12 oz, 5 kg, talla única" />
+          </div>
+
+          <!-- Género -->
+          <div class="form-group" id="fieldGenero" style="display:none;">
+            <label>Género</label>
+            <select id="pGenero">
+              <option value="">Sin especificar</option>
+              <option value="Hombre">Hombre</option>
+              <option value="Mujer">Mujer</option>
+              <option value="Unisex">Unisex</option>
+              <option value="Niño">Niño/a</option>
+            </select>
+          </div>
+
+          <!-- Material -->
+          <div class="form-group" id="fieldMaterial" style="display:none;">
+            <label>Material</label>
+            <input type="text" id="pMaterial" placeholder="Ej: Cuero, Tela, Plástico" />
+          </div>
+
+          <!-- Raza / especie (mascotas) -->
+          <div class="form-group" id="fieldMascota" style="display:none;">
+            <label>Para mascota</label>
+            <input type="text" id="pMascota" placeholder="Ej: Perro, Gato, Talla M" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- FOTOS (hasta 5) -->
+      <div class="form-group full">
+        <label>Fotos del producto <span style="color:var(--text-muted);font-weight:400;">(máx. 5)</span></label>
+        <div class="photo-tabs">
+          <button type="button" class="photo-tab active" id="tabBtnUrl" onclick="switchPhotoTab('url')">🔗 Pegar URL</button>
+          <button type="button" class="photo-tab" id="tabBtnFile" onclick="switchPhotoTab('file')">📷 Subir desde dispositivo</button>
+        </div>
+
+        <!-- URL -->
+        <div id="photoTabUrl">
+          <div style="display:flex;gap:8px;">
+            <input type="url" id="pImageUrl" placeholder="https://i.imgur.com/ejemplo.jpg" style="flex:1;" />
+            <button type="button" class="btn-add-photo-url" onclick="addPhotoFromUrl()">+ Agregar</button>
+          </div>
+          <p class="photo-hint">Sube tu foto en <a href="https://imgur.com/upload" target="_blank">imgur.com</a> y pega el link · Puedes agregar hasta 5</p>
+        </div>
+
+        <!-- File -->
+        <div id="photoTabFile" style="display:none;">
+          <div class="file-drop" id="fileDrop" onclick="triggerFileInput()">
+            <span id="fileDropText">📁 Toca aquí o arrastra imágenes · Puedes seleccionar varias a la vez</span>
+          </div>
+          <input type="file" id="pImageFile" accept="image/*" multiple onchange="handleFileSelect(event)" style="display:none;" />
+        </div>
+
+        <!-- Galería de fotos agregadas -->
+        <div class="photos-gallery" id="photosGallery"></div>
+        <p class="photo-count-hint" id="photoCountHint" style="display:none;"></p>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeProductModal()">Cancelar</button>
+      <button class="btn-primary" onclick="saveProduct()">💾 Guardar producto</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- MODAL CONFIRMAR ELIMINAR -->
+<div class="modal-overlay" id="deleteModal">
+  <div class="modal-box delete-box">
+    <h2 class="modal-title">¿Eliminar producto?</h2>
+    <p class="delete-name" id="deleteProductName"></p>
+    <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">Esta acción no se puede deshacer.</p>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
+      <button class="btn-danger" onclick="confirmDelete()">🗑 Eliminar</button>
+    </div>
+  </div>
+</div>
+
+  <!-- MODAL RESUMEN DE PEDIDO -->
+  <div class="modal-overlay" id="orderModal">
+    <div class="modal-box order-box">
+      <button class="modal-close" onclick="closeOrderModal()">✕</button>
+      <h2 class="modal-title">📋 Tu pedido</h2>
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Copia el texto o guarda la imagen y mándamela por WhatsApp</p>
+
+      <!-- Tarjeta visual del pedido (se convierte en imagen) -->
+      <div class="order-card" id="orderCard">
+        <div class="order-card-header">
+          <span class="order-card-logo">RAYAMI<span>STORE</span></span>
+          <span class="order-card-date" id="orderDate"></span>
+        </div>
+        <div class="order-card-items" id="orderCardItems"></div>
+        <div class="order-card-divider"></div>
+        <div class="order-card-total">
+          <span>TOTAL ESTIMADO</span>
+          <span id="orderCardTotal"></span>
+        </div>
+        <div class="order-card-footer">
+          <span>📱 55 8107 4978 · rayami-07.github.io/store</span>
+        </div>
+      </div>
+
+      <!-- Texto copiable -->
+      <div class="order-text-wrap">
+        <textarea class="order-textarea" id="orderTextarea" readonly></textarea>
+      </div>
+
+      <!-- Botones -->
+      <div class="order-actions">
+        <button class="btn-copy-order" id="btnCopy" onclick="copyOrderText()">
+          📋 Copiar texto
+        </button>
+        <button class="btn-save-img" onclick="saveOrderImage()">
+          📸 Guardar imagen
+        </button>
+      </div>
+      <p class="order-hint">Después de copiar o guardar, <strong>ábrelo en WhatsApp y mándamelo</strong> 👆</p>
+    </div>
+  </div>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script type="module" src="script.js"></script>
+</body>
+</html>
