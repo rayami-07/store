@@ -1330,7 +1330,6 @@ function renderSellerStats() {
 function renderSellerTable() {
   const tbody = document.getElementById("sellerTableBody");
   const empty = document.getElementById("sellerEmpty");
-  // Ocultar rechazados al vendedor
   const visible = sellerProducts.filter(p => !p.rejected);
   if (!visible.length) { tbody.innerHTML=""; empty.style.display="block"; return; }
   empty.style.display = "none";
@@ -1340,12 +1339,27 @@ function renderSellerTable() {
     const thumb = photos.length
       ? `<img class="admin-thumb" src="${photos[0]}" alt="${p.name}" />`
       : `<div class="admin-thumb-placeholder">📦</div>`;
-    const pubStatus = p.approved
-      ? `<span class="pub-badge pub-ok">✅ Publicado</span>`
-      : `<span class="pub-badge pub-wait">⏳ En revisión</span>`;
-    // Buscar vistas del producto publicado (por nombre match en allProducts)
-    const published = allProducts.find(ap => ap.sellerKey === currentSeller.fbKey && ap.name === p.name);
+
+    let pubStatus, actions;
+    if (p.draft) {
+      pubStatus = `<span class="pub-badge" style="background:rgba(107,133,181,.15);color:#6b85b5;">📝 Borrador</span>`;
+      actions = `
+        <button class="btn-edit" onclick="editSellerProduct('${p.fbKey}')">✏️ Editar</button>
+        <button class="btn-edit" style="background:rgba(37,211,102,.1);color:#25D366;border-color:rgba(37,211,102,.2);" onclick="sendSellerProductToReview('${p.fbKey}')">📤 Enviar</button>
+        <button class="btn-delete" onclick="deleteSellerProduct('${p.fbKey}')">🗑</button>`;
+    } else if (p.approved) {
+      pubStatus = `<span class="pub-badge pub-ok">✅ En tienda</span>`;
+      actions = `<button class="btn-delete" onclick="deleteSellerProduct('${p.fbKey}')">🗑</button>`;
+    } else {
+      pubStatus = `<span class="pub-badge pub-wait">⏳ En revisión</span>`;
+      actions = `
+        <button class="btn-edit" onclick="editSellerProduct('${p.fbKey}')">✏️ Editar</button>
+        <button class="btn-delete" onclick="deleteSellerProduct('${p.fbKey}')">🗑</button>`;
+    }
+
+    const published = allProducts.find(ap => ap.sellerKey === currentSeller?.fbKey && ap.name === p.name);
     const views = published ? (allViews[published.fbKey] || 0) : 0;
+
     return `
       <tr>
         <td>${thumb}</td>
@@ -1354,11 +1368,7 @@ function renderSellerTable() {
         <td>${p.condition}</td>
         <td>${pubStatus}</td>
         <td><span class="views-count">👁 ${views}</span></td>
-        <td>
-          <div class="admin-actions">
-            <button class="btn-delete" onclick="deleteSellerProduct('${p.fbKey}')">🗑</button>
-          </div>
-        </td>
+        <td><div class="admin-actions">${actions}</div></td>
       </tr>`;
   }).join("");
 }
@@ -1380,6 +1390,7 @@ window.openSellerProductModal = function() {
   ["spName","spPrice","spDesc","spImageUrl"].forEach(id => { document.getElementById(id).value=""; });
   document.getElementById("spCategory").value  = "deportes";
   document.getElementById("spCondition").value = "Nuevo";
+  document.getElementById("sellerProductModalTitle").textContent = "Subir producto";
   renderSellerPhotosGallery();
   switchSellerPhotoTab("url");
   document.getElementById("sellerProductModal").classList.add("open");
@@ -1457,14 +1468,14 @@ window.removeSellerPhotoAt = function(i) {
   renderSellerPhotosGallery();
 };
 
-window.saveSellerProduct = async function() {
+window.saveSellerProduct = async function(asDraft = false) {
   const name  = document.getElementById("spName").value.trim();
   const price = parseFloat(document.getElementById("spPrice").value);
   if (!name)                     { showToast("⚠️ Escribe el nombre"); return; }
-  if (isNaN(price)||price <= 0) { showToast("⚠️ Precio inválido"); return; }
+  if (!asDraft && (isNaN(price)||price <= 0)) { showToast("⚠️ Precio inválido"); return; }
 
   const data = {
-    name, price,
+    name, price: price || 0,
     category:   document.getElementById("spCategory").value,
     condition:  document.getElementById("spCondition").value,
     desc:       document.getElementById("spDesc").value.trim(),
@@ -1474,14 +1485,50 @@ window.saveSellerProduct = async function() {
     sellerName: currentSeller.name,
     approved:   false,
     rejected:   false,
-    createdAt:  Date.now()
+    draft:      asDraft,
+    createdAt:  sellerEditingId
+      ? (sellerProducts.find(p => p.fbKey === sellerEditingId)?.createdAt || Date.now())
+      : Date.now()
   };
 
-  showToast("⏳ Enviando...");
-  await fbSaveSellerProduct(data);
+  showToast("⏳ Guardando...");
+  if (sellerEditingId) {
+    const { fbKey: _k, ...clean } = data;
+    await set(ref(db, `sellerProducts/${sellerEditingId}`), clean);
+  } else {
+    await push(ref(db, "sellerProducts"), data);
+  }
   closeSellerProductModal();
   sellerCurrentPhotos = [];
-  showToast("✅ Producto enviado para revisión 🔥");
+  sellerEditingId = null;
+  showToast(asDraft ? "📝 Guardado como borrador" : "✅ Enviado para revisión 🔥");
+};
+
+window.saveSellerDraft    = function() { saveSellerProduct(true); };
+window.submitSellerProduct = function() { saveSellerProduct(false); };
+
+window.editSellerProduct = function(fbKey) {
+  const p = sellerProducts.find(x => x.fbKey === fbKey);
+  if (!p) return;
+  sellerEditingId = fbKey;
+  sellerCurrentPhotos = p.photos?.length ? [...p.photos] : p.image ? [p.image] : [];
+  document.getElementById("spName").value      = p.name;
+  document.getElementById("spPrice").value     = p.price;
+  document.getElementById("spCategory").value  = p.category;
+  document.getElementById("spCondition").value = p.condition;
+  document.getElementById("spDesc").value      = p.desc || "";
+  renderSellerPhotosGallery();
+  switchSellerPhotoTab("url");
+  document.getElementById("sellerProductModalTitle").textContent = "Editar producto";
+  document.getElementById("sellerProductModal").classList.add("open");
+};
+
+window.sendSellerProductToReview = async function(fbKey) {
+  const p = sellerProducts.find(x => x.fbKey === fbKey);
+  if (!p) return;
+  const { fbKey: _k, ...data } = p;
+  await set(ref(db, `sellerProducts/${fbKey}`), { ...data, draft: false, approved: false, rejected: false });
+  showToast("✅ Enviado para revisión 🔥");
 };
 
 /* ============================================
@@ -1623,17 +1670,19 @@ window.approveSellerProduct = async function(fbKey) {
   const p = allSellerProductsList.find(x => x.fbKey === fbKey);
   if (!p) return;
   const { fbKey: _k, ...data } = p;
-  // Marcar como aprobado
-  await set(ref(db, `sellerProducts/${fbKey}`), { ...data, approved: true, rejected: false });
-  // Publicar en products principal
+  // Marcar como aprobado en sellerProducts
+  await set(ref(db, `sellerProducts/${fbKey}`), { ...data, approved: true, rejected: false, draft: false });
+  // Publicar en products — usar photos array si existe
+  const photos = p.photos?.length ? p.photos : p.image ? [p.image] : [];
   await push(ref(db, "products"), {
     name: p.name, price: p.price, category: p.category,
-    condition: p.condition, desc: p.desc, image: p.image,
-    photos: p.image ? [p.image] : [],
+    condition: p.condition, desc: p.desc,
+    image: photos[0] || "",
+    photos,
     emoji: "📦", featured: false, sold: false,
     sellerKey: p.sellerKey, sellerName: p.sellerName || "LC",
     originalPrice: 0, salePrice: 0, promoEnd: 0,
-    extras: {}, createdAt: Date.now()
+    extras: p.extras || {}, createdAt: Date.now()
   });
   showToast("✅ Producto aprobado y publicado 🔥");
 };
@@ -1663,7 +1712,11 @@ window.triggerFileInput  = triggerFileInput;
 window.handleFileSelect  = handleFileSelect;
 window.addPhotoFromUrl   = addPhotoFromUrl;
 window.renderAdminTable  = renderAdminTable;
-window.switchAdminTab    = switchAdminTab;
+window.saveSellerDraft     = window.saveSellerDraft;
+window.submitSellerProduct = window.submitSellerProduct;
+window.editSellerProduct   = window.editSellerProduct;
+window.sendSellerProductToReview = window.sendSellerProductToReview;
+window.switchAdminTab      = switchAdminTab;
 
 /* ============================================
    INIT
