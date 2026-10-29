@@ -45,6 +45,13 @@
       "$itemId": {
         ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && (!data.exists() || root.child('sellers/' + data.child('sellerKey').val() + '/uid').val() === auth.uid) && (!newData.exists() || (root.child('sellers/' + newData.child('sellerKey').val() + '/uid').val() === auth.uid && newData.child('approved').val() !== true)))"
       }
+    },
+    "stores": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$storeId": {
+        ".read": true,
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+      }
     }
   }
 }

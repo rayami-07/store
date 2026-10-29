@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Creador de tiendas</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="creador.css?v=1" />
+</head>
+<body>
+
+<!-- LOGIN -->
+<main class="login" id="loginView">
+  <form class="login-card" id="loginForm">
+    <h1>Creador de tiendas</h1>
+    <p>Entra con tu cuenta de administrador.</p>
+    <label>Correo<input type="email" id="lEmail" autocomplete="username" autocapitalize="off" required /></label>
+    <label>Contraseña<input type="password" id="lPass" autocomplete="current-password" required /></label>
+    <p class="err" id="lErr"></p>
+    <button class="btn btn-dark" type="submit">Entrar</button>
+  </form>
+</main>
+
+<!-- APP -->
+<div class="app" id="appView" hidden>
+  <header class="top">
+    <b class="top-title">Creador de tiendas</b>
+    <div class="top-tabs" role="tablist">
+      <button class="ttab active" data-view="editor">Editar</button>
+      <button class="ttab" data-view="demos">Mis demos <span id="demoCount"></span></button>
+    </div>
+    <button class="btn btn-ghost" id="logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
+  </header>
+
+  <!-- EDITOR -->
+  <section class="editor" id="editorView">
+    <div class="form-col">
+      <div class="mobile-switch">
+        <button class="mtab active" data-pane="form">Datos</button>
+        <button class="mtab" data-pane="preview">Vista previa</button>
+      </div>
+
+      <form id="storeForm" class="pane" data-pane="form" autocomplete="off">
+        <div class="editing-note" id="editingNote" hidden></div>
+
+        <fieldset>
+          <legend>1 · Negocio</legend>
+          <label>Nombre del negocio *<input id="fName" required maxlength="40" placeholder="Zapatería Lupita" /></label>
+          <label>Giro
+            <select id="fGiro"></select>
+          </label>
+          <label>Frase principal<input id="fTagline" maxlength="70" placeholder="Tenis y zapatos para cada ocasión" /></label>
+          <div class="row2">
+            <label>WhatsApp del negocio *<input id="fWa" inputmode="tel" required placeholder="55 1234 5678" /></label>
+            <label>Horario<input id="fHorario" maxlength="40" placeholder="Lun a Sáb · 10 a 7" /></label>
+          </div>
+          <label>Aviso en la barra superior<input id="fAviso" maxlength="90" placeholder="Envíos a todo el Valle de México" /></label>
+        </fieldset>
+
+        <fieldset>
+          <legend>2 · Imagen</legend>
+          <div class="logo-row">
+            <div class="logo-box" id="logoBox"><i class="fa-regular fa-image"></i></div>
+            <div class="logo-actions">
+              <label class="btn btn-light file-btn"><i class="fa-solid fa-upload"></i> Subir logo<input type="file" id="fLogo" accept="image/*" hidden /></label>
+              <button type="button" class="btn btn-ghost" id="logoRemove" hidden>Quitar</button>
+              <small>PNG o JPG. Se ajusta solo.</small>
+            </div>
+          </div>
+          <div class="field-label">Color de la marca</div>
+          <div class="swatches" id="swatches"></div>
+          <div class="field-label">Estilo de títulos</div>
+          <div class="estilos" id="estilos"></div>
+        </fieldset>
+
+        <fieldset>
+          <legend>3 · Productos <span class="muted" id="prodCount"></span></legend>
+          <p class="hint">Toca la foto para cambiarla. Si no subes foto se usa una de ejemplo.</p>
+          <div class="prods" id="prods"></div>
+          <div class="prod-actions">
+            <button type="button" class="btn btn-light" id="addProd"><i class="fa-solid fa-plus"></i> Agregar producto</button>
+            <button type="button" class="btn btn-ghost" id="loadSamples"><i class="fa-solid fa-wand-magic-sparkles"></i> Usar ejemplos del giro</button>
+          </div>
+        </fieldset>
+
+        <div class="save-bar">
+          <button type="button" class="btn btn-ghost" id="newDemo"><i class="fa-solid fa-file"></i> Nueva</button>
+          <button type="submit" class="btn btn-dark" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> Guardar demo</button>
+        </div>
+
+        <div class="result" id="result" hidden>
+          <b>Demo guardada</b>
+          <div class="link-row"><input id="resLink" readonly /><button type="button" class="btn btn-light" id="copyLink"><i class="fa-regular fa-copy"></i> Copiar</button></div>
+          <div class="res-actions">
+            <a class="btn btn-wa" id="sendWa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Mandar al cliente</a>
+            <a class="btn btn-light" id="openLink" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir</a>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="preview-col pane" data-pane="preview">
+      <div class="device-switch">
+        <button class="dev active" data-dev="phone"><i class="fa-solid fa-mobile-screen"></i> Celular</button>
+        <button class="dev" data-dev="desktop"><i class="fa-solid fa-display"></i> Computadora</button>
+      </div>
+      <div class="frame-wrap phone" id="frameWrap">
+        <iframe id="preview" src="../tienda/?preview=1" title="Vista previa de la tienda"></iframe>
+      </div>
+    </div>
+  </section>
+
+  <!-- MIS DEMOS -->
+  <section class="demos" id="demosView" hidden>
+    <div class="demos-head">
+      <h2>Mis demos</h2>
+      <p class="muted">Tiendas de prueba que has creado para tus prospectos.</p>
+    </div>
+    <div class="demo-list" id="demoList"></div>
+  </section>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script type="module" src="creador.js?v=1"></script>
+</body>
+</html>

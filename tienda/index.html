@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tienda en línea</title>
+  <meta name="theme-color" content="#ffffff" />
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="tienda.css?v=1" />
+</head>
+<body>
+
+<div class="loading" id="loading"><div class="spinner"></div></div>
+
+<div class="notfound" id="notfound" hidden>
+  <h1>Tienda no encontrada</h1>
+  <p>Revisa que el link esté completo.</p>
+</div>
+
+<div id="store" hidden>
+  <div class="demo-bar" id="demoBar" hidden>
+    <span><b>Vista previa</b> · así se vería tu tienda en línea</span>
+    <a id="demoCta" target="_blank" rel="noopener">Quiero mi tienda</a>
+  </div>
+
+  <header class="hdr">
+    <div class="wrap hdr-in">
+      <a href="#" class="brand">
+        <img id="logo" alt="" hidden />
+        <span id="brandName"></span>
+      </a>
+      <label class="search">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="search" placeholder="Buscar" autocomplete="off" />
+      </label>
+      <button class="cart-btn" id="cartBtn" aria-label="Ver carrito">
+        <i class="fa-solid fa-bag-shopping"></i>
+        <span class="badge" id="cartBadge" hidden>0</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="aviso" id="aviso"></div>
+
+  <section class="hero wrap">
+    <div class="hero-txt">
+      <span class="eyebrow" id="heroEyebrow"></span>
+      <h1 id="heroTitle"></h1>
+      <div class="hero-btns">
+        <a href="#catalogo" class="btn btn-accent">Ver productos</a>
+        <a id="heroWa" class="btn btn-outline" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> WhatsApp</a>
+      </div>
+    </div>
+    <div class="hero-img"><img id="heroImg" alt="" /></div>
+  </section>
+
+  <section class="wrap catalogo" id="catalogo">
+    <div class="cat-head">
+      <h2>Productos <span id="count"></span></h2>
+      <select id="sort" aria-label="Ordenar">
+        <option value="">Destacados</option>
+        <option value="asc">Precio: menor a mayor</option>
+        <option value="desc">Precio: mayor a menor</option>
+      </select>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="grid" id="grid"></div>
+    <p class="empty" id="empty" hidden>No encontramos productos con esa búsqueda.</p>
+  </section>
+
+  <section class="info">
+    <div class="wrap info-grid">
+      <div><i class="fa-brands fa-whatsapp"></i><b>Pide por WhatsApp</b><span>Arma tu carrito y envía el pedido en un clic</span></div>
+      <div><i class="fa-solid fa-comments"></i><b>Atención directa</b><span>Te responde el negocio, sin intermediarios</span></div>
+      <div><i class="fa-solid fa-tag"></i><b>Precios claros</b><span>Lo que ves es lo que pagas</span></div>
+    </div>
+  </section>
+
+  <footer class="ftr">
+    <div class="wrap ftr-in">
+      <div class="ftr-brand"><img id="logoFtr" alt="" hidden /><b id="ftrName"></b></div>
+      <div class="ftr-contact" id="ftrContact"></div>
+      <div class="ftr-made" id="ftrMade"></div>
+    </div>
+  </footer>
+
+  <a class="wa-fab" id="waFab" target="_blank" rel="noopener" aria-label="WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
+
+  <div class="overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer" aria-label="Carrito">
+    <div class="drawer-head">
+      <h3>Tu pedido</h3>
+      <button class="icon-btn" id="closeCart" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div class="drawer-body" id="cartList"></div>
+    <div class="drawer-foot">
+      <div class="total"><span>Total</span><b id="cartTotal">$0</b></div>
+      <button class="btn btn-accent btn-block" id="sendOrder"><i class="fa-brands fa-whatsapp"></i> Enviar pedido por WhatsApp</button>
+    </div>
+  </aside>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script type="module" src="tienda.js?v=1"></script>
+</body>
+</html>

@@ -34,7 +34,7 @@ setPersistence(auth, browserSessionPersistence).catch(() => {});
 // Este correo debe coincidir con el de las reglas de seguridad de la base.
 const ADMIN_EMAILS = ["raulbenitez563@gmail.com"];
 const isAdminUser = (u) => !!u && ADMIN_EMAILS.includes((u.email || "").toLowerCase());
-const WA_NUMBER   = "5581074978";
+const WA_NUMBER   = "525581074978"; // con 52 (México): wa.me pide el número con código de país
 const IMGBB_KEY   = "0a9c6567b28ac96fca0fa0d3a74f1741";
 
 /* ── LOGO — pega aquí tu URL de ImgBB cuando la tengas ── */
