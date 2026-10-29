@@ -6,7 +6,7 @@
    sigue abriendo aunque el celular esté sin señal.
    Solo guarda archivos de este mismo sitio (no Firebase, no ImgBB).
 ============================================================ */
-const CACHE = "rayami-v3";
+const CACHE = "rayami-v4";
 const BASE = [
   "./",
   "./index.html",
@@ -19,7 +19,7 @@ const BASE = [
 ];
 
 self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE)));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(BASE.map((u) => new Request(u, { cache: "reload" })))));
   self.skipWaiting();
 });
 
@@ -38,7 +38,9 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET" || url.origin !== self.location.origin) return;
 
   e.respondWith(
-    fetch(req)
+    // "no-cache": siempre pregunta al servidor si hay versión nueva
+    // (GitHub Pages deja guardadas las páginas 10 min y eso retrasaba los cambios)
+    fetch(req, { cache: "no-cache" })
       .then((res) => {
         const copy = res.clone();
         caches.open(CACHE).then((c) => c.put(req, copy));
