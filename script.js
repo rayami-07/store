@@ -358,10 +358,7 @@ function renderCard(product) {
     ? carouselHTML(photos, carId)
     : `<div class="pc-placeholder">${product.emoji || "📦"}</div>`;
 
-  // Registrar visita (solo clientes, no admin ni vendedor)
-  if (product.fbKey && !isLoggedIn && !currentSeller) {
-    trackView(product.fbKey);
-  }
+  // La vista se registra cuando la tarjeta aparece en pantalla (ver observeCardViews)
 
   const star     = product.featured ? `<span class="pc-featured-star">⭐</span>` : "";
   const original = product.originalPrice > 0
@@ -525,6 +522,7 @@ function renderCatalog() {
     : "No hay productos con estos filtros.";
   if (filtered.length === 0) { grid.innerHTML = ""; empty.style.display = "block"; }
   else { grid.innerHTML = filtered.map(renderCard).join(""); empty.style.display = "none"; }
+  observeCardViews();
 }
 
 function renderFeatured() {
@@ -532,10 +530,35 @@ function renderFeatured() {
   const emptyEl = document.getElementById("emptyFeatured");
   const featured = allProducts.filter(p => p.featured);
   if (featured.length === 0) { grid.innerHTML = ""; emptyEl.style.display = "block"; }
-  else { grid.innerHTML = featured.map(renderCard).join(""); emptyEl.style.display = "none"; }
+  else { grid.innerHTML = featured.map(renderCard).join(""); emptyEl.style.display = "none"; observeCardViews(); }
 }
 
 function renderAll() { renderFeatured(); renderCatalog(); }
+
+/* Cuenta una vista solo si la tarjeta estuvo al menos 60% visible durante 1 segundo.
+   Antes se contaba al dibujar la página, y cada visita sumaba a TODOS los productos. */
+let cardViewObserver = null;
+const cardViewTimers = new Map();
+function observeCardViews() {
+  if (isLoggedIn || currentSeller || !("IntersectionObserver" in window)) return;
+  if (!cardViewObserver) {
+    cardViewObserver = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        const key = en.target.id.replace("card-", "");
+        if (en.isIntersecting) {
+          if (!cardViewTimers.has(key)) cardViewTimers.set(key, setTimeout(() => {
+            cardViewTimers.delete(key);
+            if (!isLoggedIn && !currentSeller) trackView(key);
+            cardViewObserver.unobserve(en.target);
+          }, 1000));
+        } else if (cardViewTimers.has(key)) {
+          clearTimeout(cardViewTimers.get(key)); cardViewTimers.delete(key);
+        }
+      });
+    }, { threshold: 0.6 });
+  }
+  document.querySelectorAll(".product-card[id^='card-']").forEach(c => cardViewObserver.observe(c));
+}
 
 /* ============================================
    CATEGORÍAS + BÚSQUEDA + NAVBAR
@@ -690,11 +713,63 @@ function renderAdminStats() {
   document.querySelector("#statUsado + .stat-label").textContent = "Vendidos";
 }
 
+const AP_CAT_LABEL = { tenis:"Tenis", ropa:"Ropa", deportes:"Deportes", accesorios:"Accesorios", mascotas:"Mascotas", usados:"Usados", ofertas:"Ofertas" };
+const esc = (t) => String(t ?? "").replace(/[&<>"]/g, c => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c]));
+
+function getAdminFiltered() {
+  const v = id => document.getElementById(id)?.value || "";
+  const q = v("adminSearch").toLowerCase().trim();
+  const cat = v("apCat"), cond = v("apCond"), seller = v("apSeller"), status = v("apStatus"), sort = v("apSort") || "nuevo";
+  const list = allProducts.filter(p => {
+    const e = p.extras || {};
+    const text = [p.name, p.desc, p.category, e.marca, e.talla, e.color, e.material, p.sellerName].join(" ").toLowerCase();
+    if (q && !text.includes(q)) return false;
+    if (cat && p.category !== cat) return false;
+    if (cond && p.condition !== cond) return false;
+    if (seller && (p.sellerName || "LC") !== seller) return false;
+    if (status === "disponible" && p.sold) return false;
+    if (status === "vendido" && !p.sold) return false;
+    if (status === "oferta" && !hasActiveOffer(p)) return false;
+    if (status === "destacado" && !p.featured) return false;
+    if (status === "sinfoto" && (p.photos?.length || p.image)) return false;
+    return true;
+  });
+  const by = {
+    nuevo: (a, b) => (b.createdAt || 0) - (a.createdAt || 0),
+    viejo: (a, b) => (a.createdAt || 0) - (b.createdAt || 0),
+    "precio-asc": (a, b) => finalPriceOf(a) - finalPriceOf(b),
+    "precio-desc": (a, b) => finalPriceOf(b) - finalPriceOf(a),
+    vistas: (a, b) => (allViews[b.fbKey] || 0) - (allViews[a.fbKey] || 0),
+    nombre: (a, b) => (a.name || "").localeCompare(b.name || "", "es"),
+  };
+  return list.sort(by[sort] || by.nuevo);
+}
+
 function renderAdminTable() {
   const tbody = document.getElementById("adminTableBody");
   const empty = document.getElementById("adminEmpty");
-  const q = (document.getElementById("adminSearch")?.value || "").toLowerCase();
-  const list = allProducts.filter(p => p.name.toLowerCase().includes(q) || (p.category||"").includes(q));
+  if (!tbody) return;
+
+  // Opciones de vendedor según los productos que existen
+  const sel = document.getElementById("apSeller");
+  if (sel) {
+    const names = [...new Set(allProducts.map(p => p.sellerName || "LC"))].sort();
+    const cur = sel.value;
+    sel.innerHTML = `<option value="">Todos los vendedores</option>` + names.map(n => `<option${n === cur ? " selected" : ""}>${esc(n)}</option>`).join("");
+  }
+
+  const list = getAdminFiltered();
+
+  // Resumen de lo filtrado
+  const avail = list.filter(p => !p.sold), sold = list.filter(p => p.sold);
+  const sum = arr => arr.reduce((t, p) => t + finalPriceOf(p), 0);
+  const summary = document.getElementById("apSummary");
+  if (summary) summary.innerHTML = `
+    <div><b>${list.length}</b><span>producto${list.length !== 1 ? "s" : ""}</span></div>
+    <div><b>${avail.length}</b><span>disponibles</span></div>
+    <div><b>${formatPrice(sum(avail))}</b><span>valor en inventario</span></div>
+    <div><b>${sold.length}</b><span>vendidos</span></div>
+    <div><b>${formatPrice(sum(sold))}</b><span>vendido</span></div>`;
 
   if (list.length === 0) { tbody.innerHTML = ""; empty.style.display = "block"; return; }
   empty.style.display = "none";
@@ -702,32 +777,178 @@ function renderAdminTable() {
   tbody.innerHTML = list.map(p => {
     const photos = p.photos?.length ? p.photos : p.image ? [p.image] : [];
     const thumb  = photos.length
-      ? `<img class="admin-thumb" src="${photos[0]}" alt="${p.name}" />`
-      : `<div class="admin-thumb-placeholder">${p.emoji || "📦"}</div>`;
-    const photoCount = photos.length > 1 ? `<span class="admin-photo-count">${photos.length}📷</span>` : "";
-    const soldBadge  = p.sold ? `<span class="admin-sold-badge">VENDIDO</span>` : "";
-    const offerBadge = p.salePrice > 0 ? `<span class="admin-offer-badge">🔥 $${p.salePrice}</span>` : "";
-    const vendorName = p.sellerName || "LC";
-    const views = allViews[p.fbKey] || 0;
+      ? `<img class="ap-thumb" src="${esc(photos[0])}" alt="" loading="lazy" />`
+      : `<div class="ap-thumb ap-thumb-empty">${p.emoji || "📦"}</div>`;
+    const e = p.extras || {};
+    const meta = [e.marca, e.talla && `Talla ${e.talla}`, e.color, photos.length > 1 && `${photos.length} fotos`].filter(Boolean).map(esc).join(" · ");
+    const offer = hasActiveOffer(p);
+    const price = offer
+      ? `<span class="ap-price">${formatPrice(p.salePrice)}</span><span class="ap-price-old">${formatPrice(p.price)}</span>`
+      : `<span class="ap-price">${formatPrice(p.price)}</span>`;
+    const chips = [
+      p.sold ? `<span class="ap-chip ap-chip-sold">Vendido</span>` : `<span class="ap-chip ap-chip-ok">Disponible</span>`,
+      offer ? `<span class="ap-chip ap-chip-offer">Oferta</span>` : "",
+      p.featured ? `<span class="ap-chip ap-chip-star">Destacado</span>` : "",
+    ].join("");
     return `
       <tr class="${p.sold ? "row-sold" : ""}">
-        <td style="position:relative">${thumb}${photoCount}</td>
-        <td><span class="admin-product-name">${p.name}</span> ${soldBadge} ${offerBadge}</td>
-        <td><span class="admin-vendor-tag">🏪 ${vendorName}</span></td>
-        <td><span class="admin-cat-badge">${p.category}</span></td>
-        <td>${p.condition}</td>
-        <td><span class="admin-price">${formatPrice(p.price)}</span></td>
-        <td><span class="views-count">👁 ${views}</span></td>
-        <td>${p.featured ? "⭐" : "—"}</td>
-        <td>
-          <div class="admin-actions">
-            <button class="btn-edit" onclick="openEditModal('${p.fbKey}')">✏️ Editar</button>
-            <button class="btn-delete" onclick="openDeleteModal('${p.fbKey}')">🗑</button>
+        <td><div class="ap-product">${thumb}<div><div class="ap-name">${esc(p.name)}</div>${meta ? `<div class="ap-meta">${meta}</div>` : ""}</div></div></td>
+        <td>${esc(AP_CAT_LABEL[p.category] || p.category)}</td>
+        <td>${esc(p.condition)}</td>
+        <td>${esc(p.sellerName || "LC")}</td>
+        <td class="ap-num">${price}</td>
+        <td><div class="ap-chips">${chips}</div></td>
+        <td class="ap-num">${allViews[p.fbKey] || 0}</td>
+        <td class="ap-actions-col">
+          <div class="ap-actions">
+            <button class="ap-icon-btn" title="Editar" aria-label="Editar" onclick="openEditModal('${p.fbKey}')"><i class="fa-solid fa-pen"></i></button>
+            <button class="ap-icon-btn" title="${p.sold ? "Marcar disponible" : "Marcar vendido"}" aria-label="${p.sold ? "Marcar disponible" : "Marcar vendido"}" onclick="toggleSold('${p.fbKey}')"><i class="fa-solid ${p.sold ? "fa-rotate-left" : "fa-check"}"></i></button>
+            <button class="ap-icon-btn ap-icon-danger" title="Borrar" aria-label="Borrar" onclick="openDeleteModal('${p.fbKey}')"><i class="fa-solid fa-trash"></i></button>
           </div>
         </td>
       </tr>`;
   }).join("");
 }
+
+window.clearAdminFilters = function () {
+  ["adminSearch", "apCat", "apCond", "apSeller", "apStatus"].forEach(id => { const el = document.getElementById(id); if (el) el.value = ""; });
+  const s = document.getElementById("apSort"); if (s) s.value = "nuevo";
+  renderAdminTable();
+};
+
+window.toggleSold = async function (fbKey) {
+  const p = allProducts.find(x => x.fbKey === fbKey);
+  if (!p) return;
+  try {
+    await update(ref(db, `products/${fbKey}`), { sold: !p.sold });
+    showToast(p.sold ? "↺ Marcado como disponible" : "✅ Marcado como vendido");
+  } catch (e) { showToast("❌ No se pudo actualizar"); console.error(e); }
+};
+
+/* ============================================
+   EXPORTAR A EXCEL (SheetJS, se carga solo al usarlo)
+============================================================ */
+let xlsxLoading = null;
+function loadXLSX() {
+  if (window.XLSX) return Promise.resolve(window.XLSX);
+  if (!xlsxLoading) xlsxLoading = new Promise((ok, fail) => {
+    const s = document.createElement("script");
+    s.src = "https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js";
+    s.onload = () => ok(window.XLSX);
+    s.onerror = () => { xlsxLoading = null; fail(new Error("No se pudo cargar la librería de Excel")); };
+    document.head.appendChild(s);
+  });
+  return xlsxLoading;
+}
+const toDate = ms => ms ? new Date(ms) : null;
+const MONEY = '"$"#,##0.00';
+
+// Crea una hoja con encabezados, anchos, filtro y formatos de moneda/fecha
+function makeSheet(XLSX, rows, cols) {
+  const ws = XLSX.utils.json_to_sheet(rows, { header: cols.map(c => c.h), cellDates: true });
+  ws["!cols"] = cols.map(c => ({ wch: c.w || 14 }));
+  const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+  ws["!autofilter"] = { ref: XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: range.e.r, c: cols.length - 1 } }) };
+  cols.forEach((c, ci) => {
+    if (!c.fmt) return;
+    for (let r = 1; r <= range.e.r; r++) {
+      const cell = ws[XLSX.utils.encode_cell({ r, c: ci })];
+      if (cell) cell.z = c.fmt;
+    }
+  });
+  return ws;
+}
+const stamp = () => new Date().toISOString().slice(0, 10);
+
+window.exportProductsXLSX = async function () {
+  showToast("⏳ Preparando Excel…");
+  try {
+    const XLSX = await loadXLSX();
+    const list = getAdminFiltered();
+    const base = location.origin + location.pathname;
+    const rows = list.map(p => {
+      const e = p.extras || {};
+      return {
+        "ID": p.fbKey,
+        "Producto": p.name || "",
+        "Categoría": AP_CAT_LABEL[p.category] || p.category || "",
+        "Condición": p.condition || "",
+        "Vendedor": p.sellerName || "LC",
+        "Precio": Number(p.price) || 0,
+        "Precio oferta": hasActiveOffer(p) ? Number(p.salePrice) : null,
+        "Fin de oferta": p.promoEnd > 0 ? toDate(p.promoEnd) : null,
+        "Precio final": finalPriceOf(p),
+        "Estado": p.sold ? "Vendido" : "Disponible",
+        "Destacado": p.featured ? "Sí" : "No",
+        "Vistas": allViews[p.fbKey] || 0,
+        "Marca": e.marca || "", "Talla": e.talla || "", "Color": e.color || "",
+        "Género": e.genero || "", "Material": e.material || "",
+        "Fotos": (p.photos?.length || (p.image ? 1 : 0)),
+        "Fecha de alta": toDate(p.createdAt),
+        "Link": `${base}#p-${p.fbKey}`,
+      };
+    });
+    const cols = [
+      { h:"ID", w:22 }, { h:"Producto", w:34 }, { h:"Categoría", w:12 }, { h:"Condición", w:11 }, { h:"Vendedor", w:12 },
+      { h:"Precio", w:12, fmt:MONEY }, { h:"Precio oferta", w:13, fmt:MONEY }, { h:"Fin de oferta", w:16, fmt:"dd/mm/yyyy hh:mm" },
+      { h:"Precio final", w:12, fmt:MONEY }, { h:"Estado", w:11 }, { h:"Destacado", w:10 }, { h:"Vistas", w:8 },
+      { h:"Marca", w:14 }, { h:"Talla", w:8 }, { h:"Color", w:12 }, { h:"Género", w:10 }, { h:"Material", w:12 },
+      { h:"Fotos", w:7 }, { h:"Fecha de alta", w:16, fmt:"dd/mm/yyyy" }, { h:"Link", w:50 },
+    ];
+
+    // Resumen por categoría (como una tabla dinámica)
+    const cats = {};
+    list.forEach(p => {
+      const k = AP_CAT_LABEL[p.category] || p.category || "Sin categoría";
+      const c = cats[k] ||= { "Categoría": k, "Productos": 0, "Disponibles": 0, "Vendidos": 0, "Valor inventario": 0, "Valor vendido": 0, "Vistas": 0 };
+      c.Productos++; c.Vistas += allViews[p.fbKey] || 0;
+      if (p.sold) { c.Vendidos++; c["Valor vendido"] += finalPriceOf(p); }
+      else { c.Disponibles++; c["Valor inventario"] += finalPriceOf(p); }
+    });
+    const res = Object.values(cats).sort((a, b) => b.Productos - a.Productos);
+    const tot = res.reduce((t, c) => { Object.keys(c).forEach(k => { if (k !== "Categoría") t[k] = (t[k] || 0) + c[k]; }); return t; }, { "Categoría": "TOTAL" });
+    res.push(tot);
+    const rcols = [{ h:"Categoría", w:16 }, { h:"Productos", w:10 }, { h:"Disponibles", w:11 }, { h:"Vendidos", w:10 },
+      { h:"Valor inventario", w:16, fmt:MONEY }, { h:"Valor vendido", w:15, fmt:MONEY }, { h:"Vistas", w:9 }];
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, makeSheet(XLSX, rows, cols), "Productos");
+    XLSX.utils.book_append_sheet(wb, makeSheet(XLSX, res, rcols), "Resumen");
+    XLSX.writeFile(wb, `RAYAMI_productos_${stamp()}.xlsx`, { cellDates: true });
+    showToast(`✅ Excel con ${rows.length} productos`);
+  } catch (e) { showToast("❌ " + e.message); console.error(e); }
+};
+
+const ORDER_STATUS_LABEL = { pendiente:"Pendiente", pagado:"Pagado", en_camino:"En camino", entregado:"Entregado", cancelado:"Cancelado" };
+window.exportOrdersXLSX = async function () {
+  showToast("⏳ Preparando Excel…");
+  try {
+    const XLSX = await loadXLSX();
+    const list = (typeof ordersFilter !== "undefined" && ordersFilter !== "todos") ? allOrders.filter(o => o.status === ordersFilter) : allOrders;
+    const rows = list.map(o => ({
+      "Código": o.trackCode || "", "Fecha": toDate(o.createdAt), "Cliente": o.name || "", "Teléfono": o.phone || "",
+      "Entrega": o.delivery === "domicilio" ? "Domicilio" : "Punto de encuentro", "Colonia": o.colonia || "", "Dirección": o.address || "",
+      "Artículos": (o.items || []).reduce((t, i) => t + (Number(i.qty) || 1), 0), "Total": Number(o.total) || 0,
+      "Estado": ORDER_STATUS_LABEL[o.status] || o.status || "", "Notas": o.notes || "",
+    }));
+    const cols = [{ h:"Código", w:13 }, { h:"Fecha", w:16, fmt:"dd/mm/yyyy hh:mm" }, { h:"Cliente", w:22 }, { h:"Teléfono", w:13 },
+      { h:"Entrega", w:18 }, { h:"Colonia", w:18 }, { h:"Dirección", w:30 }, { h:"Artículos", w:9 }, { h:"Total", w:12, fmt:MONEY },
+      { h:"Estado", w:11 }, { h:"Notas", w:30 }];
+    const items = [];
+    list.forEach(o => (o.items || []).forEach(i => items.push({
+      "Código": o.trackCode || "", "Fecha": toDate(o.createdAt), "Estado": ORDER_STATUS_LABEL[o.status] || o.status || "",
+      "Producto": i.name || "", "Cantidad": Number(i.qty) || 1, "Precio": Number(i.price) || 0,
+      "Subtotal": (Number(i.qty) || 1) * (Number(i.price) || 0),
+    })));
+    const icols = [{ h:"Código", w:13 }, { h:"Fecha", w:16, fmt:"dd/mm/yyyy hh:mm" }, { h:"Estado", w:11 }, { h:"Producto", w:34 },
+      { h:"Cantidad", w:9 }, { h:"Precio", w:12, fmt:MONEY }, { h:"Subtotal", w:12, fmt:MONEY }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, makeSheet(XLSX, rows, cols), "Pedidos");
+    XLSX.utils.book_append_sheet(wb, makeSheet(XLSX, items, icols), "Detalle por producto");
+    XLSX.writeFile(wb, `RAYAMI_pedidos_${stamp()}.xlsx`, { cellDates: true });
+    showToast(`✅ Excel con ${rows.length} pedidos`);
+  } catch (e) { showToast("❌ " + e.message); console.error(e); }
+};
 
 /* ============================================
    GALERÍA DE FOTOS — admin form

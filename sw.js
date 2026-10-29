@@ -6,7 +6,7 @@
    sigue abriendo aunque el celular esté sin señal.
    Solo guarda archivos de este mismo sitio (no Firebase, no ImgBB).
 ============================================================ */
-const CACHE = "rayami-v4";
+const CACHE = "rayami-v5";
 const BASE = [
   "./",
   "./index.html",
