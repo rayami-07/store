@@ -22,6 +22,9 @@ let cart = [];
 let cat = "";
 let storeId = "";
 let isPreview = false;
+let isSample = false;   // ejemplo dentro de la página de servicios: no abre WhatsApp
+const qp = new URLSearchParams(location.search);
+const mesa = (qp.get("mesa") || "").replace(/[^\w -]/g, "").slice(0, 12);
 let step = "cart"; // cart | checkout
 let modalId = "";
 let modalSel = {}; // opciones elegidas en la ficha: { Talla: "M" }
@@ -66,7 +69,7 @@ function render(config) {
   for (const id of ["logo", "logoFtr"]) { const el = $(id); el.hidden = !cfg.logo; if (cfg.logo) el.src = cfg.logo; }
   $("brandName").textContent = cfg.name || "Mi tienda";
   $("ftrName").textContent = cfg.name || "Mi tienda";
-  $("aviso").textContent = cfg.aviso || "";
+  $("aviso").textContent = mesa ? `Estás pidiendo para la mesa ${mesa}` : (cfg.aviso || "");
   $("heroEyebrow").textContent = cfg.name || "";
   $("heroTitle").textContent = cfg.tagline || giro.tagline;
   const first = cfg.products[0];
@@ -76,7 +79,7 @@ function render(config) {
   $("heroWa").href = waLink(cfg.whatsapp, hello);
   $("waFab").href = waLink(cfg.whatsapp, hello);
   $("ftrContact").innerHTML = cfg.whatsapp ? `WhatsApp: <b>${esc(cfg.whatsapp)}</b>${cfg.horario ? " · " + esc(cfg.horario) : ""}` : "";
-  $("ftrMade").innerHTML = `Tienda creada con <a href="${waLink(PLATAFORMA.whatsapp, "Hola, quiero una tienda en línea como esta")}" target="_blank" rel="noopener">${esc(PLATAFORMA.nombre)}</a>`;
+  $("ftrMade").innerHTML = `Tienda creada con <a href="${new URL("../servicios/", location.href).href}" target="_blank" rel="noopener">${esc(PLATAFORMA.nombre)}</a>`;
 
   const isDemo = cfg.status === "demo";
   $("demoBar").hidden = !isDemo;
@@ -270,6 +273,12 @@ const openCart = (o) => {
   if (!o && step === "checkout") setStep("cart");
 };
 
+function sampleBlock() {
+  if (!isSample) return false;
+  toast("En tu tienda, aquí se abre WhatsApp con el pedido listo");
+  return true;
+}
+
 function sendOrder() {
   const pc = pedidosCfg(), pg = pagosCfg();
   if (step === "cart" && checkoutNeeded()) { setStep("checkout"); return; }
@@ -287,6 +296,7 @@ function sendOrder() {
   const items = cartItems();
   const total = cartTotal();
   const extra = [
+    mesa && `Mesa: ${mesa}`,
     name && `Nombre: ${name}`, phone && `Teléfono: ${phone}`,
     delivery && `Entrega: ${ENTREGAS[delivery] || delivery}`,
     pay && `Pago: ${PAGOS[pay] || pay}${pay === "transferencia" ? " (te envío el comprobante)" : ""}`,
@@ -295,9 +305,10 @@ function sendOrder() {
   const text = `Hola ${cfg.name}, quiero hacer este pedido:\n\n${itemLines(items)}\n\n*Total: ${money(total)}*${extra.length ? "\n\n" + extra.join("\n") : ""}\n\n${pg.anticipado ? "Quedo atento(a) para hacer el pago." : "¿Me confirman disponibilidad?"}`;
 
   // Primero abrir WhatsApp (el navegador solo lo permite en el clic), luego registrar
+  if (sampleBlock()) { cart = []; saveCart(); setStep("cart"); openCart(false); renderGrid(); return; }
   window.open(waLink(cfg.whatsapp, text), "_blank");
   if (!isPreview) {
-    saveLead(storeId, { type: "pedido", items, total, name, phone, delivery, notes, pay });
+    saveLead(storeId, { type: "pedido", items, total, name, phone, delivery, notes, pay, ...(mesa ? { mesa } : {}) });
     measure("order", { v: total });
   }
   cart = []; saveCart(); setStep("cart"); openCart(false); renderGrid();
@@ -312,12 +323,16 @@ const itemLines = (items) => items.map((i) => `- ${i.name}${i.v ? ` (${i.v})` : 
 // Solo preguntar: manda los productos del carrito como duda, sin datos personales
 function askCart() {
   const items = cartItems();
+  if (sampleBlock()) return;
   const text = `Hola ${cfg.name}, tengo dudas sobre estos productos antes de hacer mi pedido:\n\n${itemLines(items)}\n\n¿Me pueden ayudar?`;
   window.open(waLink(cfg.whatsapp, text), "_blank");
   if (!isPreview) { saveLead(storeId, { type: "consulta", items, total: cartTotal() }); measure("ask"); }
 }
 
 /* ── Eventos ── */
+document.addEventListener("click", (e) => {
+  if (isSample && e.target.closest('a[href*="whatsapp.com"]')) { e.preventDefault(); sampleBlock(); }
+}, true);
 document.addEventListener("click", (e) => {
   const vb = e.target.closest("[data-var]");
   if (vb) {
@@ -365,9 +380,10 @@ $("waFab")?.addEventListener("click", () => measure("ask"));
 /* ── Arranque ── */
 function notFound() { $("loading").hidden = true; $("store").hidden = true; $("notfound").hidden = false; }
 
-const params = new URLSearchParams(location.search);
+const params = qp;
 if (params.get("preview")) {
   isPreview = true;
+  isSample = !!params.get("muestra");
   window.addEventListener("message", (e) => {
     if (e.origin !== location.origin || e.data?.type !== "tienda-preview") return;
     const keepScroll = scrollY;
