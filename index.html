@@ -14,7 +14,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>RAYAMI Store · Productos nuevos y usados</title>
   <meta name="description" content="Encuentra deportes, tenis, ropa, mascotas y más. Productos nuevos y usados al mejor precio." />
-  <link rel="stylesheet" href="styles.css?v=21" />
+  <link rel="stylesheet" href="styles.css?v=22" />
   <link rel="stylesheet" href="tienda-v2.css?v=3" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -299,7 +299,7 @@
     <p class="login-sub">Acceso solo para administrador</p>
     <div class="form-group">
       <label>Correo</label>
-      <input type="email" id="loginUser" name="username" autocomplete="username" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')doLogin()" />
+      <input type="email" id="loginUser" name="username" autocomplete="username" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')doLogin()" />
     </div>
     <div class="form-group">
       <label>Contraseña</label>
@@ -854,7 +854,7 @@
     <div id="sellerLoginForm">
       <div class="login-logo" style="margin-top:16px;">RAYAMI<span>VENDEDOR</span></div>
       <p class="login-sub">Entra a tu panel de vendedor</p>
-      <div class="form-group"><label>Correo</label><input type="email" id="slEmail" placeholder="tucorreo@gmail.com" onkeydown="if(event.key==='Enter')doSellerLogin()" /></div>
+      <div class="form-group"><label>Correo</label><input type="email" id="slEmail" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="tucorreo@gmail.com" onkeydown="if(event.key==='Enter')doSellerLogin()" /></div>
       <div class="form-group" style="margin-top:12px;"><label>Contraseña</label><input type="password" id="slPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSellerLogin()" /></div>
       <p class="login-error" id="sellerLoginError"></p>
       <button class="btn-primary w100" style="margin-top:8px;" onclick="doSellerLogin()">Entrar</button>
@@ -866,7 +866,7 @@
       <p class="login-sub">Crea tu cuenta de vendedor</p>
       <div class="form-group"><label>Nombre completo *</label><input type="text" id="srName" placeholder="Tu nombre" /></div>
       <div class="form-group" style="margin-top:12px;"><label>WhatsApp *</label><input type="tel" id="srPhone" placeholder="55 1234 5678" /></div>
-      <div class="form-group" style="margin-top:12px;"><label>Correo *</label><input type="email" id="srEmail" placeholder="tucorreo@gmail.com" /></div>
+      <div class="form-group" style="margin-top:12px;"><label>Correo *</label><input type="email" id="srEmail" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="tucorreo@gmail.com" /></div>
       <div class="form-group" style="margin-top:12px;"><label>Contraseña *</label><input type="password" id="srPass" placeholder="Mínimo 6 caracteres" /></div>
       <div class="form-group" style="margin-top:12px;"><label>¿Qué tipo de productos vendes?</label><input type="text" id="srDesc" placeholder="Ej: Ropa, tenis, electrónicos..." /></div>
       <p class="login-error" id="sellerRegisterError"></p>
@@ -1045,7 +1045,7 @@ window._q = _q;
   window[fn] = window[fn] || function(...args) { _q(fn, ...args); };
 });
 </script>
-<script type="module" src="script.js?v=24"></script>
+<script type="module" src="script.js?v=25"></script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));

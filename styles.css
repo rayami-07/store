@@ -1256,3 +1256,10 @@ button { cursor:pointer; border:none; background:none; font-family:inherit; }
   opacity: 1;
   transform: translate(-50%, 0);
 }
+
+/* ── Modales en celular: que el teclado no tape los campos ── */
+@media (max-width: 600px) {
+  .modal-overlay { align-items: flex-start; overflow-y: auto; padding: 16px; }
+  .modal-box { max-height: none; margin: 12px 0; padding: 28px 20px; }
+  .modal-box input, .modal-box select, .modal-box textarea { font-size: 16px; } /* evita el zoom del iPhone */
+}
