@@ -1,0 +1,50 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "products": {
+      ".read": true,
+      ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      ".indexOn": [
+        "createdAt",
+        "sellerKey"
+      ]
+    },
+    "views": {
+      ".read": true,
+      "$productId": {
+        ".write": true,
+        ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1"
+      }
+    },
+    "orders": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (query.orderByChild === 'trackCode' && query.equalTo != null && query.limitToFirst === 1)",
+      ".indexOn": [
+        "trackCode"
+      ],
+      "$orderId": {
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (!data.exists() && newData.child('status').val() === 'pendiente' && newData.child('trackCode').isString() && newData.child('items').exists())"
+      }
+    },
+    "sellers": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && query.orderByChild === 'uid' && query.equalTo === auth.uid) || (auth != null && auth.token.email_verified === true && query.orderByChild === 'email' && query.equalTo === auth.token.email)",
+      ".indexOn": [
+        "uid",
+        "email"
+      ],
+      "$sellerId": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && data.child('uid').val() === auth.uid)",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && !data.exists() && newData.child('uid').val() === auth.uid && newData.child('email').val() === auth.token.email && newData.child('status').val() === 'pending' && !newData.child('password').exists()) || (auth != null && auth.token.email_verified === true && data.exists() && !data.child('uid').exists() && data.child('email').val() === auth.token.email && newData.child('uid').val() === auth.uid && newData.child('status').val() === data.child('status').val() && newData.child('email').val() === data.child('email').val() && !newData.child('password').exists())"
+      }
+    },
+    "sellerProducts": {
+      ".read": "auth != null",
+      ".indexOn": [
+        "sellerKey"
+      ],
+      "$itemId": {
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && (!data.exists() || root.child('sellers/' + data.child('sellerKey').val() + '/uid').val() === auth.uid) && (!newData.exists() || (root.child('sellers/' + newData.child('sellerKey').val() + '/uid').val() === auth.uid && newData.child('approved').val() !== true)))"
+      }
+    }
+  }
+}

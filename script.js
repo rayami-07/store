@@ -5,8 +5,12 @@
 
 import { initializeApp }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, remove, onValue, push }
+import { getDatabase, ref, set, remove, onValue, push, get, update,
+         query, orderByChild, equalTo, limitToFirst }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         signOut, sendEmailVerification, setPersistence, browserSessionPersistence }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 /* ── Firebase config ── */
 const firebaseConfig = {
@@ -20,11 +24,16 @@ const firebaseConfig = {
 };
 const app = initializeApp(firebaseConfig);
 const db  = getDatabase(app);
+const auth = getAuth(app);
+// La sesión dura mientras la pestaña esté abierta
+setPersistence(auth, browserSessionPersistence).catch(() => {});
 
 /* ── Configuración ── */
-const ADMIN_USER  = "rayami";       // usuario (legacy)
-const ADMIN_PASS  = "rayami2025";   // contraseña (legacy)
-const ADMIN_EMAIL = "rayami";       // también acepta este como "correo"
+// El admin entra con su cuenta de Firebase Authentication.
+// La contraseña ya NO vive en el código: la guarda Google.
+// Este correo debe coincidir con el de las reglas de seguridad de la base.
+const ADMIN_EMAILS = ["raulbenitez563@gmail.com"];
+const isAdminUser = (u) => !!u && ADMIN_EMAILS.includes((u.email || "").toLowerCase());
 const WA_NUMBER   = "5581074978";
 const IMGBB_KEY   = "0a9c6567b28ac96fca0fa0d3a74f1741";
 
@@ -69,12 +78,31 @@ function initFirebase() {
     if (isLoggedIn) { renderAdminTable(); renderAdminStats(); }
   });
 
-  // Sellers — siempre escuchar, renderizar si admin está activo
+}
+
+// Vendedores: solo el admin puede leer la lista completa
+let adminListenersStarted = false;
+function startAdminSellersListener() {
   onValue(ref(db, "sellers"), snap => {
     const data = snap.val() || {};
     allSellers = Object.entries(data).map(([k, v]) => ({ ...v, fbKey: k }));
+    // Limpieza: borrar contraseñas viejas guardadas en texto plano
+    allSellers.filter(v => v.password).forEach(v =>
+      update(ref(db, `sellers/${v.fbKey}`), { password: null }).catch(() => {}));
     if (isLoggedIn) renderAdminSellers();
-  });
+  }, err => console.warn("sellers:", err.message));
+}
+
+function authErrorText(e) {
+  const c = e?.code || "";
+  if (c.includes("invalid-credential") || c.includes("wrong-password") || c.includes("user-not-found") || c.includes("invalid-email"))
+    return "⚠️ Correo o contraseña incorrectos";
+  if (c.includes("too-many-requests")) return "⚠️ Demasiados intentos. Espera unos minutos.";
+  if (c.includes("network")) return "⚠️ Sin conexión. Revisa tu internet.";
+  if (c.includes("email-already-in-use")) return "⚠️ Ese correo ya está registrado. Inicia sesión.";
+  if (c.includes("weak-password")) return "⚠️ La contraseña debe tener al menos 6 caracteres";
+  if (c.includes("operation-not-allowed")) return "⚠️ El inicio de sesión aún no está activado en Firebase.";
+  return "⚠️ No se pudo iniciar sesión (" + (c || e?.message || "error") + ")";
 }
 
 /* ============================================
@@ -596,13 +624,22 @@ function showLogin() {
 }
 function hideLogin() { document.getElementById("loginModal").classList.remove("open"); }
 
-function doLogin() {
-  const user = document.getElementById("loginUser").value.trim();
-  const pass = document.getElementById("loginPass").value;
-  if (user === ADMIN_USER && pass === ADMIN_PASS) {
+async function doLogin() {
+  const email = document.getElementById("loginUser").value.trim().toLowerCase();
+  const pass  = document.getElementById("loginPass").value;
+  const errEl = document.getElementById("loginError");
+  errEl.textContent = "";
+  if (!email || !pass) { errEl.textContent = "⚠️ Escribe tu correo y contraseña"; return; }
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    if (!isAdminUser(cred.user)) {
+      await signOut(auth);
+      errEl.textContent = "⚠️ Esta cuenta no es de administrador";
+      return;
+    }
     isLoggedIn = true; hideLogin(); showAdmin();
-  } else {
-    document.getElementById("loginError").textContent = "⚠️ Usuario o contraseña incorrectos";
+  } catch (e) {
+    errEl.textContent = authErrorText(e);
     document.getElementById("loginPass").value = "";
     document.getElementById("loginPass").focus();
   }
@@ -610,6 +647,7 @@ function doLogin() {
 
 function doLogout() {
   isLoggedIn = false;
+  signOut(auth).catch(() => {});
   document.getElementById("adminView").style.display = "none";
   document.getElementById("clientView").style.display = "block";
   renderAll();
@@ -624,8 +662,10 @@ function showAdmin() {
   document.getElementById("adminView").style.display  = "block";
   renderAdminTable();
   renderAdminStats();
-  renderAdminSellers();
-  initOrders(); // ya tenemos allSellers cargado
+  if (adminListenersStarted) { renderAdminSellers(); return; }
+  adminListenersStarted = true;
+  startAdminSellersListener();
+  initOrders();
 
   // Listener en tiempo real para productos de vendedores
   onValue(ref(db, "sellerProducts"), snap => {
@@ -1677,9 +1717,12 @@ async function showTrackingView(code) {
   if (logoEl && LOGO_URL) logoEl.src = LOGO_URL;
 
   // Buscar pedido por código
-  const snap = await new Promise(r => { const u = onValue(ref(db,"orders"), s => { u(); r(s); }); });
-  const data  = snap.val() || {};
-  const entry = Object.entries(data).find(([,v]) => v.trackCode === code);
+  // Solo se puede leer el pedido que tenga este código exacto
+  let entry = null;
+  try {
+    const snap = await get(query(ref(db, "orders"), orderByChild("trackCode"), equalTo(code), limitToFirst(1)));
+    entry = Object.entries(snap.val() || {})[0] || null;
+  } catch (e) { console.warn("tracking:", e.message); }
 
   const iconEl  = document.getElementById("trackingIcon");
   const titleEl = document.getElementById("trackingTitle");
@@ -1824,26 +1867,72 @@ window.switchSellerTab = function(tab) {
   document.getElementById("tabRegister").classList.toggle("active", tab === "register");
 };
 
+// Busca el perfil de vendedor ligado a la cuenta de Firebase
+async function findSellerByUid(uid) {
+  const snap = await get(query(ref(db, "sellers"), orderByChild("uid"), equalTo(uid)));
+  const [k, v] = Object.entries(snap.val() || {})[0] || [];
+  return k ? { ...v, fbKey: k } : null;
+}
+// Vendedores registrados antes de usar Firebase Auth (sin "uid").
+// Solo se pueden reclamar con un correo verificado.
+async function claimLegacySeller(user) {
+  const snap = await get(query(ref(db, "sellers"), orderByChild("email"), equalTo(user.email.toLowerCase())));
+  const [k, v] = Object.entries(snap.val() || {}).find(([, x]) => !x.uid) || [];
+  if (!k) return null;
+  await update(ref(db, `sellers/${k}`), { uid: user.uid, password: null });
+  return { ...v, uid: user.uid, fbKey: k };
+}
+
 window.doSellerLogin = async function() {
   const email = document.getElementById("slEmail").value.trim().toLowerCase();
   const pass  = document.getElementById("slPass").value;
   const errEl = document.getElementById("sellerLoginError");
   errEl.textContent = "";
-
   if (!email || !pass) { errEl.textContent = "⚠️ Completa todos los campos"; return; }
 
-  // Buscar vendedor en Firebase
-  const snap = await new Promise(r => {
-    const unsub = onValue(ref(db,"sellers"), s => { r(s); });
-  });
-  const data = snap.val() || {};
-  const entry = Object.entries(data).find(([,v]) => v.email === email && v.password === pass);
+  let user;
+  try {
+    user = (await signInWithEmailAndPassword(auth, email, pass)).user;
+  } catch (e) {
+    const c = e?.code || "";
+    if (!c.includes("invalid-credential") && !c.includes("user-not-found")) { errEl.textContent = authErrorText(e); return; }
+    // ¿Vendedor anterior sin cuenta todavía? Se le crea y se le pide confirmar su correo.
+    try {
+      user = (await createUserWithEmailAndPassword(auth, email, pass)).user;
+      await sendEmailVerification(user);
+      await signOut(auth);
+      errEl.innerHTML = `📧 Te mandamos un correo a <b>${email}</b> para confirmar tu cuenta. Ábrelo, da clic en el enlace y vuelve a iniciar sesión aquí. (Revisa también spam.)`;
+    } catch (e2) {
+      errEl.textContent = authErrorText(e.code ? e : e2);
+    }
+    return;
+  }
 
-  if (!entry) { errEl.textContent = "⚠️ Correo o contraseña incorrectos"; return; }
-
-  currentSeller = { ...entry[1], fbKey: entry[0] };
-  window.hideSellerAuth();
-  showSellerPanel();
+  try {
+    let seller = await findSellerByUid(user.uid);
+    if (!seller) {
+      await user.reload();
+      if (!user.emailVerified) {
+        await sendEmailVerification(user).catch(() => {});
+        await signOut(auth);
+        errEl.innerHTML = `📧 Confirma tu correo primero: te reenviamos el enlace a <b>${email}</b>. Luego vuelve a entrar.`;
+        return;
+      }
+      await user.getIdToken(true); // refrescar para que la base vea el correo verificado
+      seller = await claimLegacySeller(user);
+    }
+    if (!seller) {
+      await signOut(auth);
+      errEl.textContent = "⚠️ No encontramos un vendedor con este correo. Regístrate primero.";
+      return;
+    }
+    currentSeller = seller;
+    window.hideSellerAuth();
+    showSellerPanel();
+  } catch (e) {
+    await signOut(auth).catch(() => {});
+    errEl.textContent = "⚠️ No se pudo cargar tu cuenta (" + (e.code || e.message) + ")";
+  }
 };
 
 window.doSellerRegister = async function() {
@@ -1858,17 +1947,25 @@ window.doSellerRegister = async function() {
   if (!name||!phone||!email||!pass) { errEl.textContent = "⚠️ Completa todos los campos"; return; }
   if (pass.length < 6) { errEl.textContent = "⚠️ La contraseña debe tener al menos 6 caracteres"; return; }
 
-  // Verificar que no exista ya ese correo
-  const snap = await new Promise(r => onValue(ref(db,"sellers"), s => r(s)));
-  const data = snap.val() || {};
-  const exists = Object.values(data).find(v => v.email === email);
-  if (exists) { errEl.textContent = "⚠️ Ese correo ya está registrado"; return; }
+  let user;
+  try {
+    user = (await createUserWithEmailAndPassword(auth, email, pass)).user;
+  } catch (e) { errEl.textContent = authErrorText(e); return; }
 
-  await fbRegisterSeller({
-    name, phone, email, password: pass, desc,
-    status: "pending",  // pending | active | rejected
-    createdAt: Date.now()
-  });
+  try {
+    // El perfil ya no guarda contraseña: la tiene Firebase Authentication
+    await fbRegisterSeller({
+      uid: user.uid, name, phone, email, desc,
+      status: "pending",  // pending | active | rejected
+      createdAt: Date.now()
+    });
+    sendEmailVerification(user).catch(() => {});
+    await signOut(auth);
+  } catch (e) {
+    await user.delete().catch(() => {});
+    errEl.textContent = "⚠️ No se pudo registrar (" + (e.code || e.message) + ")";
+    return;
+  }
 
   // Notificar al admin por WhatsApp
   const msg = `🏪 *Nuevo vendedor registrado en RAYAMI STORE*\n\nNombre: ${name}\nWhatsApp: ${phone}\nCorreo: ${email}\nProductos: ${desc || "No especificado"}\n\nEntra al panel admin para aprobarlo.`;
@@ -1880,6 +1977,7 @@ window.doSellerRegister = async function() {
 
 window.doSellerLogout = function() {
   currentSeller = null;
+  signOut(auth).catch(() => {});
   document.getElementById("sellerView").style.display  = "none";
   document.getElementById("clientView").style.display  = "block";
   showToast("✅ Sesión cerrada");

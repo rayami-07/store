@@ -298,8 +298,8 @@
     <div class="login-logo">RAYAMI<span>ADMIN</span></div>
     <p class="login-sub">Acceso solo para administrador</p>
     <div class="form-group">
-      <label>Usuario</label>
-      <input type="text" id="loginUser" name="username" autocomplete="username" placeholder="Usuario" onkeydown="if(event.key==='Enter')doLogin()" />
+      <label>Correo</label>
+      <input type="email" id="loginUser" name="username" autocomplete="username" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')doLogin()" />
     </div>
     <div class="form-group">
       <label>Contraseña</label>
@@ -1045,7 +1045,7 @@ window._q = _q;
   window[fn] = window[fn] || function(...args) { _q(fn, ...args); };
 });
 </script>
-<script type="module" src="script.js?v=23"></script>
+<script type="module" src="script.js?v=24"></script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
