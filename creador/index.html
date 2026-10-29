@@ -54,6 +54,11 @@
           <label>Giro
             <select id="fGiro"></select>
           </label>
+          <div class="field-label">Paquete</div>
+          <div class="checks" id="optPlan">
+            <label><input type="radio" name="plan" value="vitrina" /> Vitrina (catálogo o menú, sin carrito)</label>
+            <label><input type="radio" name="plan" value="pedidos" /> Pedidos (carrito, pagos y entrega)</label>
+          </div>
           <label>Frase principal<input id="fTagline" maxlength="70" placeholder="Tenis y zapatos para cada ocasión" /></label>
           <div class="row2">
             <label>WhatsApp del negocio *<input id="fWa" inputmode="tel" required placeholder="55 1234 5678" /></label>
@@ -181,6 +186,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=4"></script>
+<script type="module" src="creador.js?v=5"></script>
 </body>
 </html>

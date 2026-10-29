@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Prueba tu tienda</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="editar.css?v=5" />
+</head>
+<body>
+<div class="loading" id="loading"><div class="spinner"></div></div>
+<div class="notfound" id="notfound" hidden><h1>Tienda no encontrada</h1><p>Revisa que el link esté completo.</p></div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="wrap top-in">
+      <div class="brand"><img id="logo" alt="" hidden /><div><b id="name"></b><span class="pill">Modo prueba</span></div></div>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    <p class="intro">Agrega tus productos y precios, y mira cómo queda tu tienda. <b>Tus cambios solo se guardan en este celular</b>; nadie más los ve.</p>
+
+    <section class="block">
+      <h2>¿Cómo quieres vender?</h2>
+      <div class="plans" role="radiogroup" aria-label="Paquete">
+        <label class="plan-opt"><input type="radio" name="plan" value="vitrina" /><span><b>Vitrina</b><small>Catálogo o menú. Tus clientes ven todo y te preguntan por WhatsApp.</small></span></label>
+        <label class="plan-opt"><input type="radio" name="plan" value="pedidos" /><span><b>Pedidos</b><small>Carrito con total, tallas, formas de pago y entrega.</small></span></label>
+      </div>
+    </section>
+
+    <section class="block">
+      <div class="block-head"><h2>Tus productos <span class="muted" id="count"></span></h2></div>
+      <div class="list" id="list"></div>
+      <div class="add-row">
+        <button class="btn btn-dark" id="addProd"><i class="fa-solid fa-plus"></i> Agregar producto</button>
+        <button class="btn btn-light" id="addCombo"><i class="fa-solid fa-layer-group"></i> Agregar combo</button>
+      </div>
+    </section>
+
+    <section class="block cta">
+      <p>¿Te gustó cómo queda?</p>
+      <a class="btn btn-wa" id="want" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Quiero mi tienda</a>
+      <button class="link" id="reset">Empezar de nuevo (quitar mis cambios)</button>
+    </section>
+  </main>
+
+  <div class="bottom">
+    <a class="btn btn-accent btn-block" id="viewStore"><i class="fa-solid fa-eye"></i> Ver mi tienda</a>
+  </div>
+
+  <!-- Hoja para agregar / editar producto -->
+  <div class="sheet-wrap" id="sheet" hidden>
+    <form class="sheet" id="pForm" novalidate>
+      <div class="sheet-head">
+        <h3 id="sheetTitle">Agregar producto</h3>
+        <button type="button" class="icon-btn" id="sheetClose" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="sheet-body">
+      <label class="photo-pick">
+        <img id="fPhotoPrev" alt="" />
+        <span><i class="fa-solid fa-camera"></i> Toca para poner foto</span>
+        <input type="file" id="fPhoto" accept="image/*" hidden />
+      </label>
+      <label>Nombre<input id="fName" maxlength="60" placeholder="Ej. Tenis blancos" required /></label>
+      <div class="row2">
+        <label>Precio<input id="fPrice" inputmode="decimal" placeholder="$0" required /></label>
+        <label>Precio de oferta <span class="muted">(opcional)</span><input id="fSale" inputmode="decimal" placeholder="$0" /></label>
+      </div>
+      <label>Categoría
+        <select id="fCat"></select>
+      </label>
+      <label id="newCatWrap" hidden>Nombre de la categoría nueva<input id="fNewCat" maxlength="30" placeholder="Ej. Promociones" /></label>
+      <label><span id="descLabel">Descripción <span class="muted">(opcional)</span></span><textarea id="fDesc" rows="2" maxlength="300" placeholder="Material, medidas, qué incluye…"></textarea></label>
+      <details class="opts" id="optsBox">
+        <summary>Tallas, colores u otras opciones</summary>
+        <p class="muted small">Escribe el nombre de la opción y sus valores separados por coma.</p>
+        <div class="var-row"><input id="v0n" placeholder="Talla" /><input id="v0v" placeholder="CH, M, G" /></div>
+        <div class="var-row"><input id="v1n" placeholder="Color" /><input id="v1v" placeholder="Negro, Blanco" /></div>
+      </details>
+      <p class="err" id="fErr"></p>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-light" id="sheetCancel">Cancelar</button>
+        <button type="submit" class="btn btn-dark">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="toast" id="toast"></div>
+</div>
+
+<script type="module" src="editar.js?v=2"></script>
+</body>
+</html>

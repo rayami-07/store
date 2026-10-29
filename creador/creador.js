@@ -35,7 +35,7 @@ const openRows = new Set();   // productos con "descripción y opciones" abierto
 
 function blank(giro = "ropa") {
   const g = GIROS[giro];
-  return { name: "", giro, tagline: "", whatsapp: "", horario: "", aviso: "", logo: "", color: COLORES[0], estilo: g.estilo, products: productosDeEjemplo(giro),
+  return { plan: "pedidos", name: "", giro, tagline: "", whatsapp: "", horario: "", aviso: "", logo: "", color: COLORES[0], estilo: g.estilo, products: productosDeEjemplo(giro),
     pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
     pagos: { metodos: ["entrega", "transferencia"], anticipado: !!g.pagoAnticipado, banco: "", clabe: "", titular: "", link: "" } };
 }
@@ -90,6 +90,7 @@ function fillForm() {
   $("fWa").value = state.whatsapp;
   $("fHorario").value = state.horario;
   $("fAviso").value = state.aviso;
+  document.querySelectorAll('#optPlan input').forEach((r) => (r.checked = r.value === (state.plan || "pedidos")));
   renderLogo(); renderSwatches(); renderEstilos(); renderProds(); renderPedidos(); renderPagos();
   $("editingNote").hidden = !editingId;
   $("editingNote").textContent = editingId ? `Editando la demo "${state.name}". Al guardar se actualiza el mismo link.` : "";
@@ -164,6 +165,8 @@ $("estilos").addEventListener("click", (e) => {
   const b = e.target.closest("[data-estilo]"); if (!b) return;
   state.estilo = b.dataset.estilo; renderEstilos(); pushPreview();
 });
+
+$("optPlan").addEventListener("change", (e) => { state.plan = e.target.value; pushPreview(); });
 
 /* Opciones de pedido */
 function renderPedidos() {
@@ -273,6 +276,7 @@ $("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; 
 function configOut() {
   const g = GIROS[state.giro];
   return {
+    plan: state.plan || "pedidos",
     name: state.name.trim(), giro: state.giro, tagline: state.tagline.trim(),
     whatsapp: state.whatsapp.trim(), horario: state.horario.trim(), aviso: state.aviso.trim(),
     logo: state.logo, color: state.color, estilo: state.estilo, categorias: g.categorias,

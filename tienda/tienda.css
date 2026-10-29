@@ -216,3 +216,11 @@ button { font: inherit; cursor: pointer; }
   .pm-img { aspect-ratio: auto; min-height: 380px; }
   .pm-img img { height: 100%; }
 }
+
+/* ── v4: paquete Vitrina, agotados, modo prueba ── */
+.ask-wide { width: auto; height: 36px; padding: 0 14px; border-radius: 100px; gap: 6px; display: inline-flex; font-size: 14px; font-weight: 500; }
+.tag-off { position: absolute; top: 10px; left: 10px; background: var(--ink); color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+.card.sold-out .card-img img { filter: grayscale(.85); opacity: .6; }
+.add:disabled { opacity: .55; cursor: default; }
+.trial-bar { background: #fff7ed; color: #9a3412; border-bottom: 1px solid #fed7aa; text-align: center; font-size: 13px; padding: 8px 16px; }
+.demo-bar { row-gap: 8px; }

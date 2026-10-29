@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="tienda.css?v=5" />
+  <link rel="stylesheet" href="tienda.css?v=6" />
 </head>
 <body>
 
@@ -24,8 +24,13 @@
 <div id="store" hidden>
   <div class="demo-bar" id="demoBar" hidden>
     <span><b>Vista previa</b> · así se vería tu tienda en línea</span>
+    <a id="demoTry" class="ghost">Pruébala: agrega tus productos</a>
     <a id="demoPanel" class="ghost">Ver mi panel de ventas</a>
     <a id="demoCta" target="_blank" rel="noopener">Quiero mi tienda</a>
+  </div>
+
+  <div class="trial-bar" id="trialBar" hidden>
+    <span>Estás viendo tu tienda con <b>tus cambios</b>. Solo se ven en este celular.</span>
   </div>
 
   <header class="hdr">
@@ -139,6 +144,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="tienda.js?v=6"></script>
+<script type="module" src="tienda.js?v=7"></script>
 </body>
 </html>

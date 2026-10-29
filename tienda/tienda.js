@@ -29,7 +29,7 @@ let step = "cart"; // cart | checkout
 let modalId = "";
 let modalSel = {}; // opciones elegidas en la ficha: { Talla: "M" }
 
-const measure = (t, extra) => { if (!isPreview) track(storeId, t, extra); };
+const measure = (t, extra) => { if (!isPreview && !isTrial) track(storeId, t, extra); };
 
 function inkFor(hex) {
   const h = (hex || "#111111").replace("#", "");
@@ -46,6 +46,9 @@ const pagosCfg = () => {
   pc.metodos = (pc.metodos || []).filter((m) => PAGOS[m] && !(pc.anticipado && m === "entrega"));
   return pc;
 };
+const isVitrina = () => cfg.plan === "vitrina"; // paquete catálogo/menú: sin carrito
+let isTrial = false; // modo prueba: el prospecto ve sus cambios guardados en su celular
+export const TRIAL_KEY = (id) => "tienda-prueba-" + id;
 const varsOf = (p) => (p.variantes || []).filter((g) => g && g.nombre && (g.opciones || []).length);
 const prodById = (id) => cfg.products.find((p) => p.id === id);
 
@@ -86,6 +89,9 @@ function render(config) {
   $("demoCta").href = waLink(PLATAFORMA.whatsapp, `Hola, vi la vista previa de mi tienda "${cfg.name}" y la quiero`);
   $("demoPanel").href = storeId ? `panel.html?t=${storeId}` : "#";
   $("demoPanel").hidden = !storeId;
+  const tb = $("demoTry");
+  if (tb) { tb.href = storeId ? `editar.html?t=${storeId}` : "#"; tb.hidden = !storeId; tb.textContent = isTrial ? "Seguir editando" : "Pruébala: agrega tus productos"; }
+  $("trialBar") && ($("trialBar").hidden = !isTrial);
 
   const used = new Set(cfg.products.map((p) => p.category).filter(Boolean));
   const cats = [...(cfg.categorias || []).filter((c) => used.has(c)), ...[...used].filter((c) => !(cfg.categorias || []).includes(c))];
@@ -94,6 +100,8 @@ function render(config) {
     ? [`<button class="chip${cat ? "" : " active"}" data-cat="">Todo</button>`, ...cats.map((c) => `<button class="chip${c === cat ? " active" : ""}" data-cat="${esc(c)}">${esc(c)}</button>`)].join("")
     : "";
 
+  $("cartBtn").hidden = isVitrina();
+  if (isVitrina()) openCart(false);
   renderGrid();
   renderCart();
   $("loading").hidden = true;
@@ -101,7 +109,7 @@ function render(config) {
   $("store").hidden = false;
 }
 
-const askText = (p) => `Hola ${cfg.name}, me interesa "${p.name}" (${money(finalPrice(p))}). ¿Me pueden dar más información?`;
+const askText = (p, sel) => `Hola ${cfg.name}, me interesa "${p.name}"${sel ? ` (${sel})` : ""} de ${money(finalPrice(p))}. ¿Me pueden dar más información?`;
 
 function renderGrid() {
   const q = $("search").value.trim().toLowerCase();
@@ -114,17 +122,18 @@ function renderGrid() {
   $("grid").innerHTML = list.map((p) => {
     const sale = p.salePrice > 0 && p.salePrice < p.price;
     const inCart = cart.some((i) => i.id === p.id);
-    return `<article class="card">
-      <div class="card-img" data-open="${esc(p.id)}"><img src="${esc(photoOf(p))}" alt="${esc(p.name)}" loading="lazy" />${sale ? `<span class="tag-sale">Oferta</span>` : ""}</div>
+    const off = !!p.agotado;
+    const askBtn = `<a class="ask${isVitrina() ? " ask-wide" : ""}" href="${waLink(cfg.whatsapp, askText(p))}" target="_blank" rel="noopener" data-ask="${esc(p.id)}" aria-label="Preguntar por ${esc(p.name)}" title="Preguntar por WhatsApp"><i class="fa-brands fa-whatsapp"></i>${isVitrina() ? " Preguntar" : ""}</a>`;
+    const buyBtn = off ? `<button class="add" disabled>Agotado</button>`
+      : varsOf(p).length
+        ? `<button class="add${inCart ? " in" : ""}" data-open="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Elegir opciones"}</button>`
+        : `<button class="add${inCart ? " in" : ""}" data-add="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Agregar"}</button>`;
+    return `<article class="card${off ? " sold-out" : ""}">
+      <div class="card-img" data-open="${esc(p.id)}"><img src="${esc(photoOf(p))}" alt="${esc(p.name)}" loading="lazy" />${off ? `<span class="tag-off">Agotado</span>` : sale ? `<span class="tag-sale">Oferta</span>` : ""}</div>
       <div class="card-name" data-open="${esc(p.id)}">${esc(p.name)}</div>
       ${p.category ? `<div class="card-cat">${esc(p.category)}</div>` : ""}
       <div class="card-price">${sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : money(p.price)}</div>
-      <div class="card-actions">
-        ${varsOf(p).length
-          ? `<button class="add${inCart ? " in" : ""}" data-open="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Elegir opciones"}</button>`
-          : `<button class="add${inCart ? " in" : ""}" data-add="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Agregar"}</button>`}
-        <a class="ask" href="${waLink(cfg.whatsapp, askText(p))}" target="_blank" rel="noopener" data-ask="${esc(p.id)}" aria-label="Preguntar por ${esc(p.name)}" title="Preguntar por WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
-      </div>
+      <div class="card-actions">${isVitrina() ? askBtn : buyBtn + askBtn}</div>
     </article>`;
   }).join("");
 }
@@ -145,6 +154,8 @@ function openModal(id) {
   renderVars(p);
   $("pmErr").textContent = "";
   $("pmAdd").textContent = !varsOf(p).length && cart.some((i) => i.id === id) ? "Ver mi pedido" : "Agregar al pedido";
+  $("pmAdd").hidden = isVitrina() || !!p.agotado;
+  $("pmAsk").innerHTML = `<i class="fa-brands fa-whatsapp"></i> ${p.agotado ? "Preguntar cuándo llega" : "Preguntar"}`;
   $("pModal").hidden = false;
   document.body.style.overflow = "hidden";
   measure("view", { p: id });
@@ -308,7 +319,7 @@ function sendOrder() {
   if (sampleBlock()) { cart = []; saveCart(); setStep("cart"); openCart(false); renderGrid(); return; }
   window.open(waLink(cfg.whatsapp, text), "_blank");
   if (!isPreview) {
-    saveLead(storeId, { type: "pedido", items, total, name, phone, delivery, notes, pay, ...(mesa ? { mesa } : {}) });
+    if (!isTrial) saveLead(storeId, { type: "pedido", items, total, name, phone, delivery, notes, pay, ...(mesa ? { mesa } : {}) });
     measure("order", { v: total });
   }
   cart = []; saveCart(); setStep("cart"); openCart(false); renderGrid();
@@ -326,7 +337,7 @@ function askCart() {
   if (sampleBlock()) return;
   const text = `Hola ${cfg.name}, tengo dudas sobre estos productos antes de hacer mi pedido:\n\n${itemLines(items)}\n\n¿Me pueden ayudar?`;
   window.open(waLink(cfg.whatsapp, text), "_blank");
-  if (!isPreview) { saveLead(storeId, { type: "consulta", items, total: cartTotal() }); measure("ask"); }
+  if (!isPreview && !isTrial) { saveLead(storeId, { type: "consulta", items, total: cartTotal() }); measure("ask"); }
 }
 
 /* ── Eventos ── */
@@ -337,7 +348,9 @@ document.addEventListener("click", (e) => {
   const vb = e.target.closest("[data-var]");
   if (vb) {
     modalSel[vb.dataset.var] = vb.dataset.val;
-    renderVars(prodById(modalId)); $("pmErr").textContent = ""; return;
+    renderVars(prodById(modalId)); $("pmErr").textContent = "";
+    $("pmAsk").href = waLink(cfg.whatsapp, askText(prodById(modalId), varText(modalSel)));
+    return;
   }
   if (e.target.closest('input[name="coPayM"]')) { setTimeout(renderPayBox, 0); }
   const t = e.target.closest("[data-cat],[data-add],[data-inc],[data-dec],[data-open],[data-ask]");
@@ -401,6 +414,12 @@ if (params.get("preview")) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data || !data.name) return notFound();
+        if (params.get("prueba")) {
+          try {
+            const local = JSON.parse(localStorage.getItem(TRIAL_KEY(storeId)) || "null");
+            if (local) { isTrial = true; data = { ...data, ...local }; }
+          } catch {}
+        }
         render(data);
         // Una visita por sesión del navegador
         try { if (!sessionStorage.getItem("v-" + storeId)) { sessionStorage.setItem("v-" + storeId, "1"); measure("visit"); } }
