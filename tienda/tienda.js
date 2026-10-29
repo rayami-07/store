@@ -338,17 +338,17 @@ document.addEventListener("click", (e) => {
   else { item.qty--; if (item.qty <= 0) cart = cart.filter((i) => i !== item); }
   saveCart(); renderCart(); renderGrid();
 });
-$("search").addEventListener("input", renderGrid);
-$("sort").addEventListener("change", renderGrid);
-$("cartBtn").addEventListener("click", () => openCart(true));
-$("closeCart").addEventListener("click", () => openCart(false));
-$("backCart").addEventListener("click", () => setStep("cart"));
-$("overlay").addEventListener("click", () => openCart(false));
-$("sendOrder").addEventListener("click", sendOrder);
-$("checkout").addEventListener("submit", (e) => { e.preventDefault(); sendOrder(); });
-$("pmClose").addEventListener("click", closeModal);
-$("pModal").addEventListener("click", (e) => { if (e.target === $("pModal")) closeModal(); });
-$("pmAdd").addEventListener("click", () => {
+$("search")?.addEventListener("input", renderGrid);
+$("sort")?.addEventListener("change", renderGrid);
+$("cartBtn")?.addEventListener("click", () => openCart(true));
+$("closeCart")?.addEventListener("click", () => openCart(false));
+$("backCart")?.addEventListener("click", () => setStep("cart"));
+$("overlay")?.addEventListener("click", () => openCart(false));
+$("sendOrder")?.addEventListener("click", sendOrder);
+$("checkout")?.addEventListener("submit", (e) => { e.preventDefault(); sendOrder(); });
+$("pmClose")?.addEventListener("click", closeModal);
+$("pModal")?.addEventListener("click", (e) => { if (e.target === $("pModal")) closeModal(); });
+$("pmAdd")?.addEventListener("click", () => {
   const id = modalId, p = prodById(id);
   if (!varsOf(p).length && cart.some((i) => i.id === id)) { closeModal(); openCart(true); return; }
   const faltan = varsOf(p).filter((g) => !modalSel[g.nombre]).map((g) => g.nombre.toLowerCase());
@@ -356,11 +356,11 @@ $("pmAdd").addEventListener("click", () => {
   const v = varText(modalSel);
   closeModal(); addToCart(id, v);
 });
-$("askCart").addEventListener("click", askCart);
-$("pmAsk").addEventListener("click", () => measure("ask", { p: modalId }));
+$("askCart")?.addEventListener("click", askCart);
+$("pmAsk")?.addEventListener("click", () => measure("ask", { p: modalId }));
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); openCart(false); } });
-$("heroWa").addEventListener("click", () => measure("ask"));
-$("waFab").addEventListener("click", () => measure("ask"));
+$("heroWa")?.addEventListener("click", () => measure("ask"));
+$("waFab")?.addEventListener("click", () => measure("ask"));
 
 /* ── Arranque ── */
 function notFound() { $("loading").hidden = true; $("store").hidden = true; $("notfound").hidden = false; }

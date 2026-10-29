@@ -69,6 +69,8 @@ window.addEventListener("message", (e) => {
   if (e.origin === location.origin && e.data?.type === "tienda-ready") { frameReady = true; pushPreview(); }
 });
 frame.addEventListener("load", () => { frameReady = true; pushPreview(); });
+// Siempre la versión más reciente de la plantilla (evita copias viejas en caché)
+frame.src = `../tienda/?preview=1&v=${Date.now()}`;
 let previewTimer;
 function pushPreview() {
   clearTimeout(previewTimer);
