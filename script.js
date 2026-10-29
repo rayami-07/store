@@ -416,23 +416,73 @@ function finalPriceOf(p) {
   return Number(promo ? p.salePrice : p.price) || 0;
 }
 
-function getFiltered() {
-  // Filtro por condición (solo si la página tiene los checkboxes .cond-filter)
-  const conds = [...document.querySelectorAll(".cond-filter:checked")].map(c => c.value);
+function hasActiveOffer(p) {
+  return p.salePrice > 0 && (!p.promoEnd || p.promoEnd > Date.now()) && p.salePrice < p.price;
+}
+
+// "Usados" y "Ofertas" no dependen solo de la categoría guardada:
+// - Usados: categoría "usados" O condición Usado/Seminuevo
+// - Ofertas: categoría "ofertas" O con precio de oferta vigente
+function matchesCategory(p, cat) {
+  if (cat === "todos") return true;
+  if (cat === "usados")  return p.category === "usados" || p.condition === "Usado" || p.condition === "Seminuevo";
+  if (cat === "ofertas") return p.category === "ofertas" || hasActiveOffer(p);
+  return p.category === cat;
+}
+
+// Para "Tenis + Usado": los tenis usados guardados en la categoría "usados"
+// cuentan como tenis si su nombre/descripcion lo dice.
+const CAT_WORDS = {
+  tenis: ["tenis", "sneaker", "zapato", "nike", "jordan", "adidas", "vans", "converse", "puma", "new balance"],
+  ropa: ["sudadera", "playera", "camisa", "pantal", "short", "chamarra", "jersey", "hoodie", "gorra", "ropa"],
+  deportes: ["guante", "box", "balon", "balón", "pesa", "raqueta", "casco"],
+  accesorios: ["mochila", "bolsa", "cartera", "lentes", "reloj", "cinturon", "cinturón"],
+  mascotas: ["perro", "gato", "mascota"],
+};
+function looksLike(p, cat) {
+  const t = ((p.name || "") + " " + (p.desc || "")).toLowerCase();
+  return (CAT_WORDS[cat] || []).some(w => t.includes(w));
+}
+
+function getFiltered(opts = {}) {
+  const cat = opts.cat ?? currentCategory;
+  const conds = opts.ignoreConds ? [] : [...document.querySelectorAll(".cond-filter:checked")].map(c => c.value);
+  const q = (opts.ignoreSearch ? "" : currentSearch).toLowerCase();
   const list = allProducts.filter(p => {
     if (p.sold) return false;  // ocultar vendidos al público
-    const matchCat = currentCategory === "todos" || p.category === currentCategory;
-    const q = currentSearch.toLowerCase();
-    const matchSearch = p.name.toLowerCase().includes(q) || (p.desc||"").toLowerCase().includes(q);
+    const matchCat = matchesCategory(p, cat) || (p.category === "usados" && looksLike(p, cat));
+    const matchSearch = (p.name || "").toLowerCase().includes(q) || (p.desc || "").toLowerCase().includes(q);
     const matchCond = !conds.length || conds.includes(p.condition);
     return matchCat && matchSearch && matchCond;
   });
-  // Orden (solo si la página tiene el select #sortSelect)
   const sort = document.getElementById("sortSelect")?.value || "recientes";
   if (sort === "precio-asc")  list.sort((a, b) => finalPriceOf(a) - finalPriceOf(b));
   if (sort === "precio-desc") list.sort((a, b) => finalPriceOf(b) - finalPriceOf(a));
   return list;
 }
+
+// Muestra cuántos productos hay en cada categoría y oculta las vacías
+function updateCategoryCounts() {
+  if (!allProducts.length) return;
+  document.querySelectorAll(".cat-card[data-cat]").forEach(btn => {
+    const n = getFiltered({ cat: btn.dataset.cat, ignoreConds: true, ignoreSearch: true }).length;
+    btn.dataset.count = n;
+    btn.hidden = n === 0 && btn.dataset.cat !== "todos" && !btn.classList.contains("active");
+  });
+  document.querySelectorAll(".cond-filter").forEach(c => {
+    const n = allProducts.filter(p => !p.sold && p.condition === c.value).length;
+    const label = c.closest("label");
+    if (label) { label.dataset.count = n; label.hidden = n === 0 && !c.checked; }
+  });
+}
+
+window.clearFilters = function () {
+  currentCategory = "todos"; currentSearch = "";
+  const si = document.getElementById("searchInput"); if (si) si.value = "";
+  document.querySelectorAll(".cond-filter").forEach(c => c.checked = false);
+  document.querySelectorAll(".cat-card").forEach(b => b.classList.toggle("active", b.dataset.cat === "todos"));
+  renderCatalog();
+};
 
 function renderCatalog() {
   const grid = document.getElementById("productGrid");
@@ -440,6 +490,7 @@ function renderCatalog() {
   const count = document.getElementById("productCount");
   const filtered = getFiltered();
   count.textContent = `${filtered.length} producto${filtered.length !== 1 ? "s" : ""}`;
+  updateCategoryCounts();
   if (filtered.length === 0) { grid.innerHTML = ""; empty.style.display = "block"; }
   else { grid.innerHTML = filtered.map(renderCard).join(""); empty.style.display = "none"; }
 }

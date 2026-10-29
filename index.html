@@ -15,7 +15,7 @@
   <title>RAYAMI Store · Productos nuevos y usados</title>
   <meta name="description" content="Encuentra deportes, tenis, ropa, mascotas y más. Productos nuevos y usados al mejor precio." />
   <link rel="stylesheet" href="styles.css?v=21" />
-  <link rel="stylesheet" href="tienda-v2.css?v=1" />
+  <link rel="stylesheet" href="tienda-v2.css?v=2" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -170,7 +170,8 @@
         <div class="v2-results">
           <div class="product-grid" id="productGrid"></div>
           <div class="empty-state" id="emptyState" style="display:none;">
-            <p>Sin resultados. Prueba con otra búsqueda o categoría.</p>
+            <p>No hay productos con estos filtros.</p>
+            <button class="btn-wa" type="button" onclick="clearFilters()">Quitar filtros</button>
           </div>
         </div>
       </div>
@@ -1044,7 +1045,7 @@ window._q = _q;
   window[fn] = window[fn] || function(...args) { _q(fn, ...args); };
 });
 </script>
-<script type="module" src="script.js?v=21"></script>
+<script type="module" src="script.js?v=22"></script>
 <script>
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));

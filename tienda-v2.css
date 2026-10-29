@@ -423,3 +423,13 @@
 }
 #clientView.v2 .footer-col h4 { font-family: var(--font-body); }
 #clientView.v2 .footer-logo-img { margin: 0 0 8px; align-self: flex-start; display: block; }
+
+/* Conteo por categoría y condición: "Tenis 7" */
+#clientView.v2 .v2-sidebar .cat-card[data-count]::after,
+#clientView.v2 .v2-side-group label[data-count]::after {
+  content: attr(data-count); display: inline; position: static; opacity: 1; background: none;
+  margin-left: 6px; color: var(--text-muted); font-weight: 400; font-size: 14px;
+}
+#clientView.v2 .cat-card[hidden], #clientView.v2 .v2-side-group label[hidden] { display: none !important; }
+#clientView.v2 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+#clientView.v2 .empty-state[style*="none"] { display: none !important; }
