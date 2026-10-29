@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="tienda.css?v=3" />
+  <link rel="stylesheet" href="tienda.css?v=5" />
 </head>
 <body>
 
@@ -104,12 +104,15 @@
       <label><span>Nombre <span class="opt" data-opt></span></span><input id="coName" autocomplete="name" maxlength="60" /></label>
       <label><span>Teléfono <span class="opt" data-opt></span></span><input id="coPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" /></label>
       <fieldset id="coDelivery"><legend>¿Cómo lo quieres recibir?</legend></fieldset>
+      <fieldset id="coPay"><legend>¿Cómo vas a pagar?</legend></fieldset>
+      <div class="pay-box" id="payBox" hidden></div>
       <label><span>Nota para el negocio <span class="opt">(opcional)</span></span><textarea id="coNotes" rows="2" maxlength="200" placeholder="Talla, color, horario…"></textarea></label>
       <p class="co-err" id="coErr"></p>
     </form>
     <div class="drawer-foot">
       <div class="total"><span>Total</span><b id="cartTotal">$0</b></div>
       <button class="btn btn-accent btn-block" id="sendOrder"><i class="fa-brands fa-whatsapp"></i> <span id="sendLabel">Enviar pedido por WhatsApp</span></button>
+      <button class="btn btn-outline btn-block" id="askCart"><i class="fa-regular fa-comment"></i> Tengo dudas, preguntar antes de pedir</button>
     </div>
   </aside>
 
@@ -122,6 +125,8 @@
         <h3 id="pmName"></h3>
         <div class="card-price" id="pmPrice"></div>
         <p class="pm-desc" id="pmDesc"></p>
+        <div class="pm-vars" id="pmVars"></div>
+        <p class="co-err" id="pmErr"></p>
         <div class="pm-btns">
           <button class="btn btn-accent" id="pmAdd">Agregar al pedido</button>
           <a class="btn btn-outline" id="pmAsk" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Preguntar</a>
@@ -134,6 +139,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="tienda.js?v=3"></script>
+<script type="module" src="tienda.js?v=4"></script>
 </body>
 </html>

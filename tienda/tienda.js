@@ -4,7 +4,7 @@
    - ?preview=1     vista previa en vivo desde el creador (postMessage)
    Mide visitas, productos vistos, consultas y pedidos (stats.js)
 ============================================================ */
-import { ESTILOS, GIROS, fotoEjemplo } from "./muestras.js";
+import { ESTILOS, GIROS, PAGOS, fotoEjemplo } from "./muestras.js";
 import { DB_URL, track, saveLead } from "./stats.js";
 
 // Quien ofrece la plataforma (sale en el pie y en la barra de demo)
@@ -15,7 +15,7 @@ const $ = (id) => document.getElementById(id);
 const esc = (t) => String(t ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const money = (n) => "$" + Number(n || 0).toLocaleString("es-MX");
 const waNumber = (n) => { const d = String(n || "").replace(/\D/g, ""); return d.length === 10 ? "52" + d : d; };
-const waLink = (n, text) => `https://wa.me/${waNumber(n)}${text ? "?text=" + encodeURIComponent(text) : ""}`;
+const waLink = (n, text) => `https://api.whatsapp.com/send?phone=${waNumber(n)}${text ? "&text=" + encodeURIComponent(text) : ""}`;
 
 let cfg = null;
 let cart = [];
@@ -24,6 +24,7 @@ let storeId = "";
 let isPreview = false;
 let step = "cart"; // cart | checkout
 let modalId = "";
+let modalSel = {}; // opciones elegidas en la ficha: { Talla: "M" }
 
 const measure = (t, extra) => { if (!isPreview) track(storeId, t, extra); };
 
@@ -36,6 +37,13 @@ function inkFor(hex) {
 const finalPrice = (p) => (p.salePrice > 0 && p.salePrice < p.price ? p.salePrice : p.price);
 const photoOf = (p) => p.photo || fotoEjemplo(p.emoji || (GIROS[cfg.giro] || GIROS.otro).emoji, cfg.color);
 const pedidosCfg = () => ({ datos: "opcional", entregas: ["recoger", "domicilio"], ...(cfg.pedidos || {}) });
+const pagosCfg = () => {
+  const pc = { metodos: ["entrega", "transferencia"], anticipado: false, banco: "", clabe: "", titular: "", link: "", ...(cfg.pagos || {}) };
+  // Si cobra antes, "pago al recibir" no aplica
+  pc.metodos = (pc.metodos || []).filter((m) => PAGOS[m] && !(pc.anticipado && m === "entrega"));
+  return pc;
+};
+const varsOf = (p) => (p.variantes || []).filter((g) => g && g.nombre && (g.opciones || []).length);
 const prodById = (id) => cfg.products.find((p) => p.id === id);
 
 function applyTheme() {
@@ -109,7 +117,9 @@ function renderGrid() {
       ${p.category ? `<div class="card-cat">${esc(p.category)}</div>` : ""}
       <div class="card-price">${sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : money(p.price)}</div>
       <div class="card-actions">
-        <button class="add${inCart ? " in" : ""}" data-add="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Agregar"}</button>
+        ${varsOf(p).length
+          ? `<button class="add${inCart ? " in" : ""}" data-open="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Elegir opciones"}</button>`
+          : `<button class="add${inCart ? " in" : ""}" data-add="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Agregar"}</button>`}
         <a class="ask" href="${waLink(cfg.whatsapp, askText(p))}" target="_blank" rel="noopener" data-ask="${esc(p.id)}" aria-label="Preguntar por ${esc(p.name)}" title="Preguntar por WhatsApp"><i class="fa-brands fa-whatsapp"></i></a>
       </div>
     </article>`;
@@ -128,11 +138,21 @@ function openModal(id) {
   $("pmPrice").innerHTML = sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : money(p.price);
   $("pmDesc").textContent = p.desc || "";
   $("pmAsk").href = waLink(cfg.whatsapp, askText(p));
-  $("pmAdd").textContent = cart.some((i) => i.id === id) ? "Ver mi pedido" : "Agregar al pedido";
+  modalSel = {};
+  renderVars(p);
+  $("pmErr").textContent = "";
+  $("pmAdd").textContent = !varsOf(p).length && cart.some((i) => i.id === id) ? "Ver mi pedido" : "Agregar al pedido";
   $("pModal").hidden = false;
   document.body.style.overflow = "hidden";
   measure("view", { p: id });
 }
+function renderVars(p) {
+  $("pmVars").innerHTML = varsOf(p).map((g) => `<div class="var-group"><b>${esc(g.nombre)}</b><div class="var-opts">${
+    g.opciones.map((o) => `<button type="button" class="var-opt${modalSel[g.nombre] === o ? " on" : ""}" data-var="${esc(g.nombre)}" data-val="${esc(o)}">${esc(o)}</button>`).join("")
+  }</div></div>`).join("");
+}
+const varText = (sel) => Object.entries(sel).map(([k, v]) => `${k}: ${v}`).join(" · ");
+
 function closeModal() { $("pModal").hidden = true; document.body.style.overflow = ""; modalId = ""; }
 
 /* ── Carrito ── */
@@ -141,9 +161,13 @@ function saveCart() { try { localStorage.setItem(CART_KEY(), JSON.stringify(cart
 function loadCart() { try { cart = JSON.parse(localStorage.getItem(CART_KEY()) || "[]"); } catch { cart = []; } }
 const cartTotal = () => cart.reduce((t, i) => t + i.qty * finalPrice(prodById(i.id)), 0);
 
-function addToCart(id) {
-  if (cart.some((i) => i.id === id)) { openCart(true); return; }
-  cart.push({ id, qty: 1 });
+function addToCart(id, v = "") {
+  const p = prodById(id);
+  if (varsOf(p).length && !v) { openModal(id); return; }
+  const key = id + "|" + v;
+  const line = cart.find((i) => (i.key || i.id + "|") === key);
+  if (line) { line.qty++; toast("Agregaste otra pieza"); saveCart(); renderCart(); renderGrid(); return; }
+  cart.push({ key, id, v, qty: 1 });
   toast("Agregado a tu pedido");
   saveCart(); renderCart(); renderGrid();
 }
@@ -156,7 +180,8 @@ function renderCart() {
   $("cartTotal").textContent = money(cartTotal());
   $("sendOrder").disabled = n === 0;
   if (n === 0 && step === "checkout") setStep("cart");
-  const needsForm = pedidosCfg().datos !== "ninguno" || pedidosCfg().entregas.length > 1;
+  const needsForm = checkoutNeeded();
+  $("askCart").hidden = n === 0 || step === "checkout";
   $("sendLabel").textContent = step === "cart" && needsForm ? "Continuar" : "Enviar pedido por WhatsApp";
   $("cartList").innerHTML = n === 0
     ? `<p class="vacio">Tu pedido está vacío. Agrega productos desde el catálogo.</p>`
@@ -164,10 +189,15 @@ function renderCart() {
         const p = prodById(i.id);
         return `<div class="line">
           <img src="${esc(photoOf(p))}" alt="" />
-          <div><b>${esc(p.name)}</b><small>${money(finalPrice(p))} c/u</small></div>
-          <div class="qty"><button data-dec="${esc(i.id)}" aria-label="Menos">−</button><span>${i.qty}</span><button data-inc="${esc(i.id)}" aria-label="Más">+</button></div>
+          <div><b>${esc(p.name)}</b>${i.v ? `<small class="var">${esc(i.v)}</small>` : ""}<small>${money(finalPrice(p))} c/u</small></div>
+          <div class="qty"><button data-dec="${esc(i.key || i.id + "|")}" aria-label="Menos">−</button><span>${i.qty}</span><button data-inc="${esc(i.key || i.id + "|")}" aria-label="Más">+</button></div>
         </div>`;
       }).join("");
+}
+
+function checkoutNeeded() {
+  const pc = pedidosCfg(), pg = pagosCfg();
+  return pc.datos !== "ninguno" || pc.entregas.length > 1 || pg.metodos.length > 1 || pg.metodos.includes("transferencia") || pg.metodos.includes("link");
 }
 
 function setStep(s) {
@@ -195,7 +225,40 @@ function prepareCheckout() {
   $("coDelivery").hidden = entregas.length === 0;
   $("coDelivery").innerHTML = `<legend>¿Cómo lo quieres recibir?</legend>` + entregas.map((k, i) =>
     `<label class="radio"><input type="radio" name="coDel" value="${k}"${(cur ? cur === k : i === 0) ? " checked" : ""} /> ${ENTREGAS[k]}</label>`).join("");
+  const pg = pagosCfg();
+  const curPay = document.querySelector('input[name="coPayM"]:checked')?.value;
+  $("coPay").hidden = pg.metodos.length === 0;
+  $("coPay").innerHTML = `<legend>¿Cómo vas a pagar?</legend>` + pg.metodos.map((k, i) =>
+    `<label class="radio"><input type="radio" name="coPayM" value="${k}"${(curPay ? curPay === k : i === 0) ? " checked" : ""} /> ${PAGOS[k]}</label>`).join("");
+  renderPayBox();
   $("coErr").textContent = "";
+}
+
+function renderPayBox() {
+  const pg = pagosCfg();
+  const m = document.querySelector('input[name="coPayM"]:checked')?.value;
+  const box = $("payBox");
+  const parts = [];
+  if (pg.anticipado) parts.push(`<span class="warn">Este negocio prepara tu pedido cuando recibe el pago.</span>`);
+  if (m === "transferencia" && (pg.clabe || pg.banco)) {
+    parts.push(`${pg.banco ? `<div>Banco: <b>${esc(pg.banco)}</b></div>` : ""}
+      ${pg.clabe ? `<div class="row"><span>CLABE / cuenta: <code id="clabeTxt">${esc(pg.clabe)}</code></span><button type="button" id="copyClabe">Copiar</button></div>` : ""}
+      ${pg.titular ? `<div>A nombre de: <b>${esc(pg.titular)}</b></div>` : ""}
+      <div>Al enviar tu pedido, manda tu comprobante por el mismo chat.</div>`);
+  } else if (m === "transferencia") {
+    parts.push(`<div>El negocio te compartirá sus datos para transferir por WhatsApp.</div>`);
+  }
+  if (m === "link") {
+    parts.push(pg.link ? `<div class="row"><span>Paga con tarjeta de forma segura.</span><a class="btn btn-outline" style="height:34px;padding:0 14px" href="${esc(pg.link)}" target="_blank" rel="noopener">Abrir link de pago</a></div>`
+      : `<div>El negocio te enviará el link de pago por WhatsApp.</div>`);
+  }
+  if (m === "entrega") parts.push(`<div>Pagas cuando recibes o recoges tu pedido.</div>`);
+  box.innerHTML = parts.join("");
+  box.hidden = parts.length === 0;
+  $("copyClabe")?.addEventListener("click", async () => {
+    try { await navigator.clipboard.writeText(pg.clabe); toast("CLABE copiada"); }
+    catch { const r = document.createRange(); r.selectNodeContents($("clabeTxt")); getSelection().removeAllRanges(); getSelection().addRange(r); toast("Selecciona y copia"); }
+  });
 }
 
 function toast(msg) {
@@ -208,51 +271,71 @@ const openCart = (o) => {
 };
 
 function sendOrder() {
-  const pc = pedidosCfg();
-  const needsForm = pc.datos !== "ninguno" || pc.entregas.length > 1;
-  if (step === "cart" && needsForm) { setStep("checkout"); return; }
+  const pc = pedidosCfg(), pg = pagosCfg();
+  if (step === "cart" && checkoutNeeded()) { setStep("checkout"); return; }
 
   const name = $("coName").value.trim();
   const phone = $("coPhone").value.trim();
   const delivery = document.querySelector('input[name="coDel"]:checked')?.value || pc.entregas[0] || "";
   const notes = $("coNotes").value.trim();
+  const pay = document.querySelector('input[name="coPayM"]:checked')?.value || pg.metodos[0] || "";
   if (pc.datos === "obligatorio") {
     if (!name) { $("coErr").textContent = "Escribe tu nombre"; $("coName").focus(); return; }
     if (phone.replace(/\D/g, "").length < 10) { $("coErr").textContent = "Escribe tu teléfono a 10 dígitos"; $("coPhone").focus(); return; }
   }
 
-  const items = cart.map((i) => { const p = prodById(i.id); return { id: p.id, name: p.name, qty: i.qty, price: finalPrice(p) }; });
+  const items = cartItems();
   const total = cartTotal();
-  const lines = items.map((i) => `• ${i.name} x${i.qty} → ${money(i.price * i.qty)}`);
   const extra = [
-    name && `👤 ${name}`, phone && `📱 ${phone}`,
-    delivery && `🚚 ${ENTREGAS[delivery] || delivery}`, notes && `📝 ${notes}`,
+    name && `Nombre: ${name}`, phone && `Teléfono: ${phone}`,
+    delivery && `Entrega: ${ENTREGAS[delivery] || delivery}`,
+    pay && `Pago: ${PAGOS[pay] || pay}${pay === "transferencia" ? " (te envío el comprobante)" : ""}`,
+    notes && `Nota: ${notes}`,
   ].filter(Boolean);
-  const text = `Hola ${cfg.name}, quiero hacer este pedido:\n\n${lines.join("\n")}\n\nTotal: ${money(total)}${extra.length ? "\n\n" + extra.join("\n") : ""}\n\n¿Me confirman disponibilidad?`;
+  const text = `Hola ${cfg.name}, quiero hacer este pedido:\n\n${itemLines(items)}\n\n*Total: ${money(total)}*${extra.length ? "\n\n" + extra.join("\n") : ""}\n\n${pg.anticipado ? "Quedo atento(a) para hacer el pago." : "¿Me confirman disponibilidad?"}`;
 
   // Primero abrir WhatsApp (el navegador solo lo permite en el clic), luego registrar
   window.open(waLink(cfg.whatsapp, text), "_blank");
   if (!isPreview) {
-    saveLead(storeId, { type: "pedido", items, total, name, phone, delivery, notes });
+    saveLead(storeId, { type: "pedido", items, total, name, phone, delivery, notes, pay });
     measure("order", { v: total });
   }
   cart = []; saveCart(); setStep("cart"); openCart(false); renderGrid();
   toast("¡Listo! Termina tu pedido en WhatsApp");
 }
 
+function cartItems() {
+  return cart.map((i) => { const p = prodById(i.id); return { id: p.id, name: p.name, v: i.v || "", qty: i.qty, price: finalPrice(p) }; });
+}
+const itemLines = (items) => items.map((i) => `- ${i.name}${i.v ? ` (${i.v})` : ""} x${i.qty}: ${money(i.price * i.qty)}`).join("\n");
+
+// Solo preguntar: manda los productos del carrito como duda, sin datos personales
+function askCart() {
+  const items = cartItems();
+  const text = `Hola ${cfg.name}, tengo dudas sobre estos productos antes de hacer mi pedido:\n\n${itemLines(items)}\n\n¿Me pueden ayudar?`;
+  window.open(waLink(cfg.whatsapp, text), "_blank");
+  if (!isPreview) { saveLead(storeId, { type: "consulta", items, total: cartTotal() }); measure("ask"); }
+}
+
 /* ── Eventos ── */
 document.addEventListener("click", (e) => {
+  const vb = e.target.closest("[data-var]");
+  if (vb) {
+    modalSel[vb.dataset.var] = vb.dataset.val;
+    renderVars(prodById(modalId)); $("pmErr").textContent = ""; return;
+  }
+  if (e.target.closest('input[name="coPayM"]')) { setTimeout(renderPayBox, 0); }
   const t = e.target.closest("[data-cat],[data-add],[data-inc],[data-dec],[data-open],[data-ask]");
   if (!t) return;
   if (t.dataset.cat !== undefined) { cat = t.dataset.cat; render(cfg); return; }
   if (t.dataset.open) { openModal(t.dataset.open); return; }
   if (t.dataset.ask) { measure("ask", { p: t.dataset.ask }); return; } // el enlace abre WhatsApp solo
   if (t.dataset.add) { addToCart(t.dataset.add); return; }
-  const id = t.dataset.inc || t.dataset.dec;
-  const item = cart.find((i) => i.id === id);
+  const key = t.dataset.inc || t.dataset.dec;
+  const item = cart.find((i) => (i.key || i.id + "|") === key);
   if (!item) return;
   if (t.dataset.inc) item.qty++;
-  else { item.qty--; if (item.qty <= 0) cart = cart.filter((i) => i.id !== id); }
+  else { item.qty--; if (item.qty <= 0) cart = cart.filter((i) => i !== item); }
   saveCart(); renderCart(); renderGrid();
 });
 $("search").addEventListener("input", renderGrid);
@@ -265,7 +348,15 @@ $("sendOrder").addEventListener("click", sendOrder);
 $("checkout").addEventListener("submit", (e) => { e.preventDefault(); sendOrder(); });
 $("pmClose").addEventListener("click", closeModal);
 $("pModal").addEventListener("click", (e) => { if (e.target === $("pModal")) closeModal(); });
-$("pmAdd").addEventListener("click", () => { const id = modalId; closeModal(); addToCart(id); });
+$("pmAdd").addEventListener("click", () => {
+  const id = modalId, p = prodById(id);
+  if (!varsOf(p).length && cart.some((i) => i.id === id)) { closeModal(); openCart(true); return; }
+  const faltan = varsOf(p).filter((g) => !modalSel[g.nombre]).map((g) => g.nombre.toLowerCase());
+  if (faltan.length) { $("pmErr").textContent = `Elige ${faltan.join(" y ")}`; return; }
+  const v = varText(modalSel);
+  closeModal(); addToCart(id, v);
+});
+$("askCart").addEventListener("click", askCart);
 $("pmAsk").addEventListener("click", () => measure("ask", { p: modalId }));
 document.addEventListener("keydown", (e) => { if (e.key === "Escape") { closeModal(); openCart(false); } });
 $("heroWa").addEventListener("click", () => measure("ask"));

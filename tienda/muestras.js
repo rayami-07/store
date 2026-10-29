@@ -11,6 +11,7 @@ export const GIROS = {
     estilo: "moderno",
     tagline: "Ropa urbana para todos los días",
     categorias: ["Playeras", "Sudaderas", "Pantalones", "Accesorios"],
+    variantes: [{ nombre: "Talla", opciones: ["CH", "M", "G", "XG"] }, { nombre: "Color", opciones: ["Negro", "Blanco", "Gris"] }],
     productos: [
       ["Playera básica de algodón", 249, "Playeras", "👕"],
       ["Sudadera con capucha", 549, "Sudaderas", "🧥"],
@@ -26,6 +27,7 @@ export const GIROS = {
     estilo: "moderno",
     tagline: "Tenis y zapatos para cada ocasión",
     categorias: ["Tenis", "Botas", "Sandalias", "Formal"],
+    variantes: [{ nombre: "Talla", opciones: ["23", "24", "25", "26", "27", "28", "29"] }],
     productos: [
       ["Tenis urbanos blancos", 1199, "Tenis", "👟"],
       ["Tenis para correr", 1499, "Tenis", "👟", 1299],
@@ -40,6 +42,7 @@ export const GIROS = {
     emoji: "🍔",
     estilo: "amigable",
     tagline: "Hecho al momento, directo a tu mesa",
+    pagoAnticipado: true,
     categorias: ["Platillos", "Bebidas", "Postres"],
     productos: [
       ["Hamburguesa clásica", 129, "Platillos", "🍔"],
@@ -133,6 +136,12 @@ export const ESTILOS = {
   amigable: { label: "Amigable", display: "'Fredoka', 'Trebuchet MS', sans-serif",         upper: false, weight: 600 },
 };
 
+export const PAGOS = {
+  entrega: "Pago al recibir",
+  transferencia: "Transferencia",
+  link: "Link de pago (tarjeta)",
+};
+
 export const COLORES = ["#111111", "#ff6a00", "#d62839", "#2563eb", "#0f766e", "#7c3aed", "#db2777", "#a16207"];
 
 // Foto de ejemplo: fondo con el color de la marca + emoji del producto
@@ -151,11 +160,13 @@ export function fotoEjemplo(emoji, color = "#111111") {
 let seq = 0;
 export function productosDeEjemplo(giroKey) {
   const g = GIROS[giroKey] || GIROS.otro;
+  const acc = ["Gorra bordada"]; // productos sin talla dentro de giros con tallas
   return g.productos.map(([name, price, category, emoji, salePrice]) => ({
     id: "p" + Date.now().toString(36) + (seq++),
     name, price, category, emoji,
     salePrice: salePrice || 0,
     desc: "",
     photo: "",
+    variantes: acc.includes(name) ? [] : JSON.parse(JSON.stringify(g.variantes || [])),
   }));
 }

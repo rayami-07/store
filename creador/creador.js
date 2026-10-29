@@ -30,11 +30,14 @@ const waNumber = (n) => { const d = String(n || "").replace(/\D/g, ""); return d
 let state = blank();
 let editingId = "";
 let samplesUntouched = true; // si no han editado productos, cambiar de giro carga sus ejemplos
+let pagosTouched = false;
+const openRows = new Set();   // productos con "descripción y opciones" abiertos
 
 function blank(giro = "ropa") {
   const g = GIROS[giro];
   return { name: "", giro, tagline: "", whatsapp: "", horario: "", aviso: "", logo: "", color: COLORES[0], estilo: g.estilo, products: productosDeEjemplo(giro),
-    pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] } };
+    pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
+    pagos: { metodos: ["entrega", "transferencia"], anticipado: !!g.pagoAnticipado, banco: "", clabe: "", titular: "", link: "" } };
 }
 
 function toast(msg) {
@@ -85,7 +88,7 @@ function fillForm() {
   $("fWa").value = state.whatsapp;
   $("fHorario").value = state.horario;
   $("fAviso").value = state.aviso;
-  renderLogo(); renderSwatches(); renderEstilos(); renderProds(); renderPedidos();
+  renderLogo(); renderSwatches(); renderEstilos(); renderProds(); renderPedidos(); renderPagos();
   $("editingNote").hidden = !editingId;
   $("editingNote").textContent = editingId ? `Editando la demo "${state.name}". Al guardar se actualiza el mismo link.` : "";
   pushPreview();
@@ -102,6 +105,7 @@ $("fGiro").addEventListener("change", () => {
   state.estilo = GIROS[state.giro].estilo;
   $("fTagline").placeholder = GIROS[state.giro].tagline;
   if (samplesUntouched) state.products = productosDeEjemplo(state.giro);
+  if (!pagosTouched) { state.pagos.anticipado = !!GIROS[state.giro].pagoAnticipado; renderPagos(); }
   renderEstilos(); renderProds(); pushPreview();
 });
 
@@ -172,6 +176,24 @@ $("optEntregas").addEventListener("change", () => {
   pushPreview();
 });
 
+/* Pagos */
+function renderPagos() {
+  const pg = { metodos: ["entrega", "transferencia"], anticipado: false, banco: "", clabe: "", titular: "", link: "", ...(state.pagos || {}) };
+  state.pagos = pg;
+  document.querySelectorAll("#optPagos input").forEach((c) => (c.checked = pg.metodos.includes(c.value)));
+  $("fAnticipado").checked = !!pg.anticipado;
+  $("fBanco").value = pg.banco || ""; $("fClabe").value = pg.clabe || ""; $("fTitular").value = pg.titular || ""; $("fLink").value = pg.link || "";
+  $("payTransfer").hidden = !pg.metodos.includes("transferencia");
+  $("payLink").hidden = !pg.metodos.includes("link");
+}
+$("optPagos").addEventListener("change", () => {
+  state.pagos.metodos = [...document.querySelectorAll("#optPagos input:checked")].map((c) => c.value);
+  pagosTouched = true; renderPagos(); pushPreview();
+});
+$("fAnticipado").addEventListener("change", (e) => { state.pagos.anticipado = e.target.checked; pagosTouched = true; pushPreview(); });
+for (const [id, k] of [["fBanco", "banco"], ["fClabe", "clabe"], ["fTitular", "titular"], ["fLink", "link"]])
+  $(id).addEventListener("input", (e) => { state.pagos[k] = e.target.value.trim(); pagosTouched = true; pushPreview(); });
+
 /* Productos */
 function renderProds() {
   const cats = GIROS[state.giro].categorias;
@@ -193,10 +215,29 @@ function renderProds() {
         </div>
       </div>
       <button type="button" class="prod-del" data-del="${i}" aria-label="Quitar producto"><i class="fa-solid fa-trash"></i></button>
+      <button type="button" class="prod-toggle" data-more="${esc(p.id)}">${openRows.has(p.id) ? "▾" : "▸"} Descripción y opciones${
+        (p.variantes || []).length ? ` · <b>${(p.variantes || []).map((g) => esc(g.nombre)).join(", ")}</b>` : ""}</button>
+      ${openRows.has(p.id) ? `<div class="prod-more">
+        <textarea data-f="desc" maxlength="300" placeholder="Descripción: material, medidas, qué incluye…">${esc(p.desc || "")}</textarea>
+        ${[0, 1].map((k) => { const g = (p.variantes || [])[k] || { nombre: "", opciones: [] }; return `<div class="var-row">
+          <input data-vn="${k}" value="${esc(g.nombre)}" placeholder="${k ? "Color" : "Talla"}" aria-label="Nombre de la opción" />
+          <input data-vv="${k}" value="${esc((g.opciones || []).join(", "))}" placeholder="${k ? "Negro, Blanco, Rojo" : "CH, M, G"}" aria-label="Valores separados por coma" />
+        </div>`; }).join("")}
+      </div>` : ""}
     </div>`).join("");
 }
 $("prods").addEventListener("input", (e) => {
-  const row = e.target.closest(".prod"); const f = e.target.dataset.f;
+  const row = e.target.closest(".prod");
+  if (row && (e.target.dataset.vn !== undefined || e.target.dataset.vv !== undefined)) {
+    const p = state.products[+row.dataset.i];
+    const vars = [0, 1].map((k) => ({ ...((p.variantes || [])[k] || { nombre: "", opciones: [] }) }));
+    const k = +(e.target.dataset.vn ?? e.target.dataset.vv);
+    if (e.target.dataset.vn !== undefined) vars[k].nombre = e.target.value.trim();
+    else vars[k].opciones = e.target.value.split(",").map((x) => x.trim()).filter(Boolean);
+    p.variantes = vars.filter((g) => g.nombre || g.opciones.length);
+    samplesUntouched = false; pushPreview(); return;
+  }
+  const f = e.target.dataset.f;
   if (!row || !f) return;
   const p = state.products[+row.dataset.i];
   p[f] = f === "price" || f === "salePrice" ? Number(String(e.target.value).replace(/[^\d.]/g, "")) || 0 : e.target.value;
@@ -212,6 +253,8 @@ $("prods").addEventListener("change", async (e) => {
   } catch (err) { toast(err.message); }
 });
 $("prods").addEventListener("click", (e) => {
+  const more = e.target.closest("[data-more]");
+  if (more) { const id = more.dataset.more; openRows.has(id) ? openRows.delete(id) : openRows.add(id); renderProds(); return; }
   const d = e.target.closest("[data-del]"); if (!d) return;
   state.products.splice(+d.dataset.del, 1); samplesUntouched = false; renderProds(); pushPreview();
 });
@@ -222,7 +265,7 @@ $("addProd").addEventListener("click", () => {
   $("prods").lastElementChild?.querySelector("input[data-f=name]")?.focus();
 });
 $("loadSamples").addEventListener("click", () => { state.products = productosDeEjemplo(state.giro); samplesUntouched = true; renderProds(); pushPreview(); });
-$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; samplesUntouched = true; $("result").hidden = true; fillForm(); scrollTo(0, 0); });
+$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; samplesUntouched = true; pagosTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); scrollTo(0, 0); });
 
 /* ── Guardar ── */
 function configOut() {
@@ -232,7 +275,11 @@ function configOut() {
     whatsapp: state.whatsapp.trim(), horario: state.horario.trim(), aviso: state.aviso.trim(),
     logo: state.logo, color: state.color, estilo: state.estilo, categorias: g.categorias,
     pedidos: { datos: state.pedidos?.datos || "opcional", entregas: state.pedidos?.entregas || [] },
-    products: state.products.filter((p) => p.name.trim()).map((p) => ({ ...p, name: p.name.trim() })),
+    pagos: { ...state.pagos },
+    products: state.products.filter((p) => p.name.trim()).map((p) => ({
+      ...p, name: p.name.trim(), desc: (p.desc || "").trim(),
+      variantes: (p.variantes || []).filter((g) => g.nombre && (g.opciones || []).length),
+    })),
   };
 }
 const slugify = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40) || "tienda";
@@ -304,7 +351,7 @@ $("demoList").addEventListener("click", async (e) => {
   if (ed) {
     const s = demos[ed.dataset.edit];
     state = { ...blank(s.giro || "otro"), ...s, products: Array.isArray(s.products) ? s.products : Object.values(s.products || {}) };
-    editingId = ed.dataset.edit; samplesUntouched = false;
+    editingId = ed.dataset.edit; samplesUntouched = false; pagosTouched = true; openRows.clear();
     $("result").hidden = true; fillForm(); showView("editor");
   }
   if (rm) {

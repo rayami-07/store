@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=2" />
+  <link rel="stylesheet" href="creador.css?v=3" />
 </head>
 <body>
 
@@ -105,6 +105,25 @@
           <p class="hint">Cualquier persona puede solo <b>preguntar por un producto</b> por WhatsApp, sin dar datos.</p>
         </fieldset>
 
+        <fieldset>
+          <legend>5 · Pagos</legend>
+          <div class="checks" id="optPagos">
+            <label><input type="checkbox" value="entrega" /> Pago al recibir</label>
+            <label><input type="checkbox" value="transferencia" /> Transferencia</label>
+            <label><input type="checkbox" value="link" /> Link de pago (tarjeta)</label>
+          </div>
+          <label class="switch"><input type="checkbox" id="fAnticipado" /> <span><b>Cobrar antes de preparar o enviar</b><small>Ideal para comida o pedidos sobre medida. Oculta "pago al recibir".</small></span></label>
+          <div class="pay-fields" id="payTransfer">
+            <div class="row2">
+              <label>Banco<input id="fBanco" maxlength="30" placeholder="BBVA" /></label>
+              <label>Titular<input id="fTitular" maxlength="50" placeholder="Nombre como aparece en la cuenta" /></label>
+            </div>
+            <label>CLABE o número de cuenta<input id="fClabe" inputmode="numeric" maxlength="22" placeholder="18 dígitos" /></label>
+          </div>
+          <label id="payLink">Link de pago<input id="fLink" type="url" placeholder="https://mpago.la/…" /></label>
+          <p class="hint">Estos datos los ve el comprador al hacer su pedido, para que pague directo al negocio.</p>
+        </fieldset>
+
         <div class="save-bar">
           <button type="button" class="btn btn-ghost" id="newDemo"><i class="fa-solid fa-file"></i> Nueva</button>
           <button type="submit" class="btn btn-dark" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> Guardar demo</button>
@@ -162,6 +181,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=2"></script>
+<script type="module" src="creador.js?v=3"></script>
 </body>
 </html>

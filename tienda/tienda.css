@@ -194,3 +194,25 @@ button { font: inherit; cursor: pointer; }
   .pm-img { aspect-ratio: 4 / 3; }
   .pm-info { padding: 20px 16px max(20px, env(safe-area-inset-bottom)); }
 }
+
+/* ── v3: opciones de producto, pago ── */
+.pm-vars { display: grid; gap: 12px; margin-bottom: 6px; }
+.pm-vars:empty { display: none; }
+.var-group b { display: block; font-weight: 500; font-size: 14px; margin-bottom: 6px; }
+.var-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+.var-opt { border: 1.5px solid #d6d3d1; background: #fff; border-radius: 8px; padding: 7px 12px; min-width: 44px; font-size: 14px; color: var(--ink); }
+.var-opt:hover { border-color: var(--ink); }
+.var-opt.on { border-color: var(--ink); background: var(--ink); color: #fff; }
+.line small.var { display: block; color: var(--muted); }
+.pay-box { border: 1px dashed var(--line); background: var(--panel); border-radius: 10px; padding: 12px; font-size: 14px; display: grid; gap: 6px; }
+.pay-box .row { display: flex; justify-content: space-between; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pay-box code { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; letter-spacing: .5px; overflow-wrap: anywhere; }
+.pay-box button { border: 1px solid var(--line); background: #fff; border-radius: 100px; padding: 4px 12px; font-size: 13px; }
+.pay-box .warn { color: #9a3412; font-weight: 500; }
+.drawer-foot .btn-outline { height: 42px; font-size: 14px; }
+/* Ficha: la altura la pone el texto, la foto se ajusta */
+@media (min-width: 701px) {
+  .modal-box { align-items: stretch; }
+  .pm-img { aspect-ratio: auto; min-height: 380px; }
+  .pm-img img { height: 100%; }
+}
