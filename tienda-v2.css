@@ -433,3 +433,6 @@
 #clientView.v2 .cat-card[hidden], #clientView.v2 .v2-side-group label[hidden] { display: none !important; }
 #clientView.v2 .empty-state { display: flex; flex-direction: column; align-items: center; gap: 16px; }
 #clientView.v2 .empty-state[style*="none"] { display: none !important; }
+/* "Todo" quedaba tapado por el encabezado fijo del catálogo */
+#clientView.v2 .v2-sidebar { top: 150px; padding-top: 4px; }
+#clientView.v2 .search-wrap input::-webkit-search-cancel-button { cursor: pointer; }

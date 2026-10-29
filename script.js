@@ -491,6 +491,10 @@ function renderCatalog() {
   const filtered = getFiltered();
   count.textContent = `${filtered.length} producto${filtered.length !== 1 ? "s" : ""}`;
   updateCategoryCounts();
+  const msg = document.getElementById("emptyMsg");
+  if (msg) msg.textContent = currentSearch
+    ? `No hay productos que coincidan con "${currentSearch}".`
+    : "No hay productos con estos filtros.";
   if (filtered.length === 0) { grid.innerHTML = ""; empty.style.display = "block"; }
   else { grid.innerHTML = filtered.map(renderCard).join(""); empty.style.display = "none"; }
 }
@@ -521,7 +525,19 @@ function initCategories() {
 }
 
 function initSearch() {
-  document.getElementById("searchInput").addEventListener("input", (e) => {
+  const si = document.getElementById("searchInput");
+  // Chrome a veces rellena el buscador con el usuario guardado del admin.
+  // Si el texto no lo escribió la persona, lo borramos.
+  let typed = false;
+  si.addEventListener("keydown", () => { typed = true; });
+  si.addEventListener("paste", () => { typed = true; });
+  const clearAutofill = () => {
+    if (!typed && si.value) { si.value = ""; currentSearch = ""; renderCatalog(); }
+  };
+  [300, 1000, 2500].forEach(ms => setTimeout(clearAutofill, ms));
+
+  si.addEventListener("input", (e) => {
+    if (!typed) { clearAutofill(); return; }
     currentSearch = e.target.value.trim();
     if (currentSearch) {
       currentCategory = "todos";
