@@ -15,6 +15,7 @@
   <title>RAYAMI Store · Productos nuevos y usados</title>
   <meta name="description" content="Encuentra deportes, tenis, ropa, mascotas y más. Productos nuevos y usados al mejor precio." />
   <link rel="stylesheet" href="styles.css?v=21" />
+  <link rel="stylesheet" href="tienda-v2.css?v=1" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
@@ -33,11 +34,20 @@
 <!-- ============================================================
      VISTA CLIENTE
 ============================================================ -->
-<div id="clientView">
+<div id="clientView" class="v2">
 
-  <!-- PROMO BAR -->
-  <div class="promo-bar">
-    🔥 OFERTAS ESPECIALES · TENIS · ROPA · ACCESORIOS · PREGUNTA POR WHATSAPP
+  <!-- BARRA SUPERIOR -->
+  <div class="v2-util">
+    <div class="v2-util-inner">
+      <span class="v2-util-left">Envíos en México · Atención directa por WhatsApp</span>
+      <div class="v2-util-links">
+        <button onclick="showSellerLogin()">Vender aquí</button>
+        <span>|</span>
+        <a href="https://wa.me/5581074978" target="_blank">Ayuda</a>
+        <span>|</span>
+        <button onclick="showLogin()">Admin</button>
+      </div>
+    </div>
   </div>
 
   <!-- NAVBAR -->
@@ -47,59 +57,58 @@
         <img src="https://i.ibb.co/LXPfzxZb/logo.jpg" alt="RAYAMI STORE" class="nav-logo-img" id="navLogoImg" />
         <span class="nav-logo-text">RAYAMI<span>STORE</span></span>
       </a>
-      <div class="search-wrap">
-        <input type="text" id="searchInput" placeholder="Buscar producto..." autocomplete="off" />
-        <span class="search-icon">⌕</span>
+      <div class="v2-nav-cats">
+        <button class="cat-card" data-cat="tenis">Tenis</button>
+        <button class="cat-card" data-cat="ropa">Ropa</button>
+        <button class="cat-card" data-cat="deportes">Deportes</button>
+        <button class="cat-card" data-cat="accesorios">Accesorios</button>
+        <button class="cat-card" data-cat="mascotas">Mascotas</button>
+        <button class="cat-card v2-nav-sale" data-cat="ofertas">Ofertas</button>
       </div>
-      <ul class="nav-links">
-        <li><a href="#categorias">Categorías</a></li>
-        <li><a href="#catalogo">Catálogo</a></li>
-        <li><a href="#contacto" class="btn-nav-wa">WhatsApp</a></li>
-        <li><button class="btn-admin-nav" onclick="showLogin()">🔐 Admin</button></li>
-        <li><button class="btn-seller-nav" onclick="showSellerLogin()">🏪 Vender aquí</button></li>
-        <li>
-          <button class="btn-cart-nav" onclick="openCart()" id="cartNavBtn">
-            🛒 <span id="cartBadge" class="cart-badge" style="display:none;">0</span>
-          </button>
-        </li>
-      </ul>
-      <button class="hamburger" id="hamburger" aria-label="Menú">
-        <span></span><span></span><span></span>
-      </button>
+      <div class="v2-nav-right">
+        <div class="search-wrap">
+          <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
+          <input type="text" id="searchInput" placeholder="Buscar" autocomplete="off" />
+        </div>
+        <button class="btn-cart-nav" onclick="openCart()" id="cartNavBtn" aria-label="Carrito">
+          <i class="fa-solid fa-bag-shopping"></i>
+          <span id="cartBadge" class="cart-badge" style="display:none;">0</span>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Menú">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
     </div>
     <div class="mobile-menu" id="mobileMenu">
-      <a href="#categorias" class="mm-link">Categorías</a>
       <a href="#catalogo" class="mm-link">Catálogo</a>
-      <a href="#contacto" class="mm-link mm-wa">💬 WhatsApp</a>
-      <button class="mm-link mm-seller" onclick="showSellerLogin()">🏪 Soy vendedor</button>
-      <button class="mm-link mm-admin" onclick="showLogin()">🔐 Admin</button>
+      <a href="#contacto" class="mm-link mm-wa">WhatsApp</a>
+      <button class="mm-link mm-seller" onclick="showSellerLogin()">Soy vendedor</button>
+      <button class="mm-link mm-admin" onclick="showLogin()">Admin</button>
     </div>
   </nav>
 
+  <!-- FRANJA PROMO -->
+  <div class="promo-bar">
+    🔥 Ofertas reales en tenis, ropa y accesorios · <a href="#catalogo">Ver catálogo</a>
+  </div>
+
   <!-- HERO -->
   <section class="hero" id="inicio">
-    <div class="hero-bg-text">STORE</div>
     <div class="hero-content">
-      <span class="hero-eyebrow"><span class="hero-eyebrow-dot"></span>Nuevos y seminuevos seleccionados</span>
-      <h1 class="hero-title">Tenis, ropa<span class="accent">y accesorios</span></h1>
-      <p class="hero-sub">Productos nuevos y seminuevos seleccionados. Encuentra ofertas reales en tenis, ropa, deporte y más.</p>
+      <span class="hero-eyebrow">Nuevos y seminuevos seleccionados</span>
+      <h1 class="hero-title">Tenis, ropa<br/>y accesorios</h1>
+      <p class="hero-sub">Encuentra ofertas reales en tenis, ropa, deporte y más. Pregunta, aparta y recibe en México.</p>
       <div class="hero-btns">
-        <a href="#catalogo" class="btn-primary">Ver catálogo</a>
-        <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="btn-wa">💬 WhatsApp</a>
-      </div>
-      <div class="hero-stats">
-        <div><strong>100+</strong><span>Productos</span></div>
-        <div><strong>WhatsApp</strong><span>Atención directa</span></div>
-        <div><strong>MX</strong><span>Envíos</span></div>
+        <a href="#catalogo" class="btn-primary">Comprar</a>
+        <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="btn-wa">WhatsApp</a>
       </div>
     </div>
     <div class="hero-visual">
       <div class="hero-showcase" id="heroShowcase">
-        <!-- Se llena dinámicamente con productos reales -->
         <div class="hero-showcase-card active" id="heroCard0">
-          <div class="hsc-img-wrap"><div class="hsc-placeholder">🔥</div></div>
+          <div class="hsc-img-wrap"><div class="hsc-placeholder">👟</div></div>
           <div class="hsc-info">
-            <span class="hsc-tag">CARGANDO...</span>
+            <span class="hsc-tag">Cargando…</span>
             <span class="hsc-name">Productos disponibles</span>
             <span class="hsc-price">—</span>
           </div>
@@ -107,95 +116,102 @@
       </div>
       <div class="hero-showcase-dots" id="heroShowcaseDots"></div>
     </div>
-    <div class="hero-scroll-hint">scroll ↓</div>
   </section>
 
-  <!-- CATEGORÍAS -->
-  <section class="section" id="categorias">
+  <!-- DESTACADOS (se oculta solo si no hay) -->
+  <section class="section" id="destacados">
     <div class="container">
-      <h2 class="section-title">Categorías</h2>
-      <div class="cat-grid">
-        <button class="cat-card active" data-cat="todos"><span class="cat-emoji">🛒</span><span class="cat-label">Todos</span></button>
-        <button class="cat-card" data-cat="deportes"><span class="cat-emoji">🥊</span><span class="cat-label">Deportes</span></button>
-        <button class="cat-card" data-cat="tenis"><span class="cat-emoji">👟</span><span class="cat-label">Tenis</span></button>
-        <button class="cat-card" data-cat="ropa"><span class="cat-emoji">👕</span><span class="cat-label">Ropa</span></button>
-        <button class="cat-card" data-cat="mascotas"><span class="cat-emoji">🐶</span><span class="cat-label">Mascotas</span></button>
-        <button class="cat-card" data-cat="usados"><span class="cat-emoji">♻️</span><span class="cat-label">Usados</span></button>
-        <button class="cat-card" data-cat="ofertas"><span class="cat-emoji">🔥</span><span class="cat-label">Ofertas</span></button>
-        <button class="cat-card" data-cat="accesorios"><span class="cat-emoji">🎒</span><span class="cat-label">Accesorios</span></button>
-      </div>
-    </div>
-  </section>
-
-  <!-- DESTACADOS -->
-  <section class="section section-dark" id="destacados">
-    <div class="container">
-      <h2 class="section-title">⭐ Destacados</h2>
-      <p class="section-sub">Los más populares del momento</p>
+      <h2 class="section-title">Destacados</h2>
       <div class="product-grid" id="featuredGrid"></div>
-      <p id="emptyFeatured" style="display:none;color:var(--text-muted);font-size:14px;text-align:center;padding:20px 0;">Sin productos destacados por ahora.</p>
-    </div>
-  </section>
-
-  <!-- SECCIÓN CONFIANZA -->
-  <section style="padding:0 0 20px;">
-    <div class="trust-section">
-      <div class="trust-card">🚚 Envíos disponibles</div>
-      <div class="trust-card">💬 Atención rápida</div>
-      <div class="trust-card">🔥 Ofertas constantes</div>
-      <div class="trust-card">🔒 Compra segura</div>
+      <p id="emptyFeatured" style="display:none;"></p>
     </div>
   </section>
 
   <!-- CATÁLOGO -->
   <section class="section" id="catalogo">
     <div class="container">
-      <div class="cat-header">
-        <h2 class="section-title">Catálogo completo</h2>
-        <span class="cat-count" id="productCount">0 productos</span>
+      <div class="v2-cat-head">
+        <h2 class="section-title">Catálogo <span class="cat-count" id="productCount">0 productos</span></h2>
+        <div class="v2-cat-tools">
+          <button class="v2-filter-toggle" id="v2FilterToggle" type="button">
+            <span>Ocultar filtros</span> <i class="fa-solid fa-sliders"></i>
+          </button>
+          <label class="v2-sort">
+            <span>Ordenar por</span>
+            <select id="sortSelect">
+              <option value="recientes">Lo más nuevo</option>
+              <option value="precio-asc">Precio: menor a mayor</option>
+              <option value="precio-desc">Precio: mayor a menor</option>
+            </select>
+          </label>
+        </div>
       </div>
-      <div class="product-grid" id="productGrid"></div>
-      <div class="empty-state" id="emptyState" style="display:none;">
-        <span>😕</span><p>Sin resultados para esa búsqueda</p>
+
+      <div class="v2-cat-body">
+        <aside class="v2-sidebar" id="categorias">
+          <div class="v2-side-group">
+            <button class="cat-card active" data-cat="todos">Todo</button>
+            <button class="cat-card" data-cat="tenis">Tenis</button>
+            <button class="cat-card" data-cat="ropa">Ropa</button>
+            <button class="cat-card" data-cat="deportes">Deportes</button>
+            <button class="cat-card" data-cat="accesorios">Accesorios</button>
+            <button class="cat-card" data-cat="mascotas">Mascotas</button>
+            <button class="cat-card" data-cat="usados">Usados</button>
+            <button class="cat-card" data-cat="ofertas">Ofertas</button>
+          </div>
+          <div class="v2-side-group">
+            <h4>Condición</h4>
+            <label><input type="checkbox" class="cond-filter" value="Nuevo" /> Nuevo</label>
+            <label><input type="checkbox" class="cond-filter" value="Seminuevo" /> Seminuevo</label>
+            <label><input type="checkbox" class="cond-filter" value="Usado" /> Usado</label>
+          </div>
+        </aside>
+
+        <div class="v2-results">
+          <div class="product-grid" id="productGrid"></div>
+          <div class="empty-state" id="emptyState" style="display:none;">
+            <p>Sin resultados. Prueba con otra búsqueda o categoría.</p>
+          </div>
+        </div>
       </div>
     </div>
   </section>
 
-  <!-- CTA Comprar -->
+  <!-- CONFIANZA -->
+  <section class="v2-trust">
+    <div class="container v2-trust-grid">
+      <div><i class="fa-solid fa-truck-fast"></i><strong>Envíos</strong><span>A todo México</span></div>
+      <div><i class="fa-brands fa-whatsapp"></i><strong>Atención rápida</strong><span>Directo por WhatsApp</span></div>
+      <div><i class="fa-solid fa-tag"></i><strong>Ofertas constantes</strong><span>Precios negociables</span></div>
+      <div><i class="fa-solid fa-shield-halved"></i><strong>Compra segura</strong><span>Revisamos cada producto</span></div>
+    </div>
+  </section>
+
+  <!-- CTA WHATSAPP -->
   <section class="section cta-section" id="contacto">
     <div class="container cta-inner">
-      <div class="cta-badge">💬</div>
       <h2 class="cta-title">¿Te interesa algo?</h2>
-      <p class="cta-sub">Escríbeme directo por WhatsApp y te doy más info, fotos o acordamos envío.</p>
-      <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20quiero%20preguntar%20por%20un%20producto%20🔥" target="_blank" class="btn-primary btn-xl">💬 Escribir por WhatsApp</a>
-      <p class="cta-note">Respondo rápido · Envíos disponibles · Precios negociables</p>
+      <p class="cta-sub">Escríbeme directo y te doy más info, fotos o acordamos envío.</p>
+      <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20quiero%20preguntar%20por%20un%20producto%20🔥" target="_blank" class="btn-primary btn-xl">Escribir por WhatsApp</a>
     </div>
   </section>
 
-  <!-- CTA Vender -->
+  <!-- CTA VENDER -->
   <section class="seller-cta-section">
     <div class="container">
       <div class="seller-cta-inner">
         <div class="seller-cta-left">
-          <span class="seller-cta-eyebrow">🏪 ÚNETE A RAYAMI STORE</span>
-          <h2 class="seller-cta-title">¿Tienes productos<br/>para vender?</h2>
-          <p class="seller-cta-sub">Súbete a nuestra plataforma y vende sin costo de registro. Nosotros nos encargamos de la logística, tú solo subes tus productos.</p>
-          <div class="seller-cta-actions">
-            <button class="btn-primary btn-xl" onclick="showSellerLogin()">📝 Registrarme como vendedor</button>
-            <a href="https://wa.me/5581074978?text=Hola,%20quiero%20más%20info%20para%20vender%20en%20RAYAMI%20STORE" target="_blank" class="btn-wa">💬 Más información</a>
-          </div>
+          <span class="seller-cta-eyebrow">Únete a RAYAMI STORE</span>
+          <h2 class="seller-cta-title">¿Tienes productos para vender?</h2>
+          <p class="seller-cta-sub">Regístrate gratis y vende en nuestra plataforma. Nosotros nos encargamos de la entrega; tú solo subes tus productos.</p>
           <div class="seller-cta-perks">
-            <div class="seller-perk"><span>✅</span> Registro gratis</div>
-            <div class="seller-perk"><span>💰</span> Comisión solo del 10%</div>
-            <div class="seller-perk"><span>🚚</span> Nosotros entregamos</div>
-            <div class="seller-perk"><span>📱</span> Atención directa</div>
+            <div class="seller-perk">Registro gratis</div>
+            <div class="seller-perk">Comisión del 10%</div>
+            <div class="seller-perk">Nosotros entregamos</div>
           </div>
-        </div>
-        <div class="seller-cta-right">
-          <div class="seller-cta-card">
-            <div class="seller-cta-icon">👑</div>
-            <h3>Conviértete en vendedor</h3>
-            <p>Llega a más clientes sin invertir en publicidad ni infraestructura.</p>
+          <div class="seller-cta-actions">
+            <button class="btn-primary btn-xl" onclick="showSellerLogin()">Registrarme como vendedor</button>
+            <a href="https://wa.me/5581074978?text=Hola,%20quiero%20más%20info%20para%20vender%20en%20RAYAMI%20STORE" target="_blank" class="btn-wa">Más información</a>
           </div>
         </div>
       </div>
@@ -209,25 +225,24 @@
         <div class="footer-col">
           <img src="https://i.ibb.co/LXPfzxZb/logo.jpg" alt="RAYAMI STORE" class="footer-logo-img" id="footerLogoImg" />
           <span class="footer-logo">RAYAMI<span>STORE</span></span>
-          <p class="footer-tag">Productos nuevos y usados<br/>en México 🇲🇽</p>
+          <p class="footer-tag">Productos nuevos y usados en México 🇲🇽</p>
         </div>
         <div class="footer-col">
-          <h4>NAVEGACIÓN</h4>
+          <h4>Navegación</h4>
           <a href="#catalogo">Catálogo</a>
-          <a href="#categorias">Categorías</a>
           <a href="#contacto">Contacto</a>
           <button onclick="showSellerLogin()" class="footer-link-btn">Soy vendedor</button>
         </div>
         <div class="footer-col">
-          <h4>AYUDA</h4>
+          <h4>Ayuda</h4>
           <a href="https://wa.me/5581074978" target="_blank">Preguntas frecuentes</a>
           <a href="https://wa.me/5581074978" target="_blank">Envíos</a>
           <a href="https://wa.me/5581074978" target="_blank">Cambios y devoluciones</a>
         </div>
         <div class="footer-col">
-          <h4>CONTACTO</h4>
-          <a href="https://wa.me/5581074978" target="_blank">📱 55 8107 4978</a>
-          <a href="mailto:raulbenitez563@gmail.com">📧 raulbenitez563@gmail.com</a>
+          <h4>Contacto</h4>
+          <a href="https://wa.me/5581074978" target="_blank">55 8107 4978</a>
+          <a href="mailto:raulbenitez563@gmail.com">raulbenitez563@gmail.com</a>
           <p class="footer-hours">Lun – Dom · 9am – 9pm</p>
         </div>
       </div>
@@ -239,34 +254,34 @@
 
   <!-- Botón flotante WhatsApp -->
   <a href="https://wa.me/5581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="wa-float" aria-label="WhatsApp">
-    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
+    <i class="fa-brands fa-whatsapp"></i>
   </a>
 
   <!-- Botón flotante CARRITO -->
   <button class="cart-fab" id="cartFab" onclick="openCart()" style="display:none;">
-    🛒 <span id="cartFabCount">0</span>
+    <i class="fa-solid fa-bag-shopping"></i> <span id="cartFabCount">0</span>
   </button>
 
   <!-- DRAWER CARRITO -->
   <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
   <div class="cart-drawer" id="cartDrawer">
     <div class="cart-header">
-      <h2 class="cart-title">🛒 Tu carrito</h2>
+      <h2 class="cart-title">Tu carrito</h2>
       <button class="cart-close" onclick="closeCart()">✕</button>
     </div>
     <div class="cart-body">
-      <p class="cart-empty-msg" id="cartEmpty">Aún no has agregado productos.<br/>Dale clic a "🛒 Al carrito" en cualquier producto.</p>
+      <p class="cart-empty-msg" id="cartEmpty">Aún no has agregado productos.</p>
       <div id="cartList"></div>
     </div>
     <div class="cart-footer">
       <div class="cart-total-row" id="cartTotalRow" style="display:none;">
-        <span>Total estimado:</span>
+        <span>Total estimado</span>
         <span class="cart-total-amount" id="cartTotalAmount">$0</span>
       </div>
       <button class="cart-wa-btn" id="cartOrderBtn" onclick="openOrderModal()" style="display:none;">
-        📋 Ver resumen del pedido
+        Ver resumen del pedido
       </button>
-      <button class="cart-clear-btn" id="cartClearBtn" onclick="clearCart()" style="display:none;">🗑 Vaciar carrito</button>
+      <button class="cart-clear-btn" id="cartClearBtn" onclick="clearCart()" style="display:none;">Vaciar carrito</button>
     </div>
   </div>
 
@@ -1034,6 +1049,14 @@ window._q = _q;
   if ("serviceWorker" in navigator) {
     window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
   }
+</script>
+<script>
+  // Mostrar / ocultar filtros (diseño v2)
+  document.getElementById("v2FilterToggle")?.addEventListener("click", (e) => {
+    const cv = document.getElementById("clientView");
+    const off = cv.classList.toggle("v2-no-filters");
+    e.currentTarget.querySelector("span").textContent = off ? "Mostrar filtros" : "Ocultar filtros";
+  });
 </script>
 </body>
 </html>
