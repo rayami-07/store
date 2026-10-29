@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="tienda.css?v=1" />
+  <link rel="stylesheet" href="tienda.css?v=3" />
 </head>
 <body>
 
@@ -24,6 +24,7 @@
 <div id="store" hidden>
   <div class="demo-bar" id="demoBar" hidden>
     <span><b>Vista previa</b> · así se vería tu tienda en línea</span>
+    <a id="demoPanel" class="ghost">Ver mi panel de ventas</a>
     <a id="demoCta" target="_blank" rel="noopener">Quiero mi tienda</a>
   </div>
 
@@ -93,19 +94,46 @@
   <div class="overlay" id="overlay"></div>
   <aside class="drawer" id="drawer" aria-label="Carrito">
     <div class="drawer-head">
-      <h3>Tu pedido</h3>
+      <button class="icon-btn" id="backCart" aria-label="Regresar" hidden><i class="fa-solid fa-arrow-left"></i></button>
+      <h3 id="drawerTitle">Tu pedido</h3>
       <button class="icon-btn" id="closeCart" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
     </div>
     <div class="drawer-body" id="cartList"></div>
+    <form class="drawer-body checkout" id="checkout" hidden novalidate>
+      <p class="co-note" id="coNote"></p>
+      <label><span>Nombre <span class="opt" data-opt></span></span><input id="coName" autocomplete="name" maxlength="60" /></label>
+      <label><span>Teléfono <span class="opt" data-opt></span></span><input id="coPhone" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" /></label>
+      <fieldset id="coDelivery"><legend>¿Cómo lo quieres recibir?</legend></fieldset>
+      <label><span>Nota para el negocio <span class="opt">(opcional)</span></span><textarea id="coNotes" rows="2" maxlength="200" placeholder="Talla, color, horario…"></textarea></label>
+      <p class="co-err" id="coErr"></p>
+    </form>
     <div class="drawer-foot">
       <div class="total"><span>Total</span><b id="cartTotal">$0</b></div>
-      <button class="btn btn-accent btn-block" id="sendOrder"><i class="fa-brands fa-whatsapp"></i> Enviar pedido por WhatsApp</button>
+      <button class="btn btn-accent btn-block" id="sendOrder"><i class="fa-brands fa-whatsapp"></i> <span id="sendLabel">Enviar pedido por WhatsApp</span></button>
     </div>
   </aside>
+
+  <div class="modal" id="pModal" hidden>
+    <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="pmName">
+      <button class="icon-btn modal-x" id="pmClose" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      <div class="pm-img"><img id="pmImg" alt="" /></div>
+      <div class="pm-info">
+        <span class="card-cat" id="pmCat"></span>
+        <h3 id="pmName"></h3>
+        <div class="card-price" id="pmPrice"></div>
+        <p class="pm-desc" id="pmDesc"></p>
+        <div class="pm-btns">
+          <button class="btn btn-accent" id="pmAdd">Agregar al pedido</button>
+          <a class="btn btn-outline" id="pmAsk" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Preguntar</a>
+        </div>
+        <small class="pm-hint">¿Solo quieres información? Pregunta por WhatsApp sin compromiso.</small>
+      </div>
+    </div>
+  </div>
 
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="tienda.js?v=1"></script>
+<script type="module" src="tienda.js?v=3"></script>
 </body>
 </html>

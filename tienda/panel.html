@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel de ventas</title>
+  <meta name="robots" content="noindex" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="panel.css?v=2" />
+</head>
+<body>
+<div class="loading" id="loading"><div class="spinner"></div></div>
+
+<div class="locked" id="locked" hidden>
+  <i class="fa-solid fa-lock"></i>
+  <h1>Panel privado</h1>
+  <p>Este panel solo lo puede ver el dueño de la tienda.</p>
+</div>
+
+<div id="app" hidden>
+  <header class="top">
+    <div class="wrap top-in">
+      <div class="brand"><img id="logo" alt="" hidden /><div><b id="name"></b><span>Panel de ventas</span></div></div>
+      <a class="btn btn-outline" id="storeLink"><i class="fa-solid fa-store"></i> <span>Ver mi tienda</span></a>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    <div class="banner" id="banner" hidden></div>
+
+    <div class="head-row">
+      <h1>Cómo va tu tienda</h1>
+      <div class="seg" role="group" aria-label="Periodo">
+        <button data-days="7">7 días</button>
+        <button data-days="30" class="active">30 días</button>
+      </div>
+    </div>
+
+    <section class="kpis" id="kpis"></section>
+
+    <section class="card chart-card">
+      <div class="card-head">
+        <h2 id="chartTitle">Visitas por día</h2>
+        <div class="seg small" role="group" aria-label="Métrica">
+          <button data-metric="visit" class="active">Visitas</button>
+          <button data-metric="order">Pedidos</button>
+          <button data-metric="sales">Ventas</button>
+        </div>
+      </div>
+      <div class="chart" id="chart"></div>
+    </section>
+
+    <div class="two">
+      <section class="card">
+        <div class="card-head"><h2>Productos que más interesan</h2></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>Producto</th><th class="num">Vistas</th><th class="num">Consultas</th><th class="num">Vendidos</th><th class="num">Ventas</th></tr></thead>
+            <tbody id="topProducts"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head"><h2>Últimos pedidos</h2></div>
+        <div class="orders" id="orders"></div>
+      </section>
+    </div>
+
+    <p class="foot-note">Las visitas cuentan una vez por persona y sesión. Los pedidos se registran cuando el cliente envía su carrito por WhatsApp; confirma cada venta con tu cliente.</p>
+  </main>
+</div>
+
+<script type="module" src="panel.js?v=2"></script>
+</body>
+</html>

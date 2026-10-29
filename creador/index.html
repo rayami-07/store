@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=1" />
+  <link rel="stylesheet" href="creador.css?v=2" />
 </head>
 <body>
 
@@ -31,7 +31,8 @@
     <b class="top-title">Creador de tiendas</b>
     <div class="top-tabs" role="tablist">
       <button class="ttab active" data-view="editor">Editar</button>
-      <button class="ttab" data-view="demos">Mis demos <span id="demoCount"></span></button>
+      <button class="ttab" data-view="demos">Mis tiendas <span id="demoCount"></span></button>
+      <button class="ttab" data-view="resumen">Resumen</button>
     </div>
     <button class="btn btn-ghost" id="logout"><i class="fa-solid fa-right-from-bracket"></i> Salir</button>
   </header>
@@ -87,6 +88,23 @@
           </div>
         </fieldset>
 
+        <fieldset>
+          <legend>4 · Pedidos</legend>
+          <div class="field-label">Datos del comprador</div>
+          <div class="opts" id="optDatos">
+            <label class="opt-card"><input type="radio" name="datos" value="opcional" /> <span><b>Opcionales</b><small>Pide nombre y teléfono, pero puede dejarlos en blanco</small></span></label>
+            <label class="opt-card"><input type="radio" name="datos" value="obligatorio" /> <span><b>Obligatorios</b><small>No puede enviar el pedido sin nombre y teléfono</small></span></label>
+            <label class="opt-card"><input type="radio" name="datos" value="ninguno" /> <span><b>No pedir datos</b><small>Solo manda el pedido por WhatsApp</small></span></label>
+          </div>
+          <div class="field-label">Formas de entrega</div>
+          <div class="checks" id="optEntregas">
+            <label><input type="checkbox" value="recoger" /> Recoger en tienda</label>
+            <label><input type="checkbox" value="domicilio" /> Envío a domicilio</label>
+            <label><input type="checkbox" value="punto" /> Punto de encuentro</label>
+          </div>
+          <p class="hint">Cualquier persona puede solo <b>preguntar por un producto</b> por WhatsApp, sin dar datos.</p>
+        </fieldset>
+
         <div class="save-bar">
           <button type="button" class="btn btn-ghost" id="newDemo"><i class="fa-solid fa-file"></i> Nueva</button>
           <button type="submit" class="btn btn-dark" id="saveBtn"><i class="fa-solid fa-floppy-disk"></i> Guardar demo</button>
@@ -114,11 +132,29 @@
     </div>
   </section>
 
+  <!-- RESUMEN (página maestra) -->
+  <section class="demos" id="resumenView" hidden>
+    <div class="demos-head res-head">
+      <div><h2>Resumen de tiendas</h2><p class="muted">Cómo van todas las tiendas que has creado.</p></div>
+      <div class="seg" role="group" aria-label="Periodo">
+        <button data-rdays="7">7 días</button><button data-rdays="30" class="active">30 días</button>
+      </div>
+    </div>
+    <div class="rkpis" id="rkpis"></div>
+    <div class="rtable-wrap">
+      <table class="rtable">
+        <thead><tr><th>Tienda</th><th>Estado</th><th class="num">Visitas</th><th class="num">Consultas</th><th class="num">Pedidos</th><th class="num">Ventas</th><th class="num">Conversión</th><th>Última actividad</th><th></th></tr></thead>
+        <tbody id="rbody"></tbody>
+      </table>
+    </div>
+    <p class="muted small-note">Una demo con visitas significa que el prospecto (o alguien a quien se la reenvió) la abrió. Buen momento para darle seguimiento.</p>
+  </section>
+
   <!-- MIS DEMOS -->
   <section class="demos" id="demosView" hidden>
     <div class="demos-head">
-      <h2>Mis demos</h2>
-      <p class="muted">Tiendas de prueba que has creado para tus prospectos.</p>
+      <h2>Mis tiendas</h2>
+      <p class="muted">Demos y tiendas que has creado para tus clientes.</p>
     </div>
     <div class="demo-list" id="demoList"></div>
   </section>
@@ -126,6 +162,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=1"></script>
+<script type="module" src="creador.js?v=2"></script>
 </body>
 </html>

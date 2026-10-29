@@ -6,6 +6,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo } from "../tienda/muestras.js";
+import { aggregate, money, pct, ago } from "../tienda/stats.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyDDVxmRmKb9yIZSV0ZxkPKvQPOK-oAGMWU",
@@ -32,7 +33,8 @@ let samplesUntouched = true; // si no han editado productos, cambiar de giro car
 
 function blank(giro = "ropa") {
   const g = GIROS[giro];
-  return { name: "", giro, tagline: "", whatsapp: "", horario: "", aviso: "", logo: "", color: COLORES[0], estilo: g.estilo, products: productosDeEjemplo(giro) };
+  return { name: "", giro, tagline: "", whatsapp: "", horario: "", aviso: "", logo: "", color: COLORES[0], estilo: g.estilo, products: productosDeEjemplo(giro),
+    pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] } };
 }
 
 function toast(msg) {
@@ -83,7 +85,7 @@ function fillForm() {
   $("fWa").value = state.whatsapp;
   $("fHorario").value = state.horario;
   $("fAviso").value = state.aviso;
-  renderLogo(); renderSwatches(); renderEstilos(); renderProds();
+  renderLogo(); renderSwatches(); renderEstilos(); renderProds(); renderPedidos();
   $("editingNote").hidden = !editingId;
   $("editingNote").textContent = editingId ? `Editando la demo "${state.name}". Al guardar se actualiza el mismo link.` : "";
   pushPreview();
@@ -157,6 +159,19 @@ $("estilos").addEventListener("click", (e) => {
   state.estilo = b.dataset.estilo; renderEstilos(); pushPreview();
 });
 
+/* Opciones de pedido */
+function renderPedidos() {
+  const pc = { datos: "opcional", entregas: ["recoger", "domicilio"], ...(state.pedidos || {}) };
+  state.pedidos = pc;
+  document.querySelectorAll('#optDatos input').forEach((r) => (r.checked = r.value === pc.datos));
+  document.querySelectorAll('#optEntregas input').forEach((c) => (c.checked = pc.entregas.includes(c.value)));
+}
+$("optDatos").addEventListener("change", (e) => { state.pedidos.datos = e.target.value; pushPreview(); });
+$("optEntregas").addEventListener("change", () => {
+  state.pedidos.entregas = [...document.querySelectorAll('#optEntregas input:checked')].map((c) => c.value);
+  pushPreview();
+});
+
 /* Productos */
 function renderProds() {
   const cats = GIROS[state.giro].categorias;
@@ -216,6 +231,7 @@ function configOut() {
     name: state.name.trim(), giro: state.giro, tagline: state.tagline.trim(),
     whatsapp: state.whatsapp.trim(), horario: state.horario.trim(), aviso: state.aviso.trim(),
     logo: state.logo, color: state.color, estilo: state.estilo, categorias: g.categorias,
+    pedidos: { datos: state.pedidos?.datos || "opcional", entregas: state.pedidos?.entregas || [] },
     products: state.products.filter((p) => p.name.trim()).map((p) => ({ ...p, name: p.name.trim() })),
   };
 }
@@ -232,7 +248,7 @@ $("storeForm").addEventListener("submit", async (e) => {
   const prev = editingId ? (await get(ref(db, `stores/${id}`))).val() : null;
   $("saveBtn").disabled = true;
   try {
-    await set(ref(db, `stores/${id}`), { ...out, status: "demo", createdAt: prev?.createdAt || now, updatedAt: now });
+    await set(ref(db, `stores/${id}`), { ...out, status: prev?.status || "demo", createdAt: prev?.createdAt || now, updatedAt: now });
     editingId = id;
     showResult(id, out);
     toast("✅ Demo guardada");
@@ -266,6 +282,7 @@ async function loadDemos() {
   catch (err) { demos = {}; console.warn(err); }
   const list = Object.entries(demos).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
   $("demoCount").textContent = list.length ? `(${list.length})` : "";
+  if (!$("resumenView").hidden) loadResumen();
   $("demoList").innerHTML = list.length ? list.map(([id, s]) => {
     const n = Array.isArray(s.products) ? s.products.length : Object.keys(s.products || {}).length;
     const fecha = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "";
@@ -274,6 +291,7 @@ async function loadDemos() {
       <div><div class="demo-name">${esc(s.name)}</div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}</div></div>
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
+        <a class="btn btn-light" href="${TIENDA_URL}panel.html?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-chart-column"></i> Panel</a>
         <button class="btn btn-light" data-edit="${id}"><i class="fa-solid fa-pen"></i> Editar</button>
         <button class="btn btn-ghost danger" data-remove="${id}"><i class="fa-solid fa-trash"></i></button>
       </div>
@@ -303,6 +321,8 @@ function showView(v) {
   document.querySelectorAll(".ttab").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
   $("editorView").hidden = v !== "editor";
   $("demosView").hidden = v !== "demos";
+  $("resumenView").hidden = v !== "resumen";
+  if (v === "resumen") loadResumen();
 }
 document.querySelectorAll(".ttab").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
 document.querySelectorAll(".mtab").forEach((b) => b.addEventListener("click", () => {
@@ -313,4 +333,41 @@ document.querySelector('.editor .pane[data-pane="form"]').classList.add("show-pa
 document.querySelectorAll(".dev").forEach((b) => b.addEventListener("click", () => {
   document.querySelectorAll(".dev").forEach((x) => x.classList.toggle("active", x === b));
   $("frameWrap").className = "frame-wrap " + b.dataset.dev;
+}));
+
+/* ── Resumen: la página maestra de todas las tiendas ── */
+let rdays = 30;
+async function loadResumen() {
+  let events = {}, leads = {};
+  try {
+    const [ev, ld] = await Promise.all([get(ref(db, "events")), get(ref(db, "leads"))]);
+    events = ev.val() || {}; leads = ld.val() || {};
+  } catch (err) { console.warn(err); }
+  const rows = Object.entries(demos).map(([id, s]) => ({ id, s, a: aggregate(events[id], leads[id], rdays) }))
+    .sort((x, y) => (y.a.totals.lastTs || 0) - (x.a.totals.lastTs || 0));
+  const T = rows.reduce((t, r) => { for (const k of ["visit", "ask", "order", "sales"]) t[k] += r.a.totals[k]; return t; }, { visit: 0, ask: 0, order: 0, sales: 0 });
+  const abiertas = rows.filter((r) => r.a.totals.visit > 0).length;
+  $("rkpis").innerHTML = [
+    ["Tiendas", rows.length, `${abiertas} con visitas`],
+    ["Visitas", T.visit.toLocaleString("es-MX")],
+    ["Consultas", T.ask.toLocaleString("es-MX")],
+    ["Pedidos", T.order.toLocaleString("es-MX")],
+    ["Ventas", money(T.sales)],
+  ].map(([l, v, sub]) => `<div class="rkpi"><span>${l}</span><b>${v}</b>${sub ? `<span>${sub}</span>` : ""}</div>`).join("");
+  $("rbody").innerHTML = rows.length ? rows.map(({ id, s, a }) => {
+    const t = a.totals;
+    const fresh = t.lastTs && Date.now() - t.lastTs < 86400000;
+    const st = s.status === "demo" ? "demo" : "activa";
+    return `<tr>
+      <td><div class="rstore"><div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div><div><b>${esc(s.name)}</b><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)}</div></div></div></td>
+      <td><span class="status ${st}">${st === "demo" ? "Demo" : "Activa"}</span></td>
+      <td class="num">${t.visit}</td><td class="num">${t.ask}</td><td class="num">${t.order}</td>
+      <td class="num">${money(t.sales)}</td><td class="num">${t.visit ? pct(t.conversion) : "—"}</td>
+      <td class="${fresh ? "fresh" : "muted"}">${ago(t.lastTs)}</td>
+      <td><div class="acts"><a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener">Tienda</a><a class="btn btn-light" href="${TIENDA_URL}panel.html?t=${id}" target="_blank" rel="noopener">Panel</a></div></td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="9" class="muted" style="text-align:center;padding:32px">Todavía no hay tiendas.</td></tr>`;
+}
+document.querySelectorAll("[data-rdays]").forEach((b) => b.addEventListener("click", () => {
+  rdays = +b.dataset.rdays; document.querySelectorAll("[data-rdays]").forEach((x) => x.classList.toggle("active", x === b)); loadResumen();
 }));

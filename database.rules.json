@@ -52,6 +52,51 @@
         ".read": true,
         ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
       }
+    },
+    "events": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$storeId": {
+        "$eventId": {
+          ".write": "!data.exists() && newData.exists() && root.child('stores/' + $storeId).exists()",
+          ".validate": "newData.hasChildren(['t', 'ts']) && newData.child('t').isString() && newData.child('t').val().matches(/^(visit|view|ask|order)$/) && newData.child('ts').isNumber()",
+          "t": {
+            ".validate": true
+          },
+          "ts": {
+            ".validate": true
+          },
+          "p": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "v": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "leads": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$storeId": {
+        "$leadId": {
+          ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (!data.exists() && newData.exists() && root.child('stores/' + $storeId).exists())",
+          ".validate": "newData.hasChildren(['type', 'ts']) && newData.child('type').isString() && newData.child('type').val().matches(/^(pedido|consulta)$/) && newData.child('ts').isNumber()",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "phone": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "notes": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "delivery": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          }
+        }
+      }
     }
   }
 }
