@@ -1229,3 +1229,30 @@ button { cursor:pointer; border:none; background:none; font-family:inherit; }
 
 /* Hover en showcase suspende la animación para que el usuario pueda interactuar */
 .hero-showcase:hover { animation-play-state:paused; }
+
+/* ============================================================
+   TOAST — notificación flotante (showToast en script.js)
+============================================================ */
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translate(-50%, 20px);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 12px 20px;
+  font-family: var(--font-body);
+  font-size: 14px;
+  box-shadow: var(--shadow);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 9999;
+  max-width: calc(100vw - 32px);
+  transition: opacity .25s ease, transform .25s ease;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
