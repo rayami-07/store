@@ -411,14 +411,27 @@ function renderCard(product) {
 /* ============================================
    RENDER SECCIONES CLIENTE
 ============================================================ */
+function finalPriceOf(p) {
+  const promo = p.salePrice > 0 && (!p.promoEnd || p.promoEnd > Date.now()) && p.salePrice < p.price;
+  return Number(promo ? p.salePrice : p.price) || 0;
+}
+
 function getFiltered() {
-  return allProducts.filter(p => {
+  // Filtro por condición (solo si la página tiene los checkboxes .cond-filter)
+  const conds = [...document.querySelectorAll(".cond-filter:checked")].map(c => c.value);
+  const list = allProducts.filter(p => {
     if (p.sold) return false;  // ocultar vendidos al público
     const matchCat = currentCategory === "todos" || p.category === currentCategory;
     const q = currentSearch.toLowerCase();
     const matchSearch = p.name.toLowerCase().includes(q) || (p.desc||"").toLowerCase().includes(q);
-    return matchCat && matchSearch;
+    const matchCond = !conds.length || conds.includes(p.condition);
+    return matchCat && matchSearch && matchCond;
   });
+  // Orden (solo si la página tiene el select #sortSelect)
+  const sort = document.getElementById("sortSelect")?.value || "recientes";
+  if (sort === "precio-asc")  list.sort((a, b) => finalPriceOf(a) - finalPriceOf(b));
+  if (sort === "precio-desc") list.sort((a, b) => finalPriceOf(b) - finalPriceOf(a));
+  return list;
 }
 
 function renderCatalog() {
@@ -447,8 +460,8 @@ function renderAll() { renderFeatured(); renderCatalog(); }
 function initCategories() {
   document.querySelectorAll(".cat-card").forEach(btn => {
     btn.addEventListener("click", () => {
-      document.querySelectorAll(".cat-card").forEach(b => b.classList.remove("active"));
-      btn.classList.add("active");
+      document.querySelectorAll(".cat-card").forEach(b =>
+        b.classList.toggle("active", b.dataset.cat === btn.dataset.cat));
       currentCategory = btn.dataset.cat;
       document.getElementById("catalogo").scrollIntoView({ behavior:"smooth" });
       renderCatalog();
@@ -462,11 +475,14 @@ function initSearch() {
     if (currentSearch) {
       currentCategory = "todos";
       document.querySelectorAll(".cat-card").forEach(b => b.classList.remove("active"));
-      document.querySelector('[data-cat="todos"]').classList.add("active");
+      document.querySelectorAll('[data-cat="todos"]').forEach(b => b.classList.add("active"));
       document.getElementById("catalogo").scrollIntoView({ behavior:"smooth" });
     }
     renderCatalog();
   });
+  // Controles extra del diseño nuevo (si existen en la página)
+  document.getElementById("sortSelect")?.addEventListener("change", renderCatalog);
+  document.querySelectorAll(".cond-filter").forEach(c => c.addEventListener("change", renderCatalog));
 }
 
 function initNavbar() {
