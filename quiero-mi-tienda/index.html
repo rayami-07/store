@@ -68,6 +68,7 @@ footer a{color:inherit}
     <li>Catálogo o menú QR con tu logo y tus precios</li>
     <li>Tus clientes te piden por WhatsApp con el pedido completo</li>
     <li>Ves qué se vende y cuántos te visitan</li>
+    <li>Organizas a tus clientes y sus seguimientos en un solo lugar</li>
   </ul>
 
   <form id="form" novalidate>
@@ -98,8 +99,8 @@ footer a{color:inherit}
 <script type="module">
 const DB_URL = "https://rayami-store-default-rtdb.firebaseio.com";
 const WA_RAYAMI = "525581074978";
-const GIROS = ["Comida / fonda","Cafetería","Ropa / boutique","Zapatos","Estética","Mascotas","Ferretería","Accesorios","Otro"];
-const INTERESES = ["Catálogo o menú QR","Pedidos por WhatsApp","Saber cuánto vendo y gano"];
+const GIROS = ["Comida / fonda","Cafetería","Ropa / boutique","Zapatos","Estética / barbería","Mascotas","Ferretería","Accesorios","Taller mecánico","Muebles / carpintería","Escuela / cursos","Consultorio / clínica","Eventos / banquetes","Distribuidor / mayoreo","Otro"];
+const INTERESES = ["Catálogo o menú QR","Pedidos por WhatsApp","Organizar mis clientes y seguimientos (CRM)","Saber cuánto vendo y gano"];
 // ?de=tiktok | ig | fb | wa | qr | volante … llega al CRM como "Llegó por"
 const FUENTES = { tiktok:"TikTok", tt:"TikTok", instagram:"Instagram", ig:"Instagram", facebook:"Facebook", fb:"Facebook", whatsapp:"WhatsApp", wa:"WhatsApp", qr:"QR / volante", volante:"QR / volante", google:"Google" };
 const params = new URLSearchParams(location.search);
