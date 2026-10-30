@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CRM RAYAMI Store</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0E6B57">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: app de una columna para celular, barra de pestañas abajo, hojas (sheets) que suben para alta/detalle */
+:root{
+  --bg:#F3F4F1; --surface:#FFFFFF; --ink:#18201E; --muted:#5E6966; --line:#DDE2DE;
+  --accent:#0E6B57; --accent-ink:#FFFFFF; --accent-soft:#DDEFE9;
+  --warn:#B4610A; --warn-soft:#FCEBD6; --bad:#B3261E; --bad-soft:#F9DEDC; --good:#1E7A3C;
+  --display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, sans-serif;
+  --r:14px; color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#111615; --surface:#1A211F; --ink:#E8EEEB; --muted:#9AA8A3; --line:#2C3633;
+    --accent:#3FB89A; --accent-ink:#0B1513; --accent-soft:#183A31;
+    --warn:#F0A64B; --warn-soft:#3A2A14; --bad:#F2867E; --bad-soft:#3B1D1B; --good:#6BCB8B; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111615; --surface:#1A211F; --ink:#E8EEEB; --muted:#9AA8A3; --line:#2C3633;
+  --accent:#3FB89A; --accent-ink:#0B1513; --accent-soft:#183A31;
+  --warn:#F0A64B; --warn-soft:#3A2A14; --bad:#F2867E; --bad-soft:#3B1D1B; --good:#6BCB8B; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 var(--body);-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+
+.app{max-width:640px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;padding-bottom:84px}
+header{padding:18px 16px 8px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+header h1{font:800 22px/1.1 var(--display);margin:0;letter-spacing:-.01em}
+header h1 span{color:var(--accent)}
+.sync{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.on{background:var(--good)} .dot.off{background:var(--warn)}
+.banner{margin:0 16px 8px;padding:10px 12px;border-radius:10px;background:var(--warn-soft);color:var(--warn);font-size:14px}
+
+main{padding:0 16px;display:flex;flex-direction:column;gap:14px}
+h2{font:700 17px/1.2 var(--display);margin:6px 0 0;text-wrap:balance}
+.sub{color:var(--muted);font-size:14px;margin:0}
+
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px}
+.tile b{display:block;font:800 26px/1 var(--display);font-variant-numeric:tabular-nums}
+.tile small{color:var(--muted);font-size:12px}
+.tile.alert b{color:var(--warn)}
+
+.search{display:flex;gap:8px}
+.search input{flex:1;min-width:0}
+input,select,textarea{width:100%;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+textarea{min-height:70px;resize:vertical}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:7px 12px;font-size:14px;cursor:pointer;white-space:nowrap}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip .n{opacity:.7;margin-left:4px;font-variant-numeric:tabular-nums}
+
+.list{display:flex;flex-direction:column;gap:8px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 12px 12px 14px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;cursor:pointer;text-align:left;width:100%;position:relative;overflow:hidden}
+.card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--stage,var(--line))}
+.card .name{font-weight:700;font-size:16px}
+.card .meta{color:var(--muted);font-size:13px;grid-column:1/-1;display:flex;flex-wrap:wrap;gap:4px 10px}
+.pill{font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap;align-self:start}
+.due{color:var(--warn);font-weight:600}
+.late{color:var(--bad);font-weight:600}
+.score{font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--muted);padding:28px 12px;border:1px dashed var(--line);border-radius:var(--r)}
+
+nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
+nav.tabs .inner{max-width:640px;width:100%;display:grid;grid-template-columns:1fr 1fr 76px 1fr 1fr;align-items:center}
+nav.tabs button{background:none;border:0;padding:10px 4px 12px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
+nav.tabs button svg{width:22px;height:22px}
+nav.tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
+.fab{width:58px;height:58px;border-radius:50%;background:var(--accent)!important;color:var(--accent-ink)!important;margin:-22px auto 0;box-shadow:0 6px 18px rgba(14,107,87,.35);justify-content:center}
+.fab svg{width:28px!important;height:28px!important}
+
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;color:var(--ink)}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.btn.danger{color:var(--bad);border-color:var(--bad-soft)}
+.btn.wa{background:#1FA855;border-color:#1FA855;color:#fff}
+.btn:disabled{opacity:.5;cursor:default}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row > .btn{flex:1 1 auto}
+
+/* Hojas */
+.scrim{position:fixed;inset:0;background:rgba(10,15,14,.45);z-index:10;display:none}
+.scrim.open{display:block}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:11;max-height:92%;background:var(--bg);border-radius:20px 20px 0 0;transform:translateY(105%);transition:transform .22s ease;display:flex;flex-direction:column;max-width:640px;margin:0 auto}
+.sheet.open{transform:none}
+.sheet .head{padding:14px 16px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}
+.sheet .head h3{margin:0;font:700 18px/1.2 var(--display)}
+.sheet .body{padding:14px 16px 24px;overflow-y:auto;display:flex;flex-direction:column;gap:14px}
+.x{background:none;border:0;font-size:26px;line-height:1;cursor:pointer;color:var(--muted);padding:4px 8px}
+
+.field{display:flex;flex-direction:column;gap:5px}
+.field label,.lbl{font-size:13px;font-weight:600;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:400px){.grid2{grid-template-columns:1fr}}
+details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:0 12px}
+details > summary{cursor:pointer;padding:12px 0;font-weight:700;list-style:none;display:flex;justify-content:space-between}
+details > summary::after{content:"+";color:var(--muted);font-weight:400}
+details[open] > summary::after{content:"–"}
+details .inside{display:flex;flex-direction:column;gap:12px;padding-bottom:14px}
+.checks{display:flex;flex-direction:column;gap:8px}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:15px;cursor:pointer}
+.check input{width:20px;height:20px;margin:1px 0 0;accent-color:var(--accent);flex:none}
+
+.kv{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px 12px}
+.kv div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:15px}
+.kv div:last-child{border-bottom:0}
+.kv span:first-child{color:var(--muted)}
+.kv span:last-child{text-align:right;overflow-wrap:anywhere}
+.stepper{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.stepper i{height:6px;border-radius:3px;background:var(--line)}
+.stepper i.on{background:var(--accent)}
+.log{display:flex;flex-direction:column;gap:8px}
+.log .item{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px}
+.log .item time{display:block;color:var(--muted);font-size:12px}
+
+/* Embudo */
+.funnel{display:flex;flex-direction:column;gap:8px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px}
+.fr{display:grid;grid-template-columns:118px 1fr 34px;align-items:center;gap:8px;font-size:14px}
+.bar{height:22px;background:var(--accent-soft);border-radius:6px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:6px;min-width:2px}
+.fr b{text-align:right;font-variant-numeric:tabular-nums}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+th,td{padding:9px 10px;text-align:left;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:12px}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tablewrap{overflow-x:auto}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;z-index:20;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.show{opacity:1}
+.confirm{background:var(--bad-soft);color:var(--bad);border-radius:10px;padding:12px;display:none;flex-direction:column;gap:10px}
+.confirm.show{display:flex}
+.login{min-height:100%;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.login form{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px;width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px}
+.login h1{font:800 24px/1.1 var(--display);margin:0}
+.login h1 span{color:var(--accent)}
+.err{color:var(--bad);font-size:14px;margin:0;min-height:1em}
+</style>
+</head>
+<body>
+<main class="login" id="loginView" hidden>
+  <form id="loginForm">
+    <h1>CRM <span>RAYAMI</span></h1>
+    <p class="sub">Entra con tu cuenta de administrador (la misma del Creador).</p>
+    <div class="field"><label for="lEmail">Correo</label><input type="email" id="lEmail" autocomplete="username" autocapitalize="off" required></div>
+    <div class="field"><label for="lPass">Contraseña</label><input type="password" id="lPass" autocomplete="current-password" required></div>
+    <p class="err" id="lErr"></p>
+    <button class="btn primary" type="submit">Entrar</button>
+  </form>
+</main>
+<div class="app" id="appView" hidden>
+  <header>
+    <h1>CRM <span>RAYAMI</span></h1>
+    <div class="sync" id="sync"><span class="dot" id="dot"></span><span id="syncTxt">Conectando…</span></div>
+  </header>
+  <div class="banner" id="banner" hidden></div>
+
+  <main id="view-hoy" data-view>
+    <div class="tiles">
+      <div class="tile alert"><b id="tHoy">0</b><small>seguimientos hoy o atrasados</small></div>
+      <div class="tile"><b id="tActivos">0</b><small>prospectos activos</small></div>
+      <div class="tile"><b id="tClientes">0</b><small>clientes</small></div>
+    </div>
+    <h2>Toca dar seguimiento</h2>
+    <div class="list" id="listHoy"></div>
+    <h2>Próximos 7 días</h2>
+    <div class="list" id="listSemana"></div>
+  </main>
+
+  <main id="view-lista" data-view hidden>
+    <div class="search"><input id="q" type="search" placeholder="Buscar negocio, contacto, colonia…" aria-label="Buscar"></div>
+    <div class="chips" id="chipsEtapa" role="group" aria-label="Filtrar por etapa"></div>
+    <div class="chips" id="chipsGiro" role="group" aria-label="Filtrar por giro"></div>
+    <div class="list" id="listAll"></div>
+  </main>
+
+  <main id="view-embudo" data-view hidden>
+    <h2>Embudo de validación</h2>
+    <p class="sub">Cuántos prospectos han llegado al menos a cada etapa. Los descartados cuentan hasta la etapa donde se quedaron.</p>
+    <div class="funnel" id="funnel"></div>
+    <div class="tiles">
+      <div class="tile"><b id="mQuiero">0</b><small>dijeron "lo quiero"</small></div>
+      <div class="tile"><b id="mPrueba">0%</b><small>de demos presentadas pasan a prueba</small></div>
+      <div class="tile"><b id="mPagaria">$0</b><small>pagarían al mes (promedio)</small></div>
+    </div>
+    <h2>Por giro</h2>
+    <div class="tablewrap"><table id="tGiro"></table></div>
+    <h2>Objeciones más comunes</h2>
+    <div class="tablewrap"><table id="tObj"></table></div>
+  </main>
+
+  <main id="view-mas" data-view hidden>
+    <h2>Exportar</h2>
+    <p class="sub">Saca todos tus prospectos en CSV para abrirlos en Excel.</p>
+    <div class="row">
+      <button class="btn primary" id="btnCsv" type="button">Descargar CSV</button>
+      <button class="btn" id="btnCopy" type="button">Copiar como tabla</button>
+    </div>
+    <h2>Cómo calificar a un prospecto</h2>
+    <p class="sub">El puntaje (0 a 5) suma un punto por cada criterio que cumple. Prioriza los de 4 y 5.</p>
+    <div class="kv" id="critHelp"></div>
+    <h2>Etapas</h2>
+    <div class="kv" id="etapaHelp"></div>
+    <h2>Cuenta</h2>
+    <div class="row">
+      <a class="btn" href="../creador/">Ir al Creador de tiendas</a>
+      <button class="btn danger" type="button" id="btnSalir">Cerrar sesión</button>
+    </div>
+  </main>
+</div>
+
+<nav class="tabs" aria-label="Secciones" id="tabsNav" hidden>
+  <div class="inner">
+    <button type="button" data-tab="hoy" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Hoy</button>
+    <button type="button" data-tab="lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Prospectos</button>
+    <button type="button" class="fab" id="btnNuevo" aria-label="Nuevo prospecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    <button type="button" data-tab="embudo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg>Embudo</button>
+    <button type="button" data-tab="mas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>Más</button>
+  </div>
+</nav>
+
+<div class="scrim" id="scrim"></div>
+
+<!-- Hoja: formulario -->
+<section class="sheet" id="sheetForm" aria-modal="true" role="dialog" aria-labelledby="formTitle">
+  <div class="head"><h3 id="formTitle">Nuevo prospecto</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+  <form class="body" id="form" autocomplete="off">
+    <div class="field"><label for="f-negocio">Negocio *</label><input id="f-negocio" required placeholder="Ej. Fonda Doña Mary"></div>
+    <div class="field"><span class="lbl">Giro *</span><div class="chips" id="f-giro" role="radiogroup" aria-label="Giro"></div></div>
+    <div class="grid2">
+      <div class="field"><label for="f-contacto">Contacto</label><input id="f-contacto" placeholder="Nombre del dueño"></div>
+      <div class="field"><label for="f-whatsapp">WhatsApp</label><input id="f-whatsapp" type="tel" inputmode="tel" placeholder="55 1234 5678"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="f-colonia">Colonia / zona</label><input id="f-colonia" placeholder="Ej. Centro Urbano"></div>
+      <div class="field"><label for="f-origen">¿Cómo llegaste?</label><select id="f-origen"></select></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="f-etapa">Etapa</label><select id="f-etapa"></select></div>
+      <div class="field"><label for="f-proximo">Próximo seguimiento</label><input id="f-proximo" type="date"></div>
+    </div>
+    <div class="field" id="wrapMotivo" hidden><label for="f-motivo">Motivo de descarte</label><input id="f-motivo" placeholder="Ej. No usa WhatsApp para vender"></div>
+
+    <details id="detCalif">
+      <summary>Calificación e interés</summary>
+      <div class="inside">
+        <div class="checks" id="f-criterios"></div>
+        <div class="field"><span class="lbl">Interés</span><div class="chips" id="f-interes" role="radiogroup" aria-label="Interés"></div></div>
+        <div class="grid2">
+          <div class="field"><label for="f-paquete">Paquete que le interesa</label><select id="f-paquete"></select></div>
+          <div class="field"><label for="f-pagaria">¿Cuánto pagaría al mes? ($)</label><input id="f-pagaria" type="number" inputmode="numeric" min="0" step="10" placeholder="0"></div>
+        </div>
+        <div class="field"><label for="f-objecion">Objeción principal</label><select id="f-objecion"></select></div>
+        <div class="field"><label for="f-demoSel">Su demo (de tus tiendas del Creador)</label><select id="f-demoSel"><option value="">— Sin demo todavía —</option></select></div>
+        <div class="field"><label for="f-demo">Link de su demo</label><input id="f-demo" type="url" placeholder="Se llena solo al elegir la demo"></div>
+      </div>
+    </details>
+
+    <details id="detEntrevista">
+      <summary>Entrevista (lo que hace hoy)</summary>
+      <div class="inside" id="f-entrevista"></div>
+    </details>
+
+    <div class="field"><label for="f-nota">Nota de esta visita</label><textarea id="f-nota" placeholder="Qué pasó, qué pidió, qué sigue…"></textarea></div>
+    <div class="row"><button class="btn primary" type="submit" id="btnGuardar">Guardar</button></div>
+  </form>
+</section>
+
+<!-- Hoja: detalle -->
+<section class="sheet" id="sheetDet" aria-modal="true" role="dialog" aria-labelledby="detTitle">
+  <div class="head"><h3 id="detTitle">Prospecto</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+  <div class="body" id="detBody"></div>
+</section>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const fbApp = initializeApp({
+  apiKey: "AIzaSyDDVxmRmKb9yIZSV0ZxkPKvQPOK-oAGMWU",
+  authDomain: "rayami-store.firebaseapp.com",
+  databaseURL: "https://rayami-store-default-rtdb.firebaseio.com",
+  projectId: "rayami-store",
+  storageBucket: "rayami-store.firebasestorage.app",
+  messagingSenderId: "57542479161",
+  appId: "1:57542479161:web:425e75300b964e1f526ce8",
+});
+const fdb = getDatabase(fbApp);
+const auth = getAuth(fbApp);
+const ADMIN_EMAILS = ["raulbenitez563@gmail.com"];
+const RUTA = "crm/prospectos";
+const TIENDA_URL = new URL("../tienda/", location.href).href;
+
+// ---------- Catálogos ----------
+const ETAPAS = [
+  {id:1, n:"Identificado",    d:"Lo ubicaste; aún no hablas con él."},
+  {id:2, n:"Contactado",      d:"Ya hablaste o le escribiste."},
+  {id:3, n:"Demo armada",     d:"Le hiciste su tienda de prueba."},
+  {id:4, n:"Demo presentada", d:"Ya la vio y la tocó."},
+  {id:5, n:"En prueba",       d:"Aceptó la prueba de 30 días."},
+  {id:6, n:"Negociando",      d:"Hablan de precio y paquete."},
+  {id:7, n:"Cliente",         d:"Ya paga."}
+];
+const DESCARTADO = 0;
+const STAGE_COLORS = ["#9AA5A1","#7F9C96","#5E9488","#3E8B78","#1F7D68","#C98A1B","#B4610A","#1E7A3C"];
+const GIROS = ["Fonda / restaurante","Cafetería","Boutique / ropa","Zapatería","Estética","Mascotas","Ferretería","Accesorios","Otro"];
+const ORIGENES = ["Visita en persona","Instagram","Facebook","WhatsApp","Referido","Otro"];
+const PAQUETES = ["—","Vitrina","Pedidos","Control","Dirección"];
+const INTERES = ["Frío","Tibio","Lo quiero"];
+const OBJECIONES = ["—","Ya tengo catálogo de WhatsApp gratis","¿Mis clientes bajan una app?","Está caro","No tengo tiempo","Ya uso otra plataforma","Lo tengo que pensar / consultar","Otra"];
+const CRITERIOS = [
+  {k:"wa",     n:"Vende o recibe pedidos por WhatsApp"},
+  {k:"volumen",n:"Le llegan varios pedidos o preguntas a la semana"},
+  {k:"redes",  n:"Tiene redes con fotos de sus productos"},
+  {k:"dolor",  n:"Reconoce un problema (desorden, tiempo, no sabe cuánto gana)"},
+  {k:"paga",   n:"Ya paga algo o está dispuesto a pagar"}
+];
+const PREGUNTAS = [
+  {k:"como",     q:"¿Cómo te piden hoy tus clientes?"},
+  {k:"cuantos",  q:"¿Cuántos pedidos o preguntas te llegan por WhatsApp a la semana?"},
+  {k:"tardado",  q:"¿Qué es lo más tardado de contestar?"},
+  {k:"catalogo", q:"¿Usas catálogo de WhatsApp, Facebook o Instagram? ¿Qué no te gusta?"},
+  {k:"pagaHoy",  q:"¿Pagas hoy por alguna app o plataforma? ¿Cuánto?"},
+  {k:"inventario",q:"¿Cómo llevas tu inventario y tus cuentas?"},
+  {k:"cuanto",   q:"Si esto te ahorrara tiempo o te trajera más pedidos, ¿cuánto pagarías al mes?"}
+];
+
+// ---------- Utilidades ----------
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const pad = n => String(n).padStart(2,"0");
+const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const hoy = () => ymd(new Date());
+const masDias = n => { const d = new Date(); d.setDate(d.getDate()+n); return ymd(d); };
+const diasEntre = (a,b) => Math.round((new Date(b+"T12:00")-new Date(a+"T12:00"))/864e5);
+const fmtFecha = s => { if(!s) return ""; const [y,m,d]=s.split("-"); const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]; return (+d)+" "+M[m-1]; };
+const fmtDT = iso => { const d=new Date(iso); return fmtFecha(ymd(d))+" · "+pad(d.getHours())+":"+pad(d.getMinutes()); };
+const money = n => "$"+Math.round(n||0).toLocaleString("es-MX");
+const etapaNombre = e => e===DESCARTADO ? "Descartado" : (ETAPAS.find(x=>x.id===e)?.n || "—");
+const score = p => CRITERIOS.reduce((s,c)=>s+(p.criterios?.[c.k]?1:0),0);
+const waLink = tel => { let d=String(tel||"").replace(/\D/g,""); if(!d) return ""; if(d.length===10) d="52"+d; return "https://wa.me/"+d; };
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2200); }
+
+// ---------- Almacenamiento (Firebase Realtime Database: crm/prospectos/<id>) ----------
+let prospectos = []; // [{id, ...data}]
+let demos = [];      // [{id, name}] de stores/
+let unsubs = [];
+function setSync(state, txt){ $("#dot").className="dot "+state; $("#syncTxt").textContent=txt; }
+
+// Firebase no acepta undefined ni claves vacías; limpiamos antes de guardar
+const limpio = o => JSON.parse(JSON.stringify(o));
+async function guardar(id, data){
+  data.actualizado = new Date().toISOString();
+  try{ await set(ref(fdb, `${RUTA}/${id}`), limpio(data)); }
+  catch(e){
+    toast(String(e?.code||"").includes("PERMISSION") ? "Sin permiso: falta publicar las reglas de 'crm' en Firebase" : "No se pudo guardar. Revisa tu conexión.");
+    throw e;
+  }
+}
+async function borrar(id){ await remove(ref(fdb, `${RUTA}/${id}`)); }
+function nuevoId(){ return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+function iniciar(){
+  render();
+  unsubs.push(onValue(ref(fdb, RUTA), snap=>{
+    const v = snap.val() || {};
+    prospectos = Object.entries(v).map(([id,d])=>({id, ...d}));
+    $("#banner").hidden = true;
+    render();
+    if(abiertoId && $("#sheetDet").classList.contains("open")) verDetalle(abiertoId);
+  }, err=>{
+    $("#banner").hidden=false;
+    $("#banner").textContent = "No se pudieron leer los prospectos. Revisa que las reglas de Firebase incluyan la sección 'crm'.";
+  }));
+  unsubs.push(onValue(ref(fdb, ".info/connected"), s=>{
+    s.val() ? setSync("on","En línea") : setSync("off","Sin conexión (se sube al reconectar)");
+  }));
+  get(ref(fdb, "stores")).then(s=>{
+    const v = s.val() || {};
+    demos = Object.entries(v).map(([id,d])=>({id, name:d?.name||id})).sort((a,b)=>a.name.localeCompare(b.name));
+    $("#f-demoSel").innerHTML = `<option value="">— Sin demo todavía —</option>` + demos.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("");
+  }).catch(()=>{});
+}
+function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; }
+
+// ---------- Login ----------
+onAuthStateChanged(auth, u=>{
+  const ok = u && ADMIN_EMAILS.includes((u.email||"").toLowerCase());
+  $("#loginView").hidden = !!ok;
+  $("#appView").hidden = !ok;
+  $("#tabsNav").hidden = !ok;
+  if(ok){ if(!unsubs.length) iniciar(); } else detener();
+});
+$("#loginForm").addEventListener("submit", async e=>{
+  e.preventDefault(); $("#lErr").textContent="";
+  try{
+    const {user} = await signInWithEmailAndPassword(auth, $("#lEmail").value.trim().toLowerCase(), $("#lPass").value);
+    if(!ADMIN_EMAILS.includes(user.email.toLowerCase())){ await signOut(auth); $("#lErr").textContent="Esta cuenta no es de administrador."; }
+  }catch(err){ $("#lErr").textContent="Correo o contraseña incorrectos."; }
+});
+$("#btnSalir").addEventListener("click", ()=>signOut(auth));
+
+// ---------- Navegación ----------
+let tab = "hoy";
+document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{
+  tab = b.dataset.tab;
+  document.querySelectorAll("[data-tab]").forEach(x=>{ if(x===b) x.setAttribute("aria-current","page"); else x.removeAttribute("aria-current"); });
+  document.querySelectorAll("[data-view]").forEach(v=>v.hidden = v.id!=="view-"+tab);
+  window.scrollTo(0,0);
+}));
+
+// ---------- Hojas ----------
+function abrir(sheet){ $("#scrim").classList.add("open"); sheet.classList.add("open"); }
+function cerrar(){ $("#scrim").classList.remove("open"); document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); abiertoId=null; }
+$("#scrim").addEventListener("click", cerrar);
+document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", cerrar));
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrar(); });
+
+// ---------- Tarjetas ----------
+function card(p){
+  const e = p.etapa ?? 1;
+  const color = e===DESCARTADO ? STAGE_COLORS[0] : STAGE_COLORS[e];
+  let seg = "";
+  if(p.proximo && e!==DESCARTADO && e!==7){
+    const d = diasEntre(hoy(), p.proximo);
+    if(d<0) seg = `<span class="late">Atrasado ${-d} d</span>`;
+    else if(d===0) seg = `<span class="due">Hoy</span>`;
+    else seg = `<span>Seguimiento ${fmtFecha(p.proximo)}</span>`;
+  }
+  const s = score(p);
+  return `<button type="button" class="card" data-id="${esc(p.id)}" style="--stage:${color}">
+    <span class="name">${esc(p.negocio)}</span>
+    <span class="pill">${esc(etapaNombre(e))}</span>
+    <span class="meta">
+      <span>${esc(p.giro||"")}</span>
+      ${p.colonia?`<span>${esc(p.colonia)}</span>`:""}
+      <span class="score">★ ${s}/5</span>
+      ${p.interes==="Lo quiero"?`<span class="due">Lo quiere</span>`:""}
+      ${seg}
+    </span>
+  </button>`;
+}
+function bindCards(root){ root.querySelectorAll(".card").forEach(c=>c.addEventListener("click",()=>verDetalle(c.dataset.id))); }
+
+// ---------- Render ----------
+let filtroEtapa = "activos", filtroGiro = "todos";
+function activos(){ return prospectos.filter(p=>(p.etapa??1)!==DESCARTADO && (p.etapa??1)!==7); }
+
+function render(){
+  const H = hoy();
+  const act = activos();
+  const pend = act.filter(p=>p.proximo && p.proximo<=H).sort((a,b)=>a.proximo.localeCompare(b.proximo) || score(b)-score(a));
+  const sem = act.filter(p=>p.proximo && p.proximo>H && p.proximo<=masDias(7)).sort((a,b)=>a.proximo.localeCompare(b.proximo));
+  $("#tHoy").textContent = pend.length;
+  $("#tActivos").textContent = act.length;
+  $("#tClientes").textContent = prospectos.filter(p=>p.etapa===7).length;
+  $("#listHoy").innerHTML = pend.length ? pend.map(card).join("") : `<div class="empty">${prospectos.length? "Nada pendiente para hoy." : "Aún no hay prospectos. Toca <b>+</b> para registrar el primero."}</div>`;
+  $("#listSemana").innerHTML = sem.length ? sem.map(card).join("") : `<div class="empty">Sin seguimientos en los próximos 7 días.</div>`;
+  bindCards($("#listHoy")); bindCards($("#listSemana"));
+  renderLista(); renderEmbudo();
+}
+
+function renderLista(){
+  const cnt = k => prospectos.filter(p=> k==="activos" ? ((p.etapa??1)!==DESCARTADO && (p.etapa??1)!==7) : k==="todos" ? true : (p.etapa??1)===k).length;
+  const opts = [["activos","Activos"],["todos","Todos"],...ETAPAS.map(e=>[e.id,e.n]),[DESCARTADO,"Descartados"]];
+  $("#chipsEtapa").innerHTML = opts.map(([k,n])=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${String(k)===String(filtroEtapa)}">${esc(n)}<span class="n">${cnt(k)}</span></button>`).join("");
+  $("#chipsEtapa").querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ const k=c.dataset.k; filtroEtapa = isNaN(+k)?k:+k; renderLista(); }));
+  const giros = ["todos",...GIROS.filter(g=>prospectos.some(p=>p.giro===g))];
+  $("#chipsGiro").innerHTML = giros.map(g=>`<button type="button" class="chip" data-g="${esc(g)}" aria-pressed="${g===filtroGiro}">${g==="todos"?"Todos los giros":esc(g)}</button>`).join("");
+  $("#chipsGiro").querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ filtroGiro=c.dataset.g; renderLista(); }));
+  const q = $("#q").value.trim().toLowerCase();
+  let L = prospectos.filter(p=>{
+    const e = p.etapa??1;
+    if(filtroEtapa==="activos" && (e===DESCARTADO||e===7)) return false;
+    if(typeof filtroEtapa==="number" && e!==filtroEtapa) return false;
+    if(filtroGiro!=="todos" && p.giro!==filtroGiro) return false;
+    if(q && ![p.negocio,p.contacto,p.colonia,p.giro,p.whatsapp].join(" ").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=> score(b)-score(a) || (b.actualizado||"").localeCompare(a.actualizado||""));
+  $("#listAll").innerHTML = L.length ? L.map(card).join("") : `<div class="empty">No hay prospectos con estos filtros.</div>`;
+  bindCards($("#listAll"));
+}
+$("#q").addEventListener("input", renderLista);
+
+function etapaMax(p){ return p.etapa===DESCARTADO ? (p.etapaPrevia||1) : (p.etapa??1); }
+function renderEmbudo(){
+  const tot = prospectos.length || 1;
+  $("#funnel").innerHTML = ETAPAS.map(e=>{
+    const n = prospectos.filter(p=>etapaMax(p)>=e.id).length;
+    return `<div class="fr"><span>${e.id}. ${esc(e.n)}</span><span class="bar"><i style="width:${prospectos.length? n/tot*100 : 0}%"></i></span><b>${n}</b></div>`;
+  }).join("") + `<div class="fr"><span>Descartados</span><span class="bar" style="background:var(--bad-soft)"><i style="background:var(--bad);width:${prospectos.length? prospectos.filter(p=>p.etapa===DESCARTADO).length/tot*100:0}%"></i></span><b>${prospectos.filter(p=>p.etapa===DESCARTADO).length}</b></div>`;
+  $("#mQuiero").textContent = prospectos.filter(p=>p.interes==="Lo quiero").length;
+  const pres = prospectos.filter(p=>etapaMax(p)>=4).length, prue = prospectos.filter(p=>etapaMax(p)>=5).length;
+  $("#mPrueba").textContent = pres ? Math.round(prue/pres*100)+"%" : "—";
+  const pag = prospectos.map(p=>+p.pagaria).filter(n=>n>0);
+  $("#mPagaria").textContent = pag.length ? money(pag.reduce((a,b)=>a+b,0)/pag.length) : "—";
+  const giros = GIROS.filter(g=>prospectos.some(p=>p.giro===g));
+  $("#tGiro").innerHTML = `<tr><th>Giro</th><th class="num">Prosp.</th><th class="num">Demo vista</th><th class="num">Lo quieren</th><th class="num">Pagarían</th></tr>` +
+    (giros.length ? giros.map(g=>{ const P=prospectos.filter(p=>p.giro===g); const pg=P.map(p=>+p.pagaria).filter(n=>n>0);
+      return `<tr><td>${esc(g)}</td><td class="num">${P.length}</td><td class="num">${P.filter(p=>etapaMax(p)>=4).length}</td><td class="num">${P.filter(p=>p.interes==="Lo quiero").length}</td><td class="num">${pg.length?money(pg.reduce((a,b)=>a+b,0)/pg.length):"—"}</td></tr>`; }).join("")
+    : `<tr><td colspan="5" style="color:var(--muted)">Sin datos todavía.</td></tr>`);
+  const obj = {}; prospectos.forEach(p=>{ if(p.objecion && p.objecion!=="—") obj[p.objecion]=(obj[p.objecion]||0)+1; });
+  const O = Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+  $("#tObj").innerHTML = `<tr><th>Objeción</th><th class="num">Veces</th></tr>` + (O.length ? O.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join("") : `<tr><td colspan="2" style="color:var(--muted)">Sin objeciones registradas.</td></tr>`);
+}
+
+// ---------- Formulario ----------
+function radioChips(el, items, name){
+  el.innerHTML = items.map(v=>`<button type="button" class="chip" data-v="${esc(v)}" aria-pressed="false">${esc(v)}</button>`).join("");
+  el.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ el.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", String(x===c))); }));
+}
+function chipVal(el){ return el.querySelector('.chip[aria-pressed="true"]')?.dataset.v || ""; }
+function setChip(el,v){ el.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", String(x.dataset.v===v))); }
+const opt = arr => arr.map(v=>`<option>${esc(v)}</option>`).join("");
+
+radioChips($("#f-giro"), GIROS);
+radioChips($("#f-interes"), INTERES);
+$("#f-origen").innerHTML = opt(ORIGENES);
+$("#f-paquete").innerHTML = opt(PAQUETES);
+$("#f-objecion").innerHTML = opt(OBJECIONES);
+$("#f-etapa").innerHTML = ETAPAS.map(e=>`<option value="${e.id}">${e.id}. ${esc(e.n)}</option>`).join("") + `<option value="0">Descartado</option>`;
+$("#f-etapa").addEventListener("change",()=>{ $("#wrapMotivo").hidden = $("#f-etapa").value!=="0"; });
+$("#f-criterios").innerHTML = CRITERIOS.map(c=>`<label class="check"><input type="checkbox" id="c-${c.k}"> <span>${esc(c.n)}</span></label>`).join("");
+$("#f-entrevista").innerHTML = PREGUNTAS.map(p=>`<div class="field"><label for="q-${p.k}">${esc(p.q)}</label><textarea id="q-${p.k}" rows="2"></textarea></div>`).join("");
+$("#critHelp").innerHTML = CRITERIOS.map((c,i)=>`<div><span>${i+1}</span><span>${esc(c.n)}</span></div>`).join("");
+$("#etapaHelp").innerHTML = ETAPAS.map(e=>`<div><span>${e.id}. ${esc(e.n)}</span><span>${esc(e.d)}</span></div>`).join("") + `<div><span>Descartado</span><span>No es para él por ahora. Anota el motivo.</span></div>`;
+
+let editId = null;
+function abrirForm(p){
+  editId = p?.id || null;
+  $("#formTitle").textContent = p ? "Editar prospecto" : "Nuevo prospecto";
+  $("#f-negocio").value = p?.negocio||"";
+  setChip($("#f-giro"), p?.giro||"");
+  $("#f-contacto").value = p?.contacto||"";
+  $("#f-whatsapp").value = p?.whatsapp||"";
+  $("#f-colonia").value = p?.colonia||"";
+  $("#f-origen").value = p?.origen||ORIGENES[0];
+  $("#f-etapa").value = String(p?.etapa ?? 1);
+  $("#wrapMotivo").hidden = String(p?.etapa)!=="0";
+  $("#f-motivo").value = p?.motivo||"";
+  $("#f-proximo").value = p ? (p.proximo||"") : masDias(1);
+  CRITERIOS.forEach(c=>$("#c-"+c.k).checked = !!p?.criterios?.[c.k]);
+  setChip($("#f-interes"), p?.interes||"");
+  $("#f-paquete").value = p?.paquete||"—";
+  $("#f-pagaria").value = p?.pagaria||"";
+  $("#f-objecion").value = p?.objecion||"—";
+  $("#f-demo").value = p?.demo||"";
+  const tId = (p?.demo||"").match(/[?&]t=([^&#]+)/)?.[1];
+  $("#f-demoSel").value = tId && demos.some(d=>d.id===decodeURIComponent(tId)) ? decodeURIComponent(tId) : "";
+  PREGUNTAS.forEach(q=>$("#q-"+q.k).value = p?.entrevista?.[q.k]||"");
+  $("#f-nota").value = "";
+  $("#detCalif").open = !!p; $("#detEntrevista").open = false;
+  document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open"));
+  abrir($("#sheetForm"));
+  if(!p) setTimeout(()=>$("#f-negocio").focus(), 250);
+}
+$("#btnNuevo").addEventListener("click", ()=>abrirForm(null));
+
+$("#form").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const negocio = $("#f-negocio").value.trim();
+  const giro = chipVal($("#f-giro"));
+  if(!negocio){ toast("Escribe el nombre del negocio"); $("#f-negocio").focus(); return; }
+  if(!giro){ toast("Elige el giro"); return; }
+  const prev = editId ? prospectos.find(p=>p.id===editId) : null;
+  const etapa = +$("#f-etapa").value;
+  const notas = [...(prev?.notas||[])];
+  const nota = $("#f-nota").value.trim();
+  if(nota) notas.unshift({f:new Date().toISOString(), t:nota});
+  if(prev && prev.etapa!==etapa) notas.unshift({f:new Date().toISOString(), t:`Etapa: ${etapaNombre(prev.etapa??1)} → ${etapaNombre(etapa)}`, sys:true});
+  const data = {
+    negocio, giro,
+    contacto:$("#f-contacto").value.trim(), whatsapp:$("#f-whatsapp").value.trim(),
+    colonia:$("#f-colonia").value.trim(), origen:$("#f-origen").value,
+    etapa, etapaPrevia: etapa===DESCARTADO ? (prev ? etapaMax(prev) : 1) : etapa,
+    motivo: etapa===DESCARTADO ? $("#f-motivo").value.trim() : "",
+    proximo:$("#f-proximo").value,
+    criterios:Object.fromEntries(CRITERIOS.map(c=>[c.k, $("#c-"+c.k).checked])),
+    interes:chipVal($("#f-interes")), paquete:$("#f-paquete").value,
+    pagaria: +$("#f-pagaria").value || 0, objecion:$("#f-objecion").value,
+    demo:$("#f-demo").value.trim(),
+    entrevista:Object.fromEntries(PREGUNTAS.map(q=>[q.k, $("#q-"+q.k).value.trim()])),
+    notas: notas.slice(0,200),
+    creado: prev?.creado || new Date().toISOString()
+  };
+  const id = editId || nuevoId();
+  $("#btnGuardar").disabled = true;
+  try{ await guardar(id, data); toast(editId ? "Cambios guardados" : "Prospecto registrado"); cerrar(); }
+  catch(e){}
+  finally{ $("#btnGuardar").disabled = false; }
+});
+
+// ---------- Detalle ----------
+let abiertoId = null;
+function verDetalle(id){
+  const p = prospectos.find(x=>x.id===id); if(!p) return;
+  abiertoId = id;
+  const e = p.etapa??1;
+  $("#detTitle").textContent = p.negocio;
+  const wa = waLink(p.whatsapp);
+  const ent = PREGUNTAS.filter(q=>p.entrevista?.[q.k]);
+  $("#detBody").innerHTML = `
+    <div class="stepper" aria-label="Etapa ${esc(etapaNombre(e))}">${ETAPAS.map(s=>`<i class="${etapaMax(p)>=s.id && e!==DESCARTADO?"on":""}"></i>`).join("")}</div>
+    <p class="sub"><b style="color:var(--ink)">${esc(etapaNombre(e))}</b>${e===DESCARTADO && p.motivo?" · "+esc(p.motivo):""} · ${esc(p.giro)} · ★ ${score(p)}/5</p>
+    <div class="row">
+      ${wa?`<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:""}
+      ${p.demo?`<a class="btn" href="${esc(p.demo)}" target="_blank" rel="noopener">Ver demo</a>`:""}
+      <button class="btn" type="button" id="dEdit">Editar</button>
+    </div>
+    ${e!==DESCARTADO && e<7 ? `<div class="row"><button class="btn primary" type="button" id="dNext">Pasar a: ${esc(etapaNombre(e+1))}</button></div>`:""}
+    <div class="field"><span class="lbl">Próximo seguimiento</span>
+      <div class="row">
+        <button class="btn" type="button" data-pos="1">Mañana</button>
+        <button class="btn" type="button" data-pos="3">En 3 días</button>
+        <button class="btn" type="button" data-pos="7">En 1 semana</button>
+      </div>
+      <input type="date" id="dProx" value="${esc(p.proximo||"")}" aria-label="Fecha de seguimiento">
+    </div>
+    <div class="kv">
+      ${p.contacto?`<div><span>Contacto</span><span>${esc(p.contacto)}</span></div>`:""}
+      ${p.whatsapp?`<div><span>WhatsApp</span><span>${esc(p.whatsapp)}</span></div>`:""}
+      ${p.colonia?`<div><span>Zona</span><span>${esc(p.colonia)}</span></div>`:""}
+      <div><span>Llegó por</span><span>${esc(p.origen||"—")}</span></div>
+      <div><span>Interés</span><span>${esc(p.interes||"—")}</span></div>
+      <div><span>Paquete</span><span>${esc(p.paquete||"—")}</span></div>
+      <div><span>Pagaría</span><span>${p.pagaria?money(p.pagaria)+"/mes":"—"}</span></div>
+      <div><span>Objeción</span><span>${esc(p.objecion||"—")}</span></div>
+    </div>
+    ${ent.length?`<details><summary>Entrevista</summary><div class="inside">${ent.map(q=>`<div><div class="lbl">${esc(q.q)}</div><div>${esc(p.entrevista[q.k])}</div></div>`).join("")}</div></details>`:""}
+    <div class="field"><label for="dNota">Agregar nota</label><textarea id="dNota" placeholder="Ej. Le mandé su demo, quedó de verla el lunes"></textarea>
+      <div class="row"><button class="btn" type="button" id="dAddNota">Guardar nota</button></div></div>
+    <h2>Historial</h2>
+    <div class="log">${(p.notas||[]).length ? p.notas.map(n=>`<div class="item"${n.sys?' style="color:var(--muted)"':""}><time>${esc(fmtDT(n.f))}</time>${esc(n.t)}</div>`).join("") : `<div class="empty">Sin notas.</div>`}</div>
+    <div class="row">
+      ${e!==DESCARTADO?`<button class="btn danger" type="button" id="dDesc">Descartar</button>`:`<button class="btn" type="button" id="dReact">Reactivar</button>`}
+      <button class="btn danger" type="button" id="dDel">Eliminar</button>
+    </div>
+    <div class="confirm" id="cDesc"><label for="dMotivo">¿Por qué lo descartas?</label><input id="dMotivo" placeholder="Ej. No vende por WhatsApp"><div class="row"><button class="btn danger" type="button" id="dDescOk">Descartar</button><button class="btn" type="button" data-cancel>Cancelar</button></div></div>
+    <div class="confirm" id="cDel"><span>Se borra para siempre, con su historial. Si solo no te interesa, mejor descártalo.</span><div class="row"><button class="btn danger" type="button" id="dDelOk">Sí, eliminar</button><button class="btn" type="button" data-cancel>Cancelar</button></div></div>
+  `;
+  const B = $("#detBody");
+  const upd = async (cambios, msg) => {
+    const cur = prospectos.find(x=>x.id===id); const {id:_, ...rest} = cur;
+    const data = {...rest, ...cambios};
+    try{ await guardar(id, data); toast(msg); verDetalle(id); }catch(e){}
+  };
+  const log = t => [{f:new Date().toISOString(), t, sys:true}, ...(p.notas||[])].slice(0,200);
+  B.querySelector("#dEdit").onclick = ()=>abrirForm(p);
+  B.querySelector("#dNext")?.addEventListener("click", ()=>upd({etapa:e+1, etapaPrevia:e+1, notas:log(`Etapa: ${etapaNombre(e)} → ${etapaNombre(e+1)}`)}, "Etapa actualizada"));
+  B.querySelectorAll("[data-pos]").forEach(b=>b.onclick=()=>upd({proximo:masDias(+b.dataset.pos)}, "Seguimiento: "+fmtFecha(masDias(+b.dataset.pos))));
+  B.querySelector("#dProx").onchange = ev=>upd({proximo:ev.target.value}, ev.target.value ? "Seguimiento: "+fmtFecha(ev.target.value) : "Sin fecha de seguimiento");
+  B.querySelector("#dAddNota").onclick = ()=>{ const t=B.querySelector("#dNota").value.trim(); if(!t) return; upd({notas:[{f:new Date().toISOString(), t}, ...(p.notas||[])].slice(0,200)}, "Nota guardada"); };
+  B.querySelector("#dDesc")?.addEventListener("click", ()=>{ B.querySelector("#cDesc").classList.add("show"); B.querySelector("#dMotivo").focus(); });
+  B.querySelector("#dDescOk")?.addEventListener("click", ()=>{ const m=B.querySelector("#dMotivo").value.trim(); upd({etapa:DESCARTADO, etapaPrevia:etapaMax(p), motivo:m, proximo:"", notas:log("Descartado"+(m?": "+m:""))}, "Prospecto descartado"); });
+  B.querySelector("#dReact")?.addEventListener("click", ()=>upd({etapa:p.etapaPrevia||1, motivo:"", proximo:masDias(1), notas:log("Reactivado")}, "Prospecto reactivado"));
+  B.querySelector("#dDel").onclick = ()=>B.querySelector("#cDel").classList.add("show");
+  B.querySelector("#dDelOk").onclick = async ()=>{ try{ await borrar(id); toast("Prospecto eliminado"); cerrar(); }catch(e){ toast("No se pudo eliminar"); } };
+  B.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>b.closest(".confirm").classList.remove("show"));
+  if(!$("#sheetDet").classList.contains("open")){ document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); abrir($("#sheetDet")); }
+}
+
+// ---------- Exportar ----------
+function filas(){
+  const head = ["Negocio","Giro","Contacto","WhatsApp","Zona","Origen","Etapa","Puntaje","Interés","Paquete","Pagaría/mes","Objeción","Próximo seguimiento","Motivo descarte","Link demo",...PREGUNTAS.map(q=>q.q),"Última nota","Creado","Actualizado"];
+  const rows = prospectos.map(p=>[p.negocio,p.giro,p.contacto,p.whatsapp,p.colonia,p.origen,etapaNombre(p.etapa??1),score(p),p.interes,p.paquete,p.pagaria||"",p.objecion,p.proximo,p.motivo,p.demo,...PREGUNTAS.map(q=>p.entrevista?.[q.k]||""),(p.notas||[]).find(n=>!n.sys)?.t||"",(p.creado||"").slice(0,10),(p.actualizado||"").slice(0,10)]);
+  return [head,...rows];
+}
+const csvCell = v => { const s=String(v??""); return /[",\n;]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
+$("#btnCsv").addEventListener("click", async ()=>{
+  const csv = "﻿" + filas().map(r=>r.map(csvCell).join(",")).join("\r\n");
+  const url = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
+  const a = document.createElement("a"); a.href=url; a.download="prospectos_rayami_"+hoy()+".csv";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
+});
+$("#btnCopy").addEventListener("click", async ()=>{
+  const tsv = filas().map(r=>r.map(v=>String(v??"").replace(/[\t\n]/g," ")).join("\t")).join("\n");
+  try{ await navigator.clipboard.writeText(tsv); toast("Copiado. Pégalo en Excel."); }catch(e){ toast("No se pudo copiar"); }
+});
+
+$("#f-demoSel").addEventListener("change", ev=>{ const id=ev.target.value; if(id) $("#f-demo").value = TIENDA_URL+"?t="+encodeURIComponent(id); });
+</script>
+</body>
+</html>
