@@ -53,6 +53,39 @@
         }
       }
     },
+    "tenants": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$tid": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && root.child('tenantMembers/' + $tid + '/' + auth.uid).exists())",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+        "config": {
+          ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && root.child('tenantMembers/' + $tid + '/' + auth.uid + '/rol').val() === 'owner')",
+          "categorias": {
+            "$i": {
+              ".validate": "newData.isString() && newData.val().length <= 40"
+            }
+          }
+        }
+      }
+    },
+    "tenantMembers": {
+      "$tid": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && root.child('tenantMembers/' + $tid + '/' + auth.uid).exists())",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+      }
+    },
+    "userTenants": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid)",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+      }
+    },
+    "tenantData": {
+      "$tid": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || ((auth != null && root.child('tenantMembers/' + $tid + '/' + auth.uid).exists()) && root.child('tenants/' + $tid + '/estado').val() === 'activo')",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || ((auth != null && root.child('tenantMembers/' + $tid + '/' + auth.uid).exists()) && root.child('tenants/' + $tid + '/estado').val() === 'activo')"
+      }
+    },
     "views": {
       ".read": true,
       "$productId": {

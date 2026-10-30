@@ -150,23 +150,45 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .login h1 span{color:var(--accent)}
 .err{color:var(--bad);font-size:14px;margin:0;min-height:1em}
 </style>
+<style>
+.ctxbar{margin:0 16px 8px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
+.ctxbar button{background:none;border:1px solid currentColor;color:inherit;border-radius:8px;padding:5px 10px;font-weight:600;cursor:pointer}
+.linkbtn{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;padding:4px 0;text-align:left}
+.ok{color:var(--good);font-size:14px;margin:0}
+.msgbox{background:var(--surface);border:1px dashed var(--accent);border-radius:10px;padding:12px;font-size:14px;white-space:pre-wrap}
+.byline{color:var(--muted);font-size:12px;text-align:center;margin-top:8px}
+.pill.off{background:var(--bad-soft);color:var(--bad)}
+</style>
 </head>
 <body>
 <main class="login" id="loginView" hidden>
   <form id="loginForm">
     <h1>CRM <span>RAYAMI</span></h1>
-    <p class="sub">Entra con tu cuenta de administrador (la misma del Creador).</p>
+    <p class="sub">Entra con el correo y la contraseña de tu negocio.</p>
     <div class="field"><label for="lEmail">Correo</label><input type="email" id="lEmail" autocomplete="username" autocapitalize="off" required></div>
     <div class="field"><label for="lPass">Contraseña</label><input type="password" id="lPass" autocomplete="current-password" required></div>
     <p class="err" id="lErr"></p>
     <button class="btn primary" type="submit">Entrar</button>
+    <button class="linkbtn" type="button" id="btnOlvide">Olvidé mi contraseña</button>
   </form>
 </main>
+
+<main class="login" id="blockedView" hidden>
+  <form onsubmit="return false">
+    <h1>CRM <span>RAYAMI</span></h1>
+    <p class="sub" id="blockedMsg"></p>
+    <a class="btn wa" href="https://wa.me/525581074978" target="_blank" rel="noopener">Escribir a RAYAMI Store</a>
+    <p class="sub">WhatsApp 55 8107 4978</p>
+    <button class="btn" type="button" id="btnSalirBlocked">Cerrar sesión</button>
+  </form>
+</main>
+
 <div class="app" id="appView" hidden>
   <header>
-    <h1>CRM <span>RAYAMI</span></h1>
+    <h1>CRM <span id="hdrNombre">RAYAMI</span></h1>
     <div class="sync" id="sync"><span class="dot" id="dot"></span><span id="syncTxt">Conectando…</span></div>
   </header>
+  <div class="ctxbar" id="ctxbar" hidden><span id="ctxTxt"></span><button type="button" id="btnVolver">Volver a mi CRM</button></div>
   <div class="banner" id="banner" hidden></div>
 
   <main id="view-hoy" data-view>
@@ -187,44 +209,71 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   </main>
 
   <main id="view-lista" data-view hidden>
-    <div class="search"><input id="q" type="search" placeholder="Buscar negocio, contacto, colonia…" aria-label="Buscar"></div>
+    <div class="search"><input id="q" type="search" placeholder="Buscar nombre, contacto, colonia…" aria-label="Buscar"></div>
     <div class="chips" id="chipsEtapa" role="group" aria-label="Filtrar por etapa"></div>
-    <div class="chips" id="chipsGiro" role="group" aria-label="Filtrar por giro"></div>
+    <div class="chips" id="chipsGiro" role="group" aria-label="Filtrar por categoría"></div>
     <div class="list" id="listAll"></div>
   </main>
 
   <main id="view-embudo" data-view hidden>
-    <h2>Embudo de validación</h2>
+    <h2 id="embTitulo">Embudo</h2>
     <p class="sub">Cuántos prospectos han llegado al menos a cada etapa. Los descartados cuentan hasta la etapa donde se quedaron.</p>
     <div class="funnel" id="funnel"></div>
     <div class="tiles">
-      <div class="tile"><b id="mQuiero">0</b><small>dijeron "lo quiero"</small></div>
-      <div class="tile"><b id="mPrueba">0%</b><small>de demos presentadas pasan a prueba</small></div>
-      <div class="tile"><b id="mPagaria">$0</b><small>pagarían al mes (promedio)</small></div>
+      <div class="tile"><b id="m1">0</b><small id="m1l"></small></div>
+      <div class="tile"><b id="m2">0</b><small id="m2l"></small></div>
+      <div class="tile"><b id="m3">0</b><small id="m3l"></small></div>
     </div>
-    <h2>Por giro</h2>
+    <h2 id="tCatTitulo">Por giro</h2>
     <div class="tablewrap"><table id="tGiro"></table></div>
     <h2>Objeciones más comunes</h2>
     <div class="tablewrap"><table id="tObj"></table></div>
   </main>
 
   <main id="view-mas" data-view hidden>
+    <section id="secNegocios" hidden style="display:flex;flex-direction:column;gap:12px">
+      <h2>Negocios (tus clientes del CRM)</h2>
+      <p class="sub">Cada negocio entra con su correo y ve solo sus propios prospectos.</p>
+      <div class="row"><button class="btn primary" type="button" id="btnNuevoNeg">Dar de alta un negocio</button></div>
+      <div class="list" id="listNeg"></div>
+    </section>
+
     <h2>Exportar</h2>
     <p class="sub">Saca todos tus prospectos en CSV para abrirlos en Excel.</p>
     <div class="row">
       <button class="btn primary" id="btnCsv" type="button">Descargar CSV</button>
       <button class="btn" id="btnCopy" type="button">Copiar como tabla</button>
     </div>
+
+    <section id="secCats" hidden style="display:flex;flex-direction:column;gap:8px">
+      <h2>Tus productos o servicios</h2>
+      <p class="sub">Aparecen como opciones en "¿Qué le interesa?" y en los filtros. Sepáralos con comas.</p>
+      <div class="field"><label for="catsInput">Productos o servicios</label><input id="catsInput" placeholder="Ej. Afinación, Frenos, Hojalatería"></div>
+      <div class="row"><button class="btn" type="button" id="btnCats">Guardar lista</button></div>
+    </section>
+
     <h2>Cómo calificar a un prospecto</h2>
-    <p class="sub">El puntaje (0 a 5) suma un punto por cada criterio que cumple. Prioriza los de 4 y 5.</p>
+    <p class="sub" id="critSub">El puntaje suma un punto por cada criterio que cumple. Prioriza los más altos.</p>
     <div class="kv" id="critHelp"></div>
     <h2>Etapas</h2>
     <div class="kv" id="etapaHelp"></div>
+
     <h2>Cuenta</h2>
+    <p class="sub" id="cuentaTxt"></p>
+    <details id="detPass">
+      <summary>Cambiar contraseña</summary>
+      <div class="inside">
+        <div class="field"><label for="pActual">Contraseña actual</label><input type="password" id="pActual" autocomplete="current-password"></div>
+        <div class="field"><label for="pNueva">Contraseña nueva (mínimo 8)</label><input type="password" id="pNueva" autocomplete="new-password" minlength="8"></div>
+        <p class="err" id="pErr"></p>
+        <div class="row"><button class="btn" type="button" id="btnPass">Cambiar contraseña</button></div>
+      </div>
+    </details>
     <div class="row">
-      <a class="btn" href="../creador/">Ir al Creador de tiendas</a>
+      <a class="btn" href="../creador/" id="lnkCreador" hidden>Ir al Creador de tiendas</a>
       <button class="btn danger" type="button" id="btnSalir">Cerrar sesión</button>
     </div>
+    <p class="byline">CRM por RAYAMI Store · Cuautitlán Izcalli</p>
   </main>
 </div>
 
@@ -240,25 +289,25 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 
 <div class="scrim" id="scrim"></div>
 
-<!-- Hoja: formulario -->
+<!-- Hoja: formulario de prospecto -->
 <section class="sheet" id="sheetForm" aria-modal="true" role="dialog" aria-labelledby="formTitle">
   <div class="head"><h3 id="formTitle">Nuevo prospecto</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
   <form class="body" id="form" autocomplete="off">
-    <div class="field"><label for="f-negocio">Negocio *</label><input id="f-negocio" required placeholder="Ej. Fonda Doña Mary"></div>
-    <div class="field"><span class="lbl">Giro *</span><div class="chips" id="f-giro" role="radiogroup" aria-label="Giro"></div></div>
+    <div class="field"><label for="f-negocio" id="lblNombre">Negocio *</label><input id="f-negocio" required></div>
+    <div class="field"><span class="lbl" id="lblCat">Giro *</span><div class="chips" id="f-giro" role="radiogroup" aria-labelledby="lblCat"></div></div>
     <div class="grid2">
-      <div class="field"><label for="f-contacto">Contacto</label><input id="f-contacto" placeholder="Nombre del dueño"></div>
+      <div class="field"><label for="f-contacto">Contacto</label><input id="f-contacto" placeholder="Nombre de la persona"></div>
       <div class="field"><label for="f-whatsapp">WhatsApp</label><input id="f-whatsapp" type="tel" inputmode="tel" placeholder="55 1234 5678"></div>
     </div>
     <div class="grid2">
       <div class="field"><label for="f-colonia">Colonia / zona</label><input id="f-colonia" placeholder="Ej. Centro Urbano"></div>
-      <div class="field"><label for="f-origen">¿Cómo llegaste?</label><select id="f-origen"></select></div>
+      <div class="field"><label for="f-origen">¿Cómo llegó?</label><select id="f-origen"></select></div>
     </div>
     <div class="grid2">
       <div class="field"><label for="f-etapa">Etapa</label><select id="f-etapa"></select></div>
       <div class="field"><label for="f-proximo">Próximo seguimiento</label><input id="f-proximo" type="date"></div>
     </div>
-    <div class="field" id="wrapMotivo" hidden><label for="f-motivo">Motivo de descarte</label><input id="f-motivo" placeholder="Ej. No usa WhatsApp para vender"></div>
+    <div class="field" id="wrapMotivo" hidden><label for="f-motivo">Motivo de descarte</label><input id="f-motivo" placeholder="Ej. Se fue con otro proveedor"></div>
 
     <details id="detCalif">
       <summary>Calificación e interés</summary>
@@ -266,12 +315,14 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
         <div class="checks" id="f-criterios"></div>
         <div class="field"><span class="lbl">Interés</span><div class="chips" id="f-interes" role="radiogroup" aria-label="Interés"></div></div>
         <div class="grid2">
-          <div class="field"><label for="f-paquete">Paquete que le interesa</label><select id="f-paquete"></select></div>
-          <div class="field"><label for="f-pagaria">¿Cuánto pagaría al mes? ($)</label><input id="f-pagaria" type="number" inputmode="numeric" min="0" step="10" placeholder="0"></div>
+          <div class="field" id="wrapPaquete"><label for="f-paquete">Paquete que le interesa</label><select id="f-paquete"></select></div>
+          <div class="field"><label for="f-pagaria" id="lblMonto">Monto ($)</label><input id="f-pagaria" type="number" inputmode="numeric" min="0" step="10" placeholder="0"></div>
         </div>
         <div class="field"><label for="f-objecion">Objeción principal</label><select id="f-objecion"></select></div>
-        <div class="field"><label for="f-demoSel">Su demo (de tus tiendas del Creador)</label><select id="f-demoSel"><option value="">— Sin demo todavía —</option></select></div>
-        <div class="field"><label for="f-demo">Link de su demo</label><input id="f-demo" type="url" placeholder="Se llena solo al elegir la demo"></div>
+        <div id="wrapDemo" style="display:flex;flex-direction:column;gap:12px">
+          <div class="field"><label for="f-demoSel">Su demo (de tus tiendas del Creador)</label><select id="f-demoSel"><option value="">— Sin demo todavía —</option></select></div>
+          <div class="field"><label for="f-demo">Link de su demo</label><input id="f-demo" type="url" placeholder="Se llena solo al elegir la demo"></div>
+        </div>
       </div>
     </details>
 
@@ -280,25 +331,50 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="inside" id="f-entrevista"></div>
     </details>
 
-    <div class="field"><label for="f-nota">Nota de esta visita</label><textarea id="f-nota" placeholder="Qué pasó, qué pidió, qué sigue…"></textarea></div>
+    <div class="field"><label for="f-nota">Nota</label><textarea id="f-nota" placeholder="Qué pasó, qué pidió, qué sigue…"></textarea></div>
     <div class="row"><button class="btn primary" type="submit" id="btnGuardar">Guardar</button></div>
   </form>
 </section>
 
-<!-- Hoja: detalle -->
+<!-- Hoja: detalle de prospecto -->
 <section class="sheet" id="sheetDet" aria-modal="true" role="dialog" aria-labelledby="detTitle">
   <div class="head"><h3 id="detTitle">Prospecto</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
   <div class="body" id="detBody"></div>
+</section>
+
+<!-- Hoja: alta de negocio (solo admin) -->
+<section class="sheet" id="sheetNeg" aria-modal="true" role="dialog" aria-labelledby="negTitle">
+  <div class="head"><h3 id="negTitle">Dar de alta un negocio</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+  <form class="body" id="formNeg" autocomplete="off">
+    <div class="field"><label for="n-nombre">Nombre del negocio *</label><input id="n-nombre" maxlength="40" required placeholder="Ej. Taller El Güero"></div>
+    <div class="grid2">
+      <div class="field"><label for="n-giro">Giro</label><select id="n-giro"></select></div>
+      <div class="field"><label for="n-plan">Plan</label><select id="n-plan"><option>Prueba</option><option>Control</option><option>Dirección</option></select></div>
+    </div>
+    <div class="field"><label for="n-email">Correo del dueño *</label><input id="n-email" type="email" autocapitalize="off" required placeholder="dueño@gmail.com"></div>
+    <div class="grid2">
+      <div class="field"><label for="n-pass">Contraseña temporal *</label><input id="n-pass" minlength="8" required></div>
+      <div class="field"><label for="n-wa">WhatsApp del dueño</label><input id="n-wa" type="tel" inputmode="tel" placeholder="55 1234 5678"></div>
+    </div>
+    <div class="field"><label for="n-cats">Sus productos o servicios</label><input id="n-cats" placeholder="Ej. Afinación, Frenos, Hojalatería"><span class="sub">Separados por comas. El dueño los puede cambiar después.</span></div>
+    <p class="err" id="nErr"></p>
+    <div class="row"><button class="btn primary" type="submit" id="btnCrearNeg">Crear negocio y cuenta</button></div>
+    <div id="nListo" hidden style="display:flex;flex-direction:column;gap:10px">
+      <p class="ok">Listo. Mándale este mensaje al dueño:</p>
+      <div class="msgbox" id="nMsg"></div>
+      <div class="row"><button class="btn" type="button" id="btnCopyMsg">Copiar mensaje</button><a class="btn wa" id="lnkWaMsg" target="_blank" rel="noopener" href="#">Mandar por WhatsApp</a></div>
+    </div>
+  </form>
 </section>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const fbApp = initializeApp({
+const FB_CONFIG = {
   apiKey: "AIzaSyDDVxmRmKb9yIZSV0ZxkPKvQPOK-oAGMWU",
   authDomain: "rayami-store.firebaseapp.com",
   databaseURL: "https://rayami-store-default-rtdb.firebaseio.com",
@@ -306,48 +382,94 @@ const fbApp = initializeApp({
   storageBucket: "rayami-store.firebasestorage.app",
   messagingSenderId: "57542479161",
   appId: "1:57542479161:web:425e75300b964e1f526ce8",
-});
+};
+const fbApp = initializeApp(FB_CONFIG);
 const fdb = getDatabase(fbApp);
 const auth = getAuth(fbApp);
 const ADMIN_EMAILS = ["raulbenitez563@gmail.com"];
-const RUTA = "crm/prospectos";
 const TIENDA_URL = new URL("../tienda/", location.href).href;
+const CRM_URL = new URL("./", location.href).href;
 
-// ---------- Catálogos ----------
-const ETAPAS = [
-  {id:1, n:"Identificado",    d:"Lo ubicaste; aún no hablas con él."},
-  {id:2, n:"Contactado",      d:"Ya hablaste o le escribiste."},
-  {id:3, n:"Demo armada",     d:"Le hiciste su tienda de prueba."},
-  {id:4, n:"Demo presentada", d:"Ya la vio y la tocó."},
-  {id:5, n:"En prueba",       d:"Aceptó la prueba de 30 días."},
-  {id:6, n:"Negociando",      d:"Hablan de precio y paquete."},
-  {id:7, n:"Cliente",         d:"Ya paga."}
-];
+/* ============================================================
+   MODOS
+   - rayami: tu CRM de validación (crm/…), etapas de demo/prueba.
+   - general: el CRM que usa cada negocio cliente (tenantData/<id>/…).
+   Los datos usan los mismos campos; cambian etiquetas y catálogos.
+============================================================ */
+const GIROS = ["Fonda / restaurante","Cafetería","Boutique / ropa","Zapatería","Estética","Mascotas","Ferretería","Accesorios","Taller mecánico","Mueblería / carpintería","Escuela / cursos","Consultorio / clínica","Eventos / banquetes","Distribuidor / mayoreo","Otro"];
+const GIRO_FORM = {"Comida / fonda":"Fonda / restaurante","Cafetería":"Cafetería","Ropa / boutique":"Boutique / ropa","Zapatos":"Zapatería","Estética":"Estética","Estética / barbería":"Estética","Mascotas":"Mascotas","Ferretería":"Ferretería","Accesorios":"Accesorios","Taller mecánico":"Taller mecánico","Muebles / carpintería":"Mueblería / carpintería","Escuela / cursos":"Escuela / cursos","Consultorio / clínica":"Consultorio / clínica","Eventos / banquetes":"Eventos / banquetes","Distribuidor / mayoreo":"Distribuidor / mayoreo","Otro":"Otro"};
+
+const MODOS = {
+  rayami: {
+    etapas: [
+      {id:1, n:"Identificado",    d:"Lo ubicaste; aún no hablas con él."},
+      {id:2, n:"Contactado",      d:"Ya hablaste o le escribiste."},
+      {id:3, n:"Demo armada",     d:"Le hiciste su tienda de prueba."},
+      {id:4, n:"Demo presentada", d:"Ya la vio y la tocó."},
+      {id:5, n:"En prueba",       d:"Aceptó la prueba de 30 días."},
+      {id:6, n:"Negociando",      d:"Hablan de precio y paquete."},
+      {id:7, n:"Cliente",         d:"Ya paga."}
+    ],
+    origenes: ["Visita en persona","Instagram","Facebook","TikTok","WhatsApp","Referido","QR / volante","Formulario web","Otro"],
+    interes: ["Frío","Tibio","Lo quiero"], caliente: "Lo quiero",
+    objeciones: ["—","Ya tengo catálogo de WhatsApp gratis","¿Mis clientes bajan una app?","Está caro","No tengo tiempo","Ya uso otra plataforma","Lo tengo que pensar / consultar","Otra"],
+    criterios: [
+      {k:"wa",     n:"Vende o recibe pedidos por WhatsApp"},
+      {k:"volumen",n:"Le llegan varios pedidos o preguntas a la semana"},
+      {k:"redes",  n:"Tiene redes con fotos de sus productos"},
+      {k:"dolor",  n:"Reconoce un problema (desorden, tiempo, no sabe cuánto gana)"},
+      {k:"paga",   n:"Ya paga algo o está dispuesto a pagar"}
+    ],
+    preguntas: [
+      {k:"como",     q:"¿Cómo te piden hoy tus clientes?"},
+      {k:"cuantos",  q:"¿Cuántos pedidos o preguntas te llegan por WhatsApp a la semana?"},
+      {k:"tardado",  q:"¿Qué es lo más tardado de contestar?"},
+      {k:"catalogo", q:"¿Usas catálogo de WhatsApp, Facebook o Instagram? ¿Qué no te gusta?"},
+      {k:"pagaHoy",  q:"¿Pagas hoy por alguna app o plataforma? ¿Cuánto?"},
+      {k:"inventario",q:"¿Cómo llevas tu inventario y tus cuentas?"},
+      {k:"cuanto",   q:"Si esto te ahorrara tiempo o te trajera más pedidos, ¿cuánto pagarías al mes?"}
+    ],
+    paquetes: ["—","Vitrina","Pedidos","Control","Dirección"],
+    lblNombre: "Negocio *", phNombre: "Ej. Fonda Doña Mary",
+    lblCat: "Giro *", catObligatoria: true, lblCatCorto: "Giro",
+    lblMonto: "¿Cuánto pagaría al mes? ($)", lblMontoCorto: "Pagaría", sufMonto: "/mes",
+    demo: true, solicitudes: true, embudo: "Embudo de validación"
+  },
+  general: {
+    etapas: [
+      {id:1, n:"Nuevo",       d:"Llegó o lo ubicaste; aún no hablas con él."},
+      {id:2, n:"Contactado",  d:"Ya le escribiste o hablaste."},
+      {id:3, n:"Cotizado",    d:"Le mandaste precio o propuesta."},
+      {id:4, n:"Seguimiento", d:"Lo estás persiguiendo para que decida."},
+      {id:5, n:"Negociando",  d:"Hablan de precio, fecha o detalles."},
+      {id:6, n:"Cliente",     d:"Ya compró o apartó."}
+    ],
+    origenes: ["WhatsApp","Facebook","Instagram","TikTok","Recomendación","Llegó al local","Llamada","Google","Volante / QR","Otro"],
+    interes: ["Frío","Tibio","Caliente"], caliente: "Caliente",
+    objeciones: ["—","Está caro","Lo va a pensar","Está comparando con otro","No es buen momento","Ya no contestó","Otra"],
+    criterios: [
+      {k:"necesidad",  n:"Tiene una necesidad clara"},
+      {k:"presupuesto",n:"Tiene el dinero o presupuesto"},
+      {k:"decide",     n:"Es quien decide la compra"},
+      {k:"urgencia",   n:"Lo necesita pronto"},
+      {k:"responde",   n:"Contesta tus mensajes"}
+    ],
+    preguntas: [],
+    paquetes: null,
+    lblNombre: "Nombre o empresa *", phNombre: "Ej. Juan Pérez",
+    lblCat: "¿Qué le interesa?", catObligatoria: false, lblCatCorto: "Le interesa",
+    lblMonto: "Monto estimado de la venta ($)", lblMontoCorto: "Monto", sufMonto: "",
+    demo: false, solicitudes: false, embudo: "Embudo de ventas"
+  }
+};
+
+// Contexto activo: qué CRM se está viendo
+let CTX = { modo:"rayami", base:"crm", nombre:"RAYAMI", tid:null, propio:true };
+let M = MODOS.rayami, ETAPAS = M.etapas, GANADA = 7, CATS = GIROS;
+let esAdmin = false, usuario = null;
 const DESCARTADO = 0;
 const STAGE_COLORS = ["#9AA5A1","#7F9C96","#5E9488","#3E8B78","#1F7D68","#C98A1B","#B4610A","#1E7A3C"];
-const GIROS = ["Fonda / restaurante","Cafetería","Boutique / ropa","Zapatería","Estética","Mascotas","Ferretería","Accesorios","Taller mecánico","Mueblería / carpintería","Escuela / cursos","Consultorio / clínica","Eventos / banquetes","Distribuidor / mayoreo","Otro"];
-const ORIGENES = ["Visita en persona","Instagram","Facebook","TikTok","WhatsApp","Referido","QR / volante","Formulario web","Otro"];
-// Giros del formulario público → giros del CRM
-const GIRO_FORM = {"Comida / fonda":"Fonda / restaurante","Cafetería":"Cafetería","Ropa / boutique":"Boutique / ropa","Zapatos":"Zapatería","Estética":"Estética","Estética / barbería":"Estética","Mascotas":"Mascotas","Ferretería":"Ferretería","Accesorios":"Accesorios","Taller mecánico":"Taller mecánico","Muebles / carpintería":"Mueblería / carpintería","Escuela / cursos":"Escuela / cursos","Consultorio / clínica":"Consultorio / clínica","Eventos / banquetes":"Eventos / banquetes","Distribuidor / mayoreo":"Distribuidor / mayoreo","Otro":"Otro"};
-const PAQUETES = ["—","Vitrina","Pedidos","Control","Dirección"];
-const INTERES = ["Frío","Tibio","Lo quiero"];
-const OBJECIONES = ["—","Ya tengo catálogo de WhatsApp gratis","¿Mis clientes bajan una app?","Está caro","No tengo tiempo","Ya uso otra plataforma","Lo tengo que pensar / consultar","Otra"];
-const CRITERIOS = [
-  {k:"wa",     n:"Vende o recibe pedidos por WhatsApp"},
-  {k:"volumen",n:"Le llegan varios pedidos o preguntas a la semana"},
-  {k:"redes",  n:"Tiene redes con fotos de sus productos"},
-  {k:"dolor",  n:"Reconoce un problema (desorden, tiempo, no sabe cuánto gana)"},
-  {k:"paga",   n:"Ya paga algo o está dispuesto a pagar"}
-];
-const PREGUNTAS = [
-  {k:"como",     q:"¿Cómo te piden hoy tus clientes?"},
-  {k:"cuantos",  q:"¿Cuántos pedidos o preguntas te llegan por WhatsApp a la semana?"},
-  {k:"tardado",  q:"¿Qué es lo más tardado de contestar?"},
-  {k:"catalogo", q:"¿Usas catálogo de WhatsApp, Facebook o Instagram? ¿Qué no te gusta?"},
-  {k:"pagaHoy",  q:"¿Pagas hoy por alguna app o plataforma? ¿Cuánto?"},
-  {k:"inventario",q:"¿Cómo llevas tu inventario y tus cuentas?"},
-  {k:"cuanto",   q:"Si esto te ahorrara tiempo o te trajera más pedidos, ¿cuánto pagarías al mes?"}
-];
+const colorEtapa = e => e===DESCARTADO ? STAGE_COLORS[0] : (e===GANADA ? STAGE_COLORS[7] : STAGE_COLORS[Math.min(e,6)]);
 
 // ---------- Utilidades ----------
 const $ = s => document.querySelector(s);
@@ -357,65 +479,306 @@ const ymd = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 const hoy = () => ymd(new Date());
 const masDias = n => { const d = new Date(); d.setDate(d.getDate()+n); return ymd(d); };
 const diasEntre = (a,b) => Math.round((new Date(b+"T12:00")-new Date(a+"T12:00"))/864e5);
-const fmtFecha = s => { if(!s) return ""; const [y,m,d]=s.split("-"); const M=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]; return (+d)+" "+M[m-1]; };
+const fmtFecha = s => { if(!s) return ""; const [y,m,d]=s.split("-"); const MM=["ene","feb","mar","abr","may","jun","jul","ago","sep","oct","nov","dic"]; return (+d)+" "+MM[m-1]; };
 const fmtDT = iso => { const d=new Date(iso); return fmtFecha(ymd(d))+" · "+pad(d.getHours())+":"+pad(d.getMinutes()); };
 const money = n => "$"+Math.round(n||0).toLocaleString("es-MX");
 const etapaNombre = e => e===DESCARTADO ? "Descartado" : (ETAPAS.find(x=>x.id===e)?.n || "—");
-const score = p => CRITERIOS.reduce((s,c)=>s+(p.criterios?.[c.k]?1:0),0);
-const waLink = tel => { let d=String(tel||"").replace(/\D/g,""); if(!d) return ""; if(d.length===10) d="52"+d; return "https://wa.me/"+d; };
-function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2200); }
+const score = p => M.criterios.reduce((s,c)=>s+(p.criterios?.[c.k]?1:0),0);
+const waLink = (tel, txt) => { let d=String(tel||"").replace(/\D/g,""); if(!d) return ""; if(d.length===10) d="52"+d; return "https://wa.me/"+d+(txt?"?text="+encodeURIComponent(txt):""); };
+const slug = s => String(s).normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"").slice(0,24) || "negocio";
+const passTemporal = () => { const c="abcdefghjkmnpqrstuvwxyz23456789"; let s=""; const r=crypto.getRandomValues(new Uint32Array(8)); r.forEach(x=>s+=c[x%c.length]); return s.slice(0,4)+"-"+s.slice(4); };
+const esActivo = p => { const e=p.etapa??1; return e!==DESCARTADO && e!==GANADA; };
+function toast(msg){ const t=$("#toast"); t.textContent=msg; t.classList.add("show"); clearTimeout(toast._t); toast._t=setTimeout(()=>t.classList.remove("show"),2400); }
+const limpio = o => JSON.parse(JSON.stringify(o));
+const rutaP = () => `${CTX.base}/prospectos`;
 
-// ---------- Almacenamiento (Firebase Realtime Database: crm/prospectos/<id>) ----------
-let prospectos = []; // [{id, ...data}]
-let demos = [];      // [{id, name}] de stores/
-let unsubs = [];
+// ---------- Datos ----------
+let prospectos = [], solicitudes = [], demos = [], negocios = [];
+let unsubs = [], unsubNeg = null;
 function setSync(state, txt){ $("#dot").className="dot "+state; $("#syncTxt").textContent=txt; }
 
-// Firebase no acepta undefined ni claves vacías; limpiamos antes de guardar
-const limpio = o => JSON.parse(JSON.stringify(o));
 async function guardar(id, data){
   data.actualizado = new Date().toISOString();
-  try{ await set(ref(fdb, `${RUTA}/${id}`), limpio(data)); }
+  try{ await set(ref(fdb, `${rutaP()}/${id}`), limpio(data)); }
   catch(e){
-    toast(String(e?.code||"").includes("PERMISSION") ? "Sin permiso: falta publicar las reglas de 'crm' en Firebase" : "No se pudo guardar. Revisa tu conexión.");
+    toast(String(e?.code||e?.message||"").toUpperCase().includes("PERMISSION") ? "Sin permiso para guardar. Revisa las reglas de Firebase." : "No se pudo guardar. Revisa tu conexión.");
     throw e;
   }
 }
-async function borrar(id){ await remove(ref(fdb, `${RUTA}/${id}`)); }
+async function borrar(id){ await remove(ref(fdb, `${rutaP()}/${id}`)); }
 function nuevoId(){ return "p"+Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
 function iniciar(){
+  detener();
+  aplicarModo();
   render();
-  unsubs.push(onValue(ref(fdb, RUTA), snap=>{
+  unsubs.push(onValue(ref(fdb, rutaP()), snap=>{
     const v = snap.val() || {};
     prospectos = Object.entries(v).map(([id,d])=>({id, ...d}));
     $("#banner").hidden = true;
     render();
     if(abiertoId && $("#sheetDet").classList.contains("open")) verDetalle(abiertoId);
-  }, err=>{
+  }, ()=>{
     $("#banner").hidden=false;
-    $("#banner").textContent = "No se pudieron leer los prospectos. Revisa que las reglas de Firebase incluyan la sección 'crm'.";
+    $("#banner").textContent = "No se pudieron leer los prospectos. Revisa tu conexión o que las reglas de Firebase estén publicadas.";
   }));
-  unsubs.push(onValue(ref(fdb, "crm/solicitudes"), snap=>{
-    const v = snap.val() || {};
-    solicitudes = Object.entries(v).map(([id,d])=>({id, ...d})).sort((a,b)=>(b.ts||0)-(a.ts||0));
-    renderSolicitudes();
-  }, ()=>{}));
+  if(M.solicitudes){
+    unsubs.push(onValue(ref(fdb, "crm/solicitudes"), snap=>{
+      const v = snap.val() || {};
+      solicitudes = Object.entries(v).map(([id,d])=>({id, ...d})).sort((a,b)=>(b.ts||0)-(a.ts||0));
+      renderSolicitudes();
+    }, ()=>{}));
+  }
   unsubs.push(onValue(ref(fdb, ".info/connected"), s=>{
     s.val() ? setSync("on","En línea") : setSync("off","Sin conexión (se sube al reconectar)");
   }));
-  get(ref(fdb, "stores")).then(s=>{
-    const v = s.val() || {};
-    demos = Object.entries(v).map(([id,d])=>({id, name:d?.name||id})).sort((a,b)=>a.name.localeCompare(b.name));
-    $("#f-demoSel").innerHTML = `<option value="">— Sin demo todavía —</option>` + demos.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("");
-  }).catch(()=>{});
+  if(M.demo){
+    get(ref(fdb, "stores")).then(s=>{
+      const v = s.val() || {};
+      demos = Object.entries(v).map(([id,d])=>({id, name:d?.name||id})).sort((a,b)=>a.name.localeCompare(b.name));
+      $("#f-demoSel").innerHTML = `<option value="">— Sin demo todavía —</option>` + demos.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("");
+    }).catch(()=>{});
+  }
 }
 function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; solicitudes=[]; }
 
-// ---------- Solicitudes del formulario público (crm/solicitudes) ----------
-let solicitudes = [];
+// Cambia etiquetas, catálogos y secciones según el modo activo
+function aplicarModo(){
+  M = MODOS[CTX.modo]; ETAPAS = M.etapas; GANADA = ETAPAS[ETAPAS.length-1].id;
+  CATS = CTX.modo==="rayami" ? GIROS : (CTX.cats && CTX.cats.length ? CTX.cats : []);
+  $("#hdrNombre").textContent = CTX.nombre;
+  document.title = "CRM " + CTX.nombre;
+  $("#ctxbar").hidden = !(esAdmin && !CTX.propio);
+  $("#ctxTxt").textContent = `Estás viendo el CRM de ${CTX.nombre}`;
+  $("#secNegocios").hidden = !(esAdmin && CTX.propio);
+  $("#lnkCreador").hidden = !esAdmin;
+  $("#secCats").hidden = CTX.modo!=="general" || !(esAdmin || CTX.rol==="owner");
+  $("#catsInput").value = (CTX.cats||[]).join(", ");
+  $("#secSol").hidden = true;
+  $("#embTitulo").textContent = M.embudo;
+  $("#tCatTitulo").textContent = CTX.modo==="rayami" ? "Por giro" : "Por producto o servicio";
+  $("#cuentaTxt").textContent = usuario ? `Entraste como ${usuario.email}` + (CTX.modo==="general" && !esAdmin ? ` · ${CTX.nombre}` : "") : "";
+  // Formulario
+  $("#lblNombre").textContent = M.lblNombre; $("#f-negocio").placeholder = M.phNombre;
+  $("#lblCat").textContent = M.lblCat;
+  radioChips($("#f-giro"), CATS);
+  $("#f-giro").closest(".field").hidden = !CATS.length;
+  radioChips($("#f-interes"), M.interes);
+  $("#f-origen").innerHTML = opt(M.origenes);
+  $("#wrapPaquete").hidden = !M.paquetes;
+  if(M.paquetes) $("#f-paquete").innerHTML = opt(M.paquetes);
+  $("#lblMonto").textContent = M.lblMonto;
+  $("#f-objecion").innerHTML = opt(M.objeciones);
+  $("#wrapDemo").hidden = !M.demo;
+  $("#detEntrevista").hidden = !M.preguntas.length;
+  $("#f-etapa").innerHTML = ETAPAS.map(e=>`<option value="${e.id}">${e.id}. ${esc(e.n)}</option>`).join("") + `<option value="0">Descartado</option>`;
+  $("#f-criterios").innerHTML = M.criterios.map(c=>`<label class="check"><input type="checkbox" id="c-${c.k}"> <span>${esc(c.n)}</span></label>`).join("");
+  $("#f-entrevista").innerHTML = M.preguntas.map(p=>`<div class="field"><label for="q-${p.k}">${esc(p.q)}</label><textarea id="q-${p.k}" rows="2"></textarea></div>`).join("");
+  $("#critHelp").innerHTML = M.criterios.map((c,i)=>`<div><span>${i+1}</span><span>${esc(c.n)}</span></div>`).join("");
+  $("#critSub").textContent = `El puntaje (0 a ${M.criterios.length}) suma un punto por cada criterio que cumple. Prioriza los más altos.`;
+  $("#etapaHelp").innerHTML = ETAPAS.map(e=>`<div><span>${e.id}. ${esc(e.n)}</span><span>${esc(e.d)}</span></div>`).join("") + `<div><span>Descartado</span><span>No va por ahora. Anota el motivo.</span></div>`;
+  document.querySelector(".stepper")?.remove();
+  filtroEtapa = "activos"; filtroGiro = "todos";
+}
+
+// ---------- Login y contexto ----------
+onAuthStateChanged(auth, async u=>{
+  usuario = u;
+  $("#blockedView").hidden = true;
+  if(!u){
+    detener(); if(unsubNeg){ unsubNeg(); unsubNeg=null; }
+    $("#loginView").hidden = false; $("#appView").hidden = true; $("#tabsNav").hidden = true;
+    return;
+  }
+  esAdmin = ADMIN_EMAILS.includes((u.email||"").toLowerCase());
+  if(esAdmin){
+    CTX = { modo:"rayami", base:"crm", nombre:"RAYAMI", tid:null, propio:true, rol:"admin" };
+    mostrarApp(); iniciar(); escucharNegocios();
+    return;
+  }
+  // Dueño o vendedor de un negocio
+  try{
+    const ut = (await get(ref(fdb, `userTenants/${u.uid}`))).val() || {};
+    const tid = Object.keys(ut)[0];
+    if(!tid) return bloquear("Tu cuenta todavía no tiene un negocio asignado. Escríbenos para activarlo.");
+    const [t, m] = await Promise.all([get(ref(fdb, `tenants/${tid}`)), get(ref(fdb, `tenantMembers/${tid}/${u.uid}`))]);
+    const tv = t.val();
+    if(!tv) return bloquear("No encontramos tu negocio. Escríbenos para revisarlo.");
+    if(tv.estado !== "activo") return bloquear(`El CRM de ${tv.nombre} está pausado. Escríbenos para reactivarlo.`);
+    CTX = { modo:"general", base:`tenantData/${tid}`, nombre:tv.nombre, tid, propio:true, rol:(m.val()||{}).rol||"seller", cats: tv.config?.categorias || [] };
+    mostrarApp(); iniciar();
+  }catch(e){
+    bloquear("No se pudo cargar tu negocio. Revisa tu conexión e intenta de nuevo.");
+  }
+});
+function mostrarApp(){ $("#loginView").hidden = true; $("#appView").hidden = false; $("#tabsNav").hidden = false; irTab("hoy"); }
+function bloquear(msg){
+  detener();
+  $("#loginView").hidden = true; $("#appView").hidden = true; $("#tabsNav").hidden = true;
+  $("#blockedMsg").textContent = msg; $("#blockedView").hidden = false;
+}
+$("#loginForm").addEventListener("submit", async e=>{
+  e.preventDefault(); $("#lErr").textContent="";
+  try{ await signInWithEmailAndPassword(auth, $("#lEmail").value.trim().toLowerCase(), $("#lPass").value); }
+  catch(err){ $("#lErr").textContent = err?.code==="auth/too-many-requests" ? "Demasiados intentos. Espera unos minutos." : "Correo o contraseña incorrectos."; }
+});
+$("#btnOlvide").addEventListener("click", async ()=>{
+  const email = $("#lEmail").value.trim().toLowerCase();
+  if(!email){ $("#lErr").textContent = "Escribe tu correo arriba y vuelve a tocar \"Olvidé mi contraseña\"."; $("#lEmail").focus(); return; }
+  try{ await sendPasswordResetEmail(auth, email); $("#lErr").textContent = ""; toast("Te mandamos un correo para cambiar tu contraseña. Revisa también spam."); }
+  catch(e){ toast("Te mandamos un correo para cambiar tu contraseña. Revisa también spam."); }
+});
+$("#btnSalir").addEventListener("click", ()=>signOut(auth));
+$("#btnSalirBlocked").addEventListener("click", ()=>signOut(auth));
+$("#btnVolver").addEventListener("click", ()=>{ CTX = { modo:"rayami", base:"crm", nombre:"RAYAMI", tid:null, propio:true, rol:"admin" }; iniciar(); irTab("mas"); });
+
+$("#btnPass").addEventListener("click", async ()=>{
+  const actual = $("#pActual").value, nueva = $("#pNueva").value;
+  $("#pErr").textContent = "";
+  if(nueva.length < 8){ $("#pErr").textContent = "La nueva debe tener al menos 8 caracteres."; return; }
+  try{
+    await reauthenticateWithCredential(auth.currentUser, EmailAuthProvider.credential(auth.currentUser.email, actual));
+    await updatePassword(auth.currentUser, nueva);
+    $("#pActual").value = ""; $("#pNueva").value = ""; $("#detPass").open = false;
+    toast("Contraseña cambiada");
+  }catch(e){ $("#pErr").textContent = e?.code==="auth/wrong-password"||e?.code==="auth/invalid-credential" ? "La contraseña actual no es correcta." : "No se pudo cambiar. Intenta de nuevo."; }
+});
+
+$("#btnCats").addEventListener("click", async ()=>{
+  const cats = [...new Set($("#catsInput").value.split(",").map(s=>s.trim()).filter(Boolean))].slice(0,30).map(s=>s.slice(0,40));
+  try{
+    await set(ref(fdb, `tenants/${CTX.tid}/config/categorias`), cats);
+    CTX.cats = cats; aplicarModo(); render(); toast("Lista guardada");
+  }catch(e){ toast("No se pudo guardar la lista"); }
+});
+
+// ---------- Navegación ----------
+function irTab(t){
+  document.querySelectorAll("[data-tab]").forEach(x=>{ if(x.dataset.tab===t) x.setAttribute("aria-current","page"); else x.removeAttribute("aria-current"); });
+  document.querySelectorAll("[data-view]").forEach(v=>v.hidden = v.id!=="view-"+t);
+  window.scrollTo(0,0);
+}
+document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>irTab(b.dataset.tab)));
+
+// ---------- Hojas ----------
+function abrir(sheet){ document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); $("#scrim").classList.add("open"); sheet.classList.add("open"); }
+function cerrar(){ $("#scrim").classList.remove("open"); document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); abiertoId=null; }
+$("#scrim").addEventListener("click", cerrar);
+document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", cerrar));
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrar(); });
+
+// ---------- Tarjetas ----------
+function card(p){
+  const e = p.etapa ?? 1;
+  let seg = "";
+  if(p.proximo && esActivo(p)){
+    const d = diasEntre(hoy(), p.proximo);
+    if(d<0) seg = `<span class="late">Atrasado ${-d} d</span>`;
+    else if(d===0) seg = `<span class="due">Hoy</span>`;
+    else seg = `<span>Seguimiento ${fmtFecha(p.proximo)}</span>`;
+  }
+  return `<button type="button" class="card" data-id="${esc(p.id)}" style="--stage:${colorEtapa(e)}">
+    <span class="name">${esc(p.negocio)}</span>
+    <span class="pill">${esc(etapaNombre(e))}</span>
+    <span class="meta">
+      ${p.giro?`<span>${esc(p.giro)}</span>`:""}
+      ${p.colonia?`<span>${esc(p.colonia)}</span>`:""}
+      ${CTX.modo==="general" && p.pagaria?`<span>${money(p.pagaria)}</span>`:""}
+      <span class="score">★ ${score(p)}/${M.criterios.length}</span>
+      ${p.interes===M.caliente?`<span class="due">${esc(M.caliente)}</span>`:""}
+      ${seg}
+    </span>
+  </button>`;
+}
+function bindCards(root){ root.querySelectorAll(".card[data-id]").forEach(c=>c.addEventListener("click",()=>verDetalle(c.dataset.id))); }
+
+// ---------- Render ----------
+let filtroEtapa = "activos", filtroGiro = "todos";
+function render(){
+  const H = hoy();
+  const act = prospectos.filter(esActivo);
+  const pend = act.filter(p=>p.proximo && p.proximo<=H).sort((a,b)=>a.proximo.localeCompare(b.proximo) || score(b)-score(a));
+  const sem = act.filter(p=>p.proximo && p.proximo>H && p.proximo<=masDias(7)).sort((a,b)=>a.proximo.localeCompare(b.proximo));
+  $("#tHoy").textContent = pend.length;
+  $("#tActivos").textContent = act.length;
+  $("#tClientes").textContent = prospectos.filter(p=>p.etapa===GANADA).length;
+  $("#listHoy").innerHTML = pend.length ? pend.map(card).join("") : `<div class="empty">${prospectos.length? "Nada pendiente para hoy." : "Aún no hay prospectos. Toca <b>+</b> para registrar el primero."}</div>`;
+  $("#listSemana").innerHTML = sem.length ? sem.map(card).join("") : `<div class="empty">Sin seguimientos en los próximos 7 días.</div>`;
+  bindCards($("#listHoy")); bindCards($("#listSemana"));
+  renderLista(); renderEmbudo(); renderSolicitudes();
+}
+
+function renderLista(){
+  const cnt = k => prospectos.filter(p=> k==="activos" ? esActivo(p) : k==="todos" ? true : (p.etapa??1)===k).length;
+  const opts = [["activos","Activos"],["todos","Todos"],...ETAPAS.map(e=>[e.id,e.n]),[DESCARTADO,"Descartados"]];
+  $("#chipsEtapa").innerHTML = opts.map(([k,n])=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${String(k)===String(filtroEtapa)}">${esc(n)}<span class="n">${cnt(k)}</span></button>`).join("");
+  $("#chipsEtapa").querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ const k=c.dataset.k; filtroEtapa = isNaN(+k)?k:+k; renderLista(); }));
+  const usadas = [...new Set(prospectos.map(p=>p.giro).filter(Boolean))];
+  const giros = ["todos",...CATS.filter(g=>usadas.includes(g)),...usadas.filter(g=>!CATS.includes(g))];
+  $("#chipsGiro").hidden = giros.length<2;
+  $("#chipsGiro").innerHTML = giros.map(g=>`<button type="button" class="chip" data-g="${esc(g)}" aria-pressed="${g===filtroGiro}">${g==="todos"?(CTX.modo==="rayami"?"Todos los giros":"Todo"):esc(g)}</button>`).join("");
+  $("#chipsGiro").querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ filtroGiro=c.dataset.g; renderLista(); }));
+  const q = $("#q").value.trim().toLowerCase();
+  const L = prospectos.filter(p=>{
+    const e = p.etapa??1;
+    if(filtroEtapa==="activos" && !esActivo(p)) return false;
+    if(typeof filtroEtapa==="number" && e!==filtroEtapa) return false;
+    if(filtroGiro!=="todos" && p.giro!==filtroGiro) return false;
+    if(q && ![p.negocio,p.contacto,p.colonia,p.giro,p.whatsapp].join(" ").toLowerCase().includes(q)) return false;
+    return true;
+  }).sort((a,b)=> score(b)-score(a) || (b.actualizado||"").localeCompare(a.actualizado||""));
+  $("#listAll").innerHTML = L.length ? L.map(card).join("") : `<div class="empty">No hay prospectos con estos filtros.</div>`;
+  bindCards($("#listAll"));
+}
+$("#q").addEventListener("input", renderLista);
+
+function etapaMax(p){ return p.etapa===DESCARTADO ? (p.etapaPrevia||1) : (p.etapa??1); }
+const prom = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+const suma = arr => arr.reduce((a,b)=>a+b,0);
+function renderEmbudo(){
+  const tot = prospectos.length || 1;
+  const desc = prospectos.filter(p=>p.etapa===DESCARTADO).length;
+  $("#funnel").innerHTML = ETAPAS.map(e=>{
+    const n = prospectos.filter(p=>etapaMax(p)>=e.id).length;
+    return `<div class="fr"><span>${e.id}. ${esc(e.n)}</span><span class="bar"><i style="width:${prospectos.length? n/tot*100 : 0}%"></i></span><b>${n}</b></div>`;
+  }).join("") + `<div class="fr"><span>Descartados</span><span class="bar" style="background:var(--bad-soft)"><i style="background:var(--bad);width:${prospectos.length? desc/tot*100:0}%"></i></span><b>${desc}</b></div>`;
+
+  const montos = P => P.map(p=>+p.pagaria).filter(n=>n>0);
+  if(CTX.modo==="rayami"){
+    $("#m1").textContent = prospectos.filter(p=>p.interes===M.caliente).length; $("#m1l").textContent = 'dijeron "lo quiero"';
+    const pres = prospectos.filter(p=>etapaMax(p)>=4).length, prue = prospectos.filter(p=>etapaMax(p)>=5).length;
+    $("#m2").textContent = pres ? Math.round(prue/pres*100)+"%" : "—"; $("#m2l").textContent = "de demos presentadas pasan a prueba";
+    const pg = montos(prospectos); $("#m3").textContent = pg.length ? money(prom(pg)) : "—"; $("#m3l").textContent = "pagarían al mes (promedio)";
+  } else {
+    const ganados = prospectos.filter(p=>p.etapa===GANADA);
+    const cerrados = ganados.length + desc;
+    $("#m1").textContent = cerrados ? Math.round(ganados.length/cerrados*100)+"%" : "—"; $("#m1l").textContent = "de los cerrados se volvieron clientes";
+    $("#m2").textContent = money(suma(montos(prospectos.filter(p=>esActivo(p) && etapaMax(p)>=3)))); $("#m2l").textContent = "en juego (cotizados y negociando)";
+    $("#m3").textContent = money(suma(montos(ganados))); $("#m3l").textContent = "vendido a clientes";
+  }
+
+  const usadas = [...new Set(prospectos.map(p=>p.giro).filter(Boolean))];
+  if(CTX.modo==="rayami"){
+    $("#tGiro").innerHTML = `<tr><th>Giro</th><th class="num">Prosp.</th><th class="num">Demo vista</th><th class="num">Lo quieren</th><th class="num">Pagarían</th></tr>` +
+      (usadas.length ? usadas.map(g=>{ const P=prospectos.filter(p=>p.giro===g); const pg=montos(P);
+        return `<tr><td>${esc(g)}</td><td class="num">${P.length}</td><td class="num">${P.filter(p=>etapaMax(p)>=4).length}</td><td class="num">${P.filter(p=>p.interes===M.caliente).length}</td><td class="num">${pg.length?money(prom(pg)):"—"}</td></tr>`; }).join("")
+      : `<tr><td colspan="5" style="color:var(--muted)">Sin datos todavía.</td></tr>`);
+  } else {
+    $("#tGiro").innerHTML = `<tr><th>Producto / servicio</th><th class="num">Prosp.</th><th class="num">Clientes</th><th class="num">Vendido</th></tr>` +
+      (usadas.length ? usadas.map(g=>{ const P=prospectos.filter(p=>p.giro===g); const G=P.filter(p=>p.etapa===GANADA);
+        return `<tr><td>${esc(g)}</td><td class="num">${P.length}</td><td class="num">${G.length}</td><td class="num">${money(suma(montos(G)))}</td></tr>`; }).join("")
+      : `<tr><td colspan="4" style="color:var(--muted)">Sin datos todavía.</td></tr>`);
+  }
+  const obj = {}; prospectos.forEach(p=>{ if(p.objecion && p.objecion!=="—") obj[p.objecion]=(obj[p.objecion]||0)+1; });
+  const O = Object.entries(obj).sort((a,b)=>b[1]-a[1]);
+  $("#tObj").innerHTML = `<tr><th>Objeción</th><th class="num">Veces</th></tr>` + (O.length ? O.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join("") : `<tr><td colspan="2" style="color:var(--muted)">Sin objeciones registradas.</td></tr>`);
+}
+
+// ---------- Solicitudes del formulario público (solo tu CRM) ----------
 function renderSolicitudes(){
-  $("#secSol").hidden = !solicitudes.length;
+  const ver = M.solicitudes && solicitudes.length;
+  $("#secSol").hidden = !ver;
+  if(!ver) return;
   $("#solCount").textContent = solicitudes.length;
   $("#listSol").innerHTML = solicitudes.map(s=>`
     <div class="card" style="--stage:#ff6a00;cursor:default">
@@ -445,7 +808,7 @@ async function convertirSolicitud(sid){
   const data = {
     negocio:s.negocio||"Sin nombre", giro:GIRO_FORM[s.giro]||"Otro",
     contacto:s.nombre||"", whatsapp:s.whatsapp||"", colonia:s.colonia||"",
-    origen: ORIGENES.includes(s.fuente) ? s.fuente : "Formulario web",
+    origen: M.origenes.includes(s.fuente) ? s.fuente : "Formulario web",
     etapa:1, etapaPrevia:1, proximo:hoy(),
     criterios:{}, interes:"Tibio", paquete:"—", pagaria:0, objecion:"—", demo:"",
     entrevista:{}, notas:[{f:ahora, t:nota}], creado: s.ts ? new Date(s.ts).toISOString() : ahora
@@ -459,174 +822,50 @@ async function convertirSolicitud(sid){
   }catch(e){}
 }
 
-// ---------- Login ----------
-onAuthStateChanged(auth, u=>{
-  const ok = u && ADMIN_EMAILS.includes((u.email||"").toLowerCase());
-  $("#loginView").hidden = !!ok;
-  $("#appView").hidden = !ok;
-  $("#tabsNav").hidden = !ok;
-  if(ok){ if(!unsubs.length) iniciar(); } else detener();
-});
-$("#loginForm").addEventListener("submit", async e=>{
-  e.preventDefault(); $("#lErr").textContent="";
-  try{
-    const {user} = await signInWithEmailAndPassword(auth, $("#lEmail").value.trim().toLowerCase(), $("#lPass").value);
-    if(!ADMIN_EMAILS.includes(user.email.toLowerCase())){ await signOut(auth); $("#lErr").textContent="Esta cuenta no es de administrador."; }
-  }catch(err){ $("#lErr").textContent="Correo o contraseña incorrectos."; }
-});
-$("#btnSalir").addEventListener("click", ()=>signOut(auth));
-
-// ---------- Navegación ----------
-let tab = "hoy";
-document.querySelectorAll("[data-tab]").forEach(b=>b.addEventListener("click",()=>{
-  tab = b.dataset.tab;
-  document.querySelectorAll("[data-tab]").forEach(x=>{ if(x===b) x.setAttribute("aria-current","page"); else x.removeAttribute("aria-current"); });
-  document.querySelectorAll("[data-view]").forEach(v=>v.hidden = v.id!=="view-"+tab);
-  window.scrollTo(0,0);
-}));
-
-// ---------- Hojas ----------
-function abrir(sheet){ $("#scrim").classList.add("open"); sheet.classList.add("open"); }
-function cerrar(){ $("#scrim").classList.remove("open"); document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); abiertoId=null; }
-$("#scrim").addEventListener("click", cerrar);
-document.querySelectorAll("[data-close]").forEach(b=>b.addEventListener("click", cerrar));
-document.addEventListener("keydown", e=>{ if(e.key==="Escape") cerrar(); });
-
-// ---------- Tarjetas ----------
-function card(p){
-  const e = p.etapa ?? 1;
-  const color = e===DESCARTADO ? STAGE_COLORS[0] : STAGE_COLORS[e];
-  let seg = "";
-  if(p.proximo && e!==DESCARTADO && e!==7){
-    const d = diasEntre(hoy(), p.proximo);
-    if(d<0) seg = `<span class="late">Atrasado ${-d} d</span>`;
-    else if(d===0) seg = `<span class="due">Hoy</span>`;
-    else seg = `<span>Seguimiento ${fmtFecha(p.proximo)}</span>`;
-  }
-  const s = score(p);
-  return `<button type="button" class="card" data-id="${esc(p.id)}" style="--stage:${color}">
-    <span class="name">${esc(p.negocio)}</span>
-    <span class="pill">${esc(etapaNombre(e))}</span>
-    <span class="meta">
-      <span>${esc(p.giro||"")}</span>
-      ${p.colonia?`<span>${esc(p.colonia)}</span>`:""}
-      <span class="score">★ ${s}/5</span>
-      ${p.interes==="Lo quiero"?`<span class="due">Lo quiere</span>`:""}
-      ${seg}
-    </span>
-  </button>`;
-}
-function bindCards(root){ root.querySelectorAll(".card").forEach(c=>c.addEventListener("click",()=>verDetalle(c.dataset.id))); }
-
-// ---------- Render ----------
-let filtroEtapa = "activos", filtroGiro = "todos";
-function activos(){ return prospectos.filter(p=>(p.etapa??1)!==DESCARTADO && (p.etapa??1)!==7); }
-
-function render(){
-  const H = hoy();
-  const act = activos();
-  const pend = act.filter(p=>p.proximo && p.proximo<=H).sort((a,b)=>a.proximo.localeCompare(b.proximo) || score(b)-score(a));
-  const sem = act.filter(p=>p.proximo && p.proximo>H && p.proximo<=masDias(7)).sort((a,b)=>a.proximo.localeCompare(b.proximo));
-  $("#tHoy").textContent = pend.length;
-  $("#tActivos").textContent = act.length;
-  $("#tClientes").textContent = prospectos.filter(p=>p.etapa===7).length;
-  $("#listHoy").innerHTML = pend.length ? pend.map(card).join("") : `<div class="empty">${prospectos.length? "Nada pendiente para hoy." : "Aún no hay prospectos. Toca <b>+</b> para registrar el primero."}</div>`;
-  $("#listSemana").innerHTML = sem.length ? sem.map(card).join("") : `<div class="empty">Sin seguimientos en los próximos 7 días.</div>`;
-  bindCards($("#listHoy")); bindCards($("#listSemana"));
-  renderLista(); renderEmbudo(); renderSolicitudes();
-}
-
-function renderLista(){
-  const cnt = k => prospectos.filter(p=> k==="activos" ? ((p.etapa??1)!==DESCARTADO && (p.etapa??1)!==7) : k==="todos" ? true : (p.etapa??1)===k).length;
-  const opts = [["activos","Activos"],["todos","Todos"],...ETAPAS.map(e=>[e.id,e.n]),[DESCARTADO,"Descartados"]];
-  $("#chipsEtapa").innerHTML = opts.map(([k,n])=>`<button type="button" class="chip" data-k="${k}" aria-pressed="${String(k)===String(filtroEtapa)}">${esc(n)}<span class="n">${cnt(k)}</span></button>`).join("");
-  $("#chipsEtapa").querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ const k=c.dataset.k; filtroEtapa = isNaN(+k)?k:+k; renderLista(); }));
-  const giros = ["todos",...GIROS.filter(g=>prospectos.some(p=>p.giro===g))];
-  $("#chipsGiro").innerHTML = giros.map(g=>`<button type="button" class="chip" data-g="${esc(g)}" aria-pressed="${g===filtroGiro}">${g==="todos"?"Todos los giros":esc(g)}</button>`).join("");
-  $("#chipsGiro").querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ filtroGiro=c.dataset.g; renderLista(); }));
-  const q = $("#q").value.trim().toLowerCase();
-  let L = prospectos.filter(p=>{
-    const e = p.etapa??1;
-    if(filtroEtapa==="activos" && (e===DESCARTADO||e===7)) return false;
-    if(typeof filtroEtapa==="number" && e!==filtroEtapa) return false;
-    if(filtroGiro!=="todos" && p.giro!==filtroGiro) return false;
-    if(q && ![p.negocio,p.contacto,p.colonia,p.giro,p.whatsapp].join(" ").toLowerCase().includes(q)) return false;
-    return true;
-  }).sort((a,b)=> score(b)-score(a) || (b.actualizado||"").localeCompare(a.actualizado||""));
-  $("#listAll").innerHTML = L.length ? L.map(card).join("") : `<div class="empty">No hay prospectos con estos filtros.</div>`;
-  bindCards($("#listAll"));
-}
-$("#q").addEventListener("input", renderLista);
-
-function etapaMax(p){ return p.etapa===DESCARTADO ? (p.etapaPrevia||1) : (p.etapa??1); }
-function renderEmbudo(){
-  const tot = prospectos.length || 1;
-  $("#funnel").innerHTML = ETAPAS.map(e=>{
-    const n = prospectos.filter(p=>etapaMax(p)>=e.id).length;
-    return `<div class="fr"><span>${e.id}. ${esc(e.n)}</span><span class="bar"><i style="width:${prospectos.length? n/tot*100 : 0}%"></i></span><b>${n}</b></div>`;
-  }).join("") + `<div class="fr"><span>Descartados</span><span class="bar" style="background:var(--bad-soft)"><i style="background:var(--bad);width:${prospectos.length? prospectos.filter(p=>p.etapa===DESCARTADO).length/tot*100:0}%"></i></span><b>${prospectos.filter(p=>p.etapa===DESCARTADO).length}</b></div>`;
-  $("#mQuiero").textContent = prospectos.filter(p=>p.interes==="Lo quiero").length;
-  const pres = prospectos.filter(p=>etapaMax(p)>=4).length, prue = prospectos.filter(p=>etapaMax(p)>=5).length;
-  $("#mPrueba").textContent = pres ? Math.round(prue/pres*100)+"%" : "—";
-  const pag = prospectos.map(p=>+p.pagaria).filter(n=>n>0);
-  $("#mPagaria").textContent = pag.length ? money(pag.reduce((a,b)=>a+b,0)/pag.length) : "—";
-  const giros = GIROS.filter(g=>prospectos.some(p=>p.giro===g));
-  $("#tGiro").innerHTML = `<tr><th>Giro</th><th class="num">Prosp.</th><th class="num">Demo vista</th><th class="num">Lo quieren</th><th class="num">Pagarían</th></tr>` +
-    (giros.length ? giros.map(g=>{ const P=prospectos.filter(p=>p.giro===g); const pg=P.map(p=>+p.pagaria).filter(n=>n>0);
-      return `<tr><td>${esc(g)}</td><td class="num">${P.length}</td><td class="num">${P.filter(p=>etapaMax(p)>=4).length}</td><td class="num">${P.filter(p=>p.interes==="Lo quiero").length}</td><td class="num">${pg.length?money(pg.reduce((a,b)=>a+b,0)/pg.length):"—"}</td></tr>`; }).join("")
-    : `<tr><td colspan="5" style="color:var(--muted)">Sin datos todavía.</td></tr>`);
-  const obj = {}; prospectos.forEach(p=>{ if(p.objecion && p.objecion!=="—") obj[p.objecion]=(obj[p.objecion]||0)+1; });
-  const O = Object.entries(obj).sort((a,b)=>b[1]-a[1]);
-  $("#tObj").innerHTML = `<tr><th>Objeción</th><th class="num">Veces</th></tr>` + (O.length ? O.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="num">${v}</td></tr>`).join("") : `<tr><td colspan="2" style="color:var(--muted)">Sin objeciones registradas.</td></tr>`);
-}
-
-// ---------- Formulario ----------
-function radioChips(el, items, name){
+// ---------- Formulario de prospecto ----------
+function radioChips(el, items){
   el.innerHTML = items.map(v=>`<button type="button" class="chip" data-v="${esc(v)}" aria-pressed="false">${esc(v)}</button>`).join("");
-  el.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{ el.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", String(x===c))); }));
+  el.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
+    const ya = c.getAttribute("aria-pressed")==="true";
+    el.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed","false"));
+    if(!ya) c.setAttribute("aria-pressed","true");
+  }));
 }
 function chipVal(el){ return el.querySelector('.chip[aria-pressed="true"]')?.dataset.v || ""; }
 function setChip(el,v){ el.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", String(x.dataset.v===v))); }
 const opt = arr => arr.map(v=>`<option>${esc(v)}</option>`).join("");
-
-radioChips($("#f-giro"), GIROS);
-radioChips($("#f-interes"), INTERES);
-$("#f-origen").innerHTML = opt(ORIGENES);
-$("#f-paquete").innerHTML = opt(PAQUETES);
-$("#f-objecion").innerHTML = opt(OBJECIONES);
-$("#f-etapa").innerHTML = ETAPAS.map(e=>`<option value="${e.id}">${e.id}. ${esc(e.n)}</option>`).join("") + `<option value="0">Descartado</option>`;
 $("#f-etapa").addEventListener("change",()=>{ $("#wrapMotivo").hidden = $("#f-etapa").value!=="0"; });
-$("#f-criterios").innerHTML = CRITERIOS.map(c=>`<label class="check"><input type="checkbox" id="c-${c.k}"> <span>${esc(c.n)}</span></label>`).join("");
-$("#f-entrevista").innerHTML = PREGUNTAS.map(p=>`<div class="field"><label for="q-${p.k}">${esc(p.q)}</label><textarea id="q-${p.k}" rows="2"></textarea></div>`).join("");
-$("#critHelp").innerHTML = CRITERIOS.map((c,i)=>`<div><span>${i+1}</span><span>${esc(c.n)}</span></div>`).join("");
-$("#etapaHelp").innerHTML = ETAPAS.map(e=>`<div><span>${e.id}. ${esc(e.n)}</span><span>${esc(e.d)}</span></div>`).join("") + `<div><span>Descartado</span><span>No es para él por ahora. Anota el motivo.</span></div>`;
 
 let editId = null;
 function abrirForm(p){
   editId = p?.id || null;
   $("#formTitle").textContent = p ? "Editar prospecto" : "Nuevo prospecto";
   $("#f-negocio").value = p?.negocio||"";
+  // Si la categoría guardada ya no está en la lista, se agrega para no perderla
+  if(p?.giro && !CATS.includes(p.giro)){ radioChips($("#f-giro"), [...CATS, p.giro]); $("#f-giro").closest(".field").hidden=false; }
+  else radioChips($("#f-giro"), CATS);
   setChip($("#f-giro"), p?.giro||"");
   $("#f-contacto").value = p?.contacto||"";
   $("#f-whatsapp").value = p?.whatsapp||"";
   $("#f-colonia").value = p?.colonia||"";
-  $("#f-origen").value = p?.origen||ORIGENES[0];
+  $("#f-origen").value = M.origenes.includes(p?.origen) ? p.origen : M.origenes[0];
   $("#f-etapa").value = String(p?.etapa ?? 1);
   $("#wrapMotivo").hidden = String(p?.etapa)!=="0";
   $("#f-motivo").value = p?.motivo||"";
   $("#f-proximo").value = p ? (p.proximo||"") : masDias(1);
-  CRITERIOS.forEach(c=>$("#c-"+c.k).checked = !!p?.criterios?.[c.k]);
+  M.criterios.forEach(c=>$("#c-"+c.k).checked = !!p?.criterios?.[c.k]);
   setChip($("#f-interes"), p?.interes||"");
-  $("#f-paquete").value = p?.paquete||"—";
+  if(M.paquetes) $("#f-paquete").value = p?.paquete||"—";
   $("#f-pagaria").value = p?.pagaria||"";
-  $("#f-objecion").value = p?.objecion||"—";
-  $("#f-demo").value = p?.demo||"";
-  const tId = (p?.demo||"").match(/[?&]t=([^&#]+)/)?.[1];
-  $("#f-demoSel").value = tId && demos.some(d=>d.id===decodeURIComponent(tId)) ? decodeURIComponent(tId) : "";
-  PREGUNTAS.forEach(q=>$("#q-"+q.k).value = p?.entrevista?.[q.k]||"");
+  $("#f-objecion").value = M.objeciones.includes(p?.objecion) ? p.objecion : "—";
+  if(M.demo){
+    $("#f-demo").value = p?.demo||"";
+    const tId = (p?.demo||"").match(/[?&]t=([^&#]+)/)?.[1];
+    $("#f-demoSel").value = tId && demos.some(d=>d.id===decodeURIComponent(tId)) ? decodeURIComponent(tId) : "";
+  }
+  M.preguntas.forEach(q=>$("#q-"+q.k).value = p?.entrevista?.[q.k]||"");
   $("#f-nota").value = "";
   $("#detCalif").open = !!p; $("#detEntrevista").open = false;
-  document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open"));
   abrir($("#sheetForm"));
   if(!p) setTimeout(()=>$("#f-negocio").focus(), 250);
 }
@@ -636,8 +875,8 @@ $("#form").addEventListener("submit", async ev=>{
   ev.preventDefault();
   const negocio = $("#f-negocio").value.trim();
   const giro = chipVal($("#f-giro"));
-  if(!negocio){ toast("Escribe el nombre del negocio"); $("#f-negocio").focus(); return; }
-  if(!giro){ toast("Elige el giro"); return; }
+  if(!negocio){ toast("Escribe el nombre"); $("#f-negocio").focus(); return; }
+  if(M.catObligatoria && !giro){ toast("Elige el giro"); return; }
   const prev = editId ? prospectos.find(p=>p.id===editId) : null;
   const etapa = +$("#f-etapa").value;
   const notas = [...(prev?.notas||[])];
@@ -645,17 +884,19 @@ $("#form").addEventListener("submit", async ev=>{
   if(nota) notas.unshift({f:new Date().toISOString(), t:nota});
   if(prev && prev.etapa!==etapa) notas.unshift({f:new Date().toISOString(), t:`Etapa: ${etapaNombre(prev.etapa??1)} → ${etapaNombre(etapa)}`, sys:true});
   const data = {
+    ...(prev ? (({id,...r})=>r)(prev) : {}),
     negocio, giro,
     contacto:$("#f-contacto").value.trim(), whatsapp:$("#f-whatsapp").value.trim(),
     colonia:$("#f-colonia").value.trim(), origen:$("#f-origen").value,
     etapa, etapaPrevia: etapa===DESCARTADO ? (prev ? etapaMax(prev) : 1) : etapa,
     motivo: etapa===DESCARTADO ? $("#f-motivo").value.trim() : "",
-    proximo:$("#f-proximo").value,
-    criterios:Object.fromEntries(CRITERIOS.map(c=>[c.k, $("#c-"+c.k).checked])),
-    interes:chipVal($("#f-interes")), paquete:$("#f-paquete").value,
+    proximo: etapa===DESCARTADO ? "" : $("#f-proximo").value,
+    criterios:Object.fromEntries(M.criterios.map(c=>[c.k, $("#c-"+c.k).checked])),
+    interes:chipVal($("#f-interes")),
+    paquete: M.paquetes ? $("#f-paquete").value : (prev?.paquete||""),
     pagaria: +$("#f-pagaria").value || 0, objecion:$("#f-objecion").value,
-    demo:$("#f-demo").value.trim(),
-    entrevista:Object.fromEntries(PREGUNTAS.map(q=>[q.k, $("#q-"+q.k).value.trim()])),
+    demo: M.demo ? $("#f-demo").value.trim() : (prev?.demo||""),
+    entrevista: M.preguntas.length ? Object.fromEntries(M.preguntas.map(q=>[q.k, $("#q-"+q.k).value.trim()])) : (prev?.entrevista||{}),
     notas: notas.slice(0,200),
     creado: prev?.creado || new Date().toISOString()
   };
@@ -665,8 +906,9 @@ $("#form").addEventListener("submit", async ev=>{
   catch(e){}
   finally{ $("#btnGuardar").disabled = false; }
 });
+$("#f-demoSel").addEventListener("change", ev=>{ const id=ev.target.value; if(id) $("#f-demo").value = TIENDA_URL+"?t="+encodeURIComponent(id); });
 
-// ---------- Detalle ----------
+// ---------- Detalle de prospecto ----------
 let abiertoId = null;
 function verDetalle(id){
   const p = prospectos.find(x=>x.id===id); if(!p) return;
@@ -674,16 +916,17 @@ function verDetalle(id){
   const e = p.etapa??1;
   $("#detTitle").textContent = p.negocio;
   const wa = waLink(p.whatsapp);
-  const ent = PREGUNTAS.filter(q=>p.entrevista?.[q.k]);
+  const ent = M.preguntas.filter(q=>p.entrevista?.[q.k]);
+  const sig = ETAPAS.find(x=>x.id===e+1);
   $("#detBody").innerHTML = `
-    <div class="stepper" aria-label="Etapa ${esc(etapaNombre(e))}">${ETAPAS.map(s=>`<i class="${etapaMax(p)>=s.id && e!==DESCARTADO?"on":""}"></i>`).join("")}</div>
-    <p class="sub"><b style="color:var(--ink)">${esc(etapaNombre(e))}</b>${e===DESCARTADO && p.motivo?" · "+esc(p.motivo):""} · ${esc(p.giro)} · ★ ${score(p)}/5</p>
+    <div class="stepper" style="grid-template-columns:repeat(${ETAPAS.length},1fr)" aria-label="Etapa ${esc(etapaNombre(e))}">${ETAPAS.map(s=>`<i class="${etapaMax(p)>=s.id && e!==DESCARTADO?"on":""}"></i>`).join("")}</div>
+    <p class="sub"><b style="color:var(--ink)">${esc(etapaNombre(e))}</b>${e===DESCARTADO && p.motivo?" · "+esc(p.motivo):""}${p.giro?" · "+esc(p.giro):""} · ★ ${score(p)}/${M.criterios.length}</p>
     <div class="row">
       ${wa?`<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:""}
       ${p.demo?`<a class="btn" href="${esc(p.demo)}" target="_blank" rel="noopener">Ver demo</a>`:""}
       <button class="btn" type="button" id="dEdit">Editar</button>
     </div>
-    ${e!==DESCARTADO && e<7 ? `<div class="row"><button class="btn primary" type="button" id="dNext">Pasar a: ${esc(etapaNombre(e+1))}</button></div>`:""}
+    ${e!==DESCARTADO && sig ? `<div class="row"><button class="btn primary" type="button" id="dNext">Pasar a: ${esc(sig.n)}</button></div>`:""}
     <div class="field"><span class="lbl">Próximo seguimiento</span>
       <div class="row">
         <button class="btn" type="button" data-pos="1">Mañana</button>
@@ -698,12 +941,12 @@ function verDetalle(id){
       ${p.colonia?`<div><span>Zona</span><span>${esc(p.colonia)}</span></div>`:""}
       <div><span>Llegó por</span><span>${esc(p.origen||"—")}</span></div>
       <div><span>Interés</span><span>${esc(p.interes||"—")}</span></div>
-      <div><span>Paquete</span><span>${esc(p.paquete||"—")}</span></div>
-      <div><span>Pagaría</span><span>${p.pagaria?money(p.pagaria)+"/mes":"—"}</span></div>
+      ${M.paquetes?`<div><span>Paquete</span><span>${esc(p.paquete||"—")}</span></div>`:""}
+      <div><span>${esc(M.lblMontoCorto)}</span><span>${p.pagaria?money(p.pagaria)+M.sufMonto:"—"}</span></div>
       <div><span>Objeción</span><span>${esc(p.objecion||"—")}</span></div>
     </div>
     ${ent.length?`<details><summary>Entrevista</summary><div class="inside">${ent.map(q=>`<div><div class="lbl">${esc(q.q)}</div><div>${esc(p.entrevista[q.k])}</div></div>`).join("")}</div></details>`:""}
-    <div class="field"><label for="dNota">Agregar nota</label><textarea id="dNota" placeholder="Ej. Le mandé su demo, quedó de verla el lunes"></textarea>
+    <div class="field"><label for="dNota">Agregar nota</label><textarea id="dNota" placeholder="Ej. Le mandé precio, quedó de contestar el lunes"></textarea>
       <div class="row"><button class="btn" type="button" id="dAddNota">Guardar nota</button></div></div>
     <h2>Historial</h2>
     <div class="log">${(p.notas||[]).length ? p.notas.map(n=>`<div class="item"${n.sys?' style="color:var(--muted)"':""}><time>${esc(fmtDT(n.f))}</time>${esc(n.t)}</div>`).join("") : `<div class="empty">Sin notas.</div>`}</div>
@@ -711,18 +954,17 @@ function verDetalle(id){
       ${e!==DESCARTADO?`<button class="btn danger" type="button" id="dDesc">Descartar</button>`:`<button class="btn" type="button" id="dReact">Reactivar</button>`}
       <button class="btn danger" type="button" id="dDel">Eliminar</button>
     </div>
-    <div class="confirm" id="cDesc"><label for="dMotivo">¿Por qué lo descartas?</label><input id="dMotivo" placeholder="Ej. No vende por WhatsApp"><div class="row"><button class="btn danger" type="button" id="dDescOk">Descartar</button><button class="btn" type="button" data-cancel>Cancelar</button></div></div>
-    <div class="confirm" id="cDel"><span>Se borra para siempre, con su historial. Si solo no te interesa, mejor descártalo.</span><div class="row"><button class="btn danger" type="button" id="dDelOk">Sí, eliminar</button><button class="btn" type="button" data-cancel>Cancelar</button></div></div>
+    <div class="confirm" id="cDesc"><label for="dMotivo">¿Por qué lo descartas?</label><input id="dMotivo" placeholder="Ej. Se fue con otro"><div class="row"><button class="btn danger" type="button" id="dDescOk">Descartar</button><button class="btn" type="button" data-cancel>Cancelar</button></div></div>
+    <div class="confirm" id="cDel"><span>Se borra para siempre, con su historial. Si solo no va, mejor descártalo.</span><div class="row"><button class="btn danger" type="button" id="dDelOk">Sí, eliminar</button><button class="btn" type="button" data-cancel>Cancelar</button></div></div>
   `;
   const B = $("#detBody");
   const upd = async (cambios, msg) => {
     const cur = prospectos.find(x=>x.id===id); const {id:_, ...rest} = cur;
-    const data = {...rest, ...cambios};
-    try{ await guardar(id, data); toast(msg); verDetalle(id); }catch(e){}
+    try{ await guardar(id, {...rest, ...cambios}); toast(msg); verDetalle(id); }catch(e){}
   };
   const log = t => [{f:new Date().toISOString(), t, sys:true}, ...(p.notas||[])].slice(0,200);
   B.querySelector("#dEdit").onclick = ()=>abrirForm(p);
-  B.querySelector("#dNext")?.addEventListener("click", ()=>upd({etapa:e+1, etapaPrevia:e+1, notas:log(`Etapa: ${etapaNombre(e)} → ${etapaNombre(e+1)}`)}, "Etapa actualizada"));
+  B.querySelector("#dNext")?.addEventListener("click", ()=>upd({etapa:e+1, etapaPrevia:e+1, ...(e+1===GANADA?{proximo:""}:{}), notas:log(`Etapa: ${etapaNombre(e)} → ${etapaNombre(e+1)}`)}, "Etapa actualizada"));
   B.querySelectorAll("[data-pos]").forEach(b=>b.onclick=()=>upd({proximo:masDias(+b.dataset.pos)}, "Seguimiento: "+fmtFecha(masDias(+b.dataset.pos))));
   B.querySelector("#dProx").onchange = ev=>upd({proximo:ev.target.value}, ev.target.value ? "Seguimiento: "+fmtFecha(ev.target.value) : "Sin fecha de seguimiento");
   B.querySelector("#dAddNota").onclick = ()=>{ const t=B.querySelector("#dNota").value.trim(); if(!t) return; upd({notas:[{f:new Date().toISOString(), t}, ...(p.notas||[])].slice(0,200)}, "Nota guardada"); };
@@ -732,20 +974,20 @@ function verDetalle(id){
   B.querySelector("#dDel").onclick = ()=>B.querySelector("#cDel").classList.add("show");
   B.querySelector("#dDelOk").onclick = async ()=>{ try{ await borrar(id); toast("Prospecto eliminado"); cerrar(); }catch(e){ toast("No se pudo eliminar"); } };
   B.querySelectorAll("[data-cancel]").forEach(b=>b.onclick=()=>b.closest(".confirm").classList.remove("show"));
-  if(!$("#sheetDet").classList.contains("open")){ document.querySelectorAll(".sheet").forEach(s=>s.classList.remove("open")); abrir($("#sheetDet")); }
+  if(!$("#sheetDet").classList.contains("open")) abrir($("#sheetDet"));
 }
 
 // ---------- Exportar ----------
 function filas(){
-  const head = ["Negocio","Giro","Contacto","WhatsApp","Zona","Origen","Etapa","Puntaje","Interés","Paquete","Pagaría/mes","Objeción","Próximo seguimiento","Motivo descarte","Link demo",...PREGUNTAS.map(q=>q.q),"Última nota","Creado","Actualizado"];
-  const rows = prospectos.map(p=>[p.negocio,p.giro,p.contacto,p.whatsapp,p.colonia,p.origen,etapaNombre(p.etapa??1),score(p),p.interes,p.paquete,p.pagaria||"",p.objecion,p.proximo,p.motivo,p.demo,...PREGUNTAS.map(q=>p.entrevista?.[q.k]||""),(p.notas||[]).find(n=>!n.sys)?.t||"",(p.creado||"").slice(0,10),(p.actualizado||"").slice(0,10)]);
+  const head = [M.lblNombre.replace(" *",""), M.lblCatCorto,"Contacto","WhatsApp","Zona","Origen","Etapa","Puntaje","Interés",...(M.paquetes?["Paquete"]:[]),M.lblMontoCorto,"Objeción","Próximo seguimiento","Motivo descarte",...(M.demo?["Link demo"]:[]),...M.preguntas.map(q=>q.q),"Última nota","Creado","Actualizado"];
+  const rows = prospectos.map(p=>[p.negocio,p.giro,p.contacto,p.whatsapp,p.colonia,p.origen,etapaNombre(p.etapa??1),score(p),p.interes,...(M.paquetes?[p.paquete]:[]),p.pagaria||"",p.objecion,p.proximo,p.motivo,...(M.demo?[p.demo]:[]),...M.preguntas.map(q=>p.entrevista?.[q.k]||""),(p.notas||[]).find(n=>!n.sys)?.t||"",(p.creado||"").slice(0,10),(p.actualizado||"").slice(0,10)]);
   return [head,...rows];
 }
 const csvCell = v => { const s=String(v??""); return /[",\n;]/.test(s) ? '"'+s.replace(/"/g,'""')+'"' : s; };
-$("#btnCsv").addEventListener("click", async ()=>{
+$("#btnCsv").addEventListener("click", ()=>{
   const csv = "﻿" + filas().map(r=>r.map(csvCell).join(",")).join("\r\n");
   const url = URL.createObjectURL(new Blob([csv],{type:"text/csv;charset=utf-8"}));
-  const a = document.createElement("a"); a.href=url; a.download="prospectos_rayami_"+hoy()+".csv";
+  const a = document.createElement("a"); a.href=url; a.download=`prospectos_${slug(CTX.nombre)}_${hoy()}.csv`;
   document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url), 2000);
 });
 $("#btnCopy").addEventListener("click", async ()=>{
@@ -753,7 +995,126 @@ $("#btnCopy").addEventListener("click", async ()=>{
   try{ await navigator.clipboard.writeText(tsv); toast("Copiado. Pégalo en Excel."); }catch(e){ toast("No se pudo copiar"); }
 });
 
-$("#f-demoSel").addEventListener("change", ev=>{ const id=ev.target.value; if(id) $("#f-demo").value = TIENDA_URL+"?t="+encodeURIComponent(id); });
+/* ============================================================
+   NEGOCIOS (solo admin)
+   tenants/<tid>               datos del negocio, estado, config
+   tenantMembers/<tid>/<uid>   quién entra y con qué rol
+   userTenants/<uid>/<tid>     para saber a qué negocio pertenece cada cuenta
+   tenantData/<tid>/prospectos su CRM
+============================================================ */
+function escucharNegocios(){
+  if(unsubNeg) unsubNeg();
+  unsubNeg = onValue(ref(fdb, "tenants"), snap=>{
+    const v = snap.val() || {};
+    negocios = Object.entries(v).map(([id,d])=>({id, ...d})).sort((a,b)=>(b.creado||"").localeCompare(a.creado||""));
+    renderNegocios();
+  }, ()=>{ $("#listNeg").innerHTML = `<div class="empty">No se pudieron leer los negocios. Publica las reglas nuevas en Firebase.</div>`; });
+}
+function renderNegocios(){
+  $("#listNeg").innerHTML = negocios.length ? negocios.map(n=>`
+    <div class="card" style="--stage:${n.estado==="activo"?"var(--accent)":"var(--bad)"};cursor:default">
+      <span class="name">${esc(n.nombre)}</span>
+      <span class="pill ${n.estado==="activo"?"":"off"}">${n.estado==="activo"?"Activo":"Pausado"}</span>
+      <span class="meta"><span>${esc(n.giro||"")}</span><span>Plan ${esc(n.plan||"—")}</span><span>${esc(n.duenoEmail||"")}</span>${n.creado?`<span>Desde ${esc(fmtFecha(n.creado.slice(0,10)))}</span>`:""}</span>
+      <span class="row" style="grid-column:1/-1;margin-top:6px">
+        <button class="btn primary" type="button" data-neg-abrir="${esc(n.id)}">Abrir su CRM</button>
+        <button class="btn" type="button" data-neg-msg="${esc(n.id)}">Mensaje de acceso</button>
+        <button class="btn ${n.estado==="activo"?"danger":""}" type="button" data-neg-estado="${esc(n.id)}">${n.estado==="activo"?"Pausar":"Activar"}</button>
+      </span>
+    </div>`).join("") : `<div class="empty">Aún no das de alta ningún negocio.</div>`;
+  $("#listNeg").querySelectorAll("[data-neg-abrir]").forEach(b=>b.onclick=()=>{
+    const n = negocios.find(x=>x.id===b.dataset.negAbrir);
+    CTX = { modo:"general", base:`tenantData/${n.id}`, nombre:n.nombre, tid:n.id, propio:false, rol:"admin", cats:n.config?.categorias||[] };
+    iniciar(); irTab("hoy");
+  });
+  $("#listNeg").querySelectorAll("[data-neg-msg]").forEach(b=>b.onclick=()=>{
+    const n = negocios.find(x=>x.id===b.dataset.negMsg);
+    mostrarMensaje(n, null);
+  });
+  $("#listNeg").querySelectorAll("[data-neg-estado]").forEach(b=>b.onclick=async()=>{
+    const n = negocios.find(x=>x.id===b.dataset.negEstado);
+    const nuevo = n.estado==="activo" ? "pausado" : "activo";
+    if(nuevo==="pausado" && b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="¿Pausar? Toca otra vez"; return; }
+    try{ await set(ref(fdb, `tenants/${n.id}/estado`), nuevo); toast(nuevo==="activo"?"Negocio activado":"Negocio pausado: ya no puede entrar"); }
+    catch(e){ toast("No se pudo cambiar"); }
+  });
+}
+
+function mensajeAcceso(n, pass){
+  return `Hola${n.duenoNombre?" "+n.duenoNombre:""}, ya está listo el CRM de ${n.nombre}.\n\n` +
+    `Entra aquí: ${CRM_URL}\nCorreo: ${n.duenoEmail}\n` +
+    (pass ? `Contraseña temporal: ${pass}\n\nAl entrar, cámbiala en Más → Cambiar contraseña.` : `Si no recuerdas tu contraseña, toca "Olvidé mi contraseña" en la pantalla de entrada.`) +
+    `\n\nTip: en Chrome toca ⋮ → "Agregar a pantalla principal" para tenerlo como app.\n— RAYAMI Store`;
+}
+function mostrarMensaje(n, pass){
+  $("#formNeg").reset();
+  $("#n-giro").innerHTML = opt(GIROS);
+  [...$("#formNeg").querySelectorAll(".field, .row:not(#nListo .row)")].forEach(el=>el.hidden = true);
+  $("#nErr").textContent = "";
+  const msg = mensajeAcceso(n, pass);
+  $("#nMsg").textContent = msg;
+  $("#lnkWaMsg").href = waLink(n.duenoWa||"", msg) || ("https://wa.me/?text="+encodeURIComponent(msg));
+  $("#nListo").hidden = false;
+  $("#negTitle").textContent = n.nombre;
+  abrir($("#sheetNeg"));
+}
+$("#btnNuevoNeg").addEventListener("click", ()=>{
+  $("#formNeg").reset();
+  [...$("#formNeg").querySelectorAll(".field, .row")].forEach(el=>el.hidden = false);
+  $("#n-giro").innerHTML = opt(GIROS);
+  $("#n-pass").value = passTemporal();
+  $("#nErr").textContent = ""; $("#nListo").hidden = true;
+  $("#negTitle").textContent = "Dar de alta un negocio";
+  $("#btnCrearNeg").disabled = false;
+  abrir($("#sheetNeg"));
+  setTimeout(()=>$("#n-nombre").focus(), 250);
+});
+$("#btnCopyMsg").addEventListener("click", async ()=>{
+  try{ await navigator.clipboard.writeText($("#nMsg").textContent); toast("Mensaje copiado"); }catch(e){ toast("No se pudo copiar"); }
+});
+
+// Crea la cuenta del dueño con una "app secundaria" para no cerrar tu sesión de admin
+let appAlta = null;
+$("#formNeg").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const nombre = $("#n-nombre").value.trim(), email = $("#n-email").value.trim().toLowerCase(), pass = $("#n-pass").value;
+  $("#nErr").textContent = "";
+  if(nombre.length<2){ $("#nErr").textContent = "Escribe el nombre del negocio."; return; }
+  if(!/^\S+@\S+\.\S+$/.test(email)){ $("#nErr").textContent = "Revisa el correo del dueño."; return; }
+  if(pass.length<8){ $("#nErr").textContent = "La contraseña temporal debe tener al menos 8 caracteres."; return; }
+  $("#btnCrearNeg").disabled = true; $("#btnCrearNeg").textContent = "Creando…";
+  try{
+    appAlta = appAlta || initializeApp(FB_CONFIG, "alta-negocios");
+    const authAlta = getAuth(appAlta);
+    const cred = await createUserWithEmailAndPassword(authAlta, email, pass);
+    const uid = cred.user.uid;
+    await signOut(authAlta);
+    const tid = slug(nombre) + "-" + Math.random().toString(36).slice(2,6);
+    const cats = [...new Set($("#n-cats").value.split(",").map(s=>s.trim()).filter(Boolean))].slice(0,30);
+    const n = {
+      nombre, giro:$("#n-giro").value, plan:$("#n-plan").value, estado:"activo",
+      duenoEmail:email, duenoUid:uid, duenoWa:$("#n-wa").value.replace(/\D/g,"").slice(-10),
+      creado:new Date().toISOString(), config:{ categorias:cats }
+    };
+    await update(ref(fdb), {
+      [`tenants/${tid}`]: limpio(n),
+      [`tenantMembers/${tid}/${uid}`]: { rol:"owner", email },
+      [`userTenants/${uid}/${tid}`]: true
+    });
+    mostrarMensaje(n, pass);
+    toast("Negocio creado");
+  }catch(e){
+    const c = e?.code||"";
+    $("#nErr").textContent =
+      c==="auth/email-already-in-use" ? "Ese correo ya tiene cuenta en RAYAMI. Usa otro correo del dueño." :
+      c==="auth/invalid-email" ? "El correo no es válido." :
+      c==="auth/weak-password" ? "La contraseña es muy débil." :
+      String(c||e?.message||"").toUpperCase().includes("PERMISSION") ? "Firebase no dejó guardar el negocio. Publica las reglas nuevas." :
+      "No se pudo crear. Revisa tu conexión e intenta de nuevo.";
+  }finally{
+    $("#btnCrearNeg").disabled = false; $("#btnCrearNeg").textContent = "Crear negocio y cuenta";
+  }
+});
 </script>
 </body>
 </html>
