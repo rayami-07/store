@@ -6,7 +6,7 @@
    sigue abriendo aunque el celular esté sin señal.
    Solo guarda archivos de este mismo sitio (no Firebase, no ImgBB).
 ============================================================ */
-const CACHE = "rayami-v6";
+const CACHE = "rayami-v7";
 const BASE = [
   "./",
   "./index.html",
@@ -47,8 +47,26 @@ self.addEventListener("fetch", (e) => {
         return res;
       })
       .catch(() =>
-        caches.match(req, { ignoreSearch: true })
-          .then((r) => r || caches.match("./index.html"))
+        caches.match(req, { ignoreSearch: true }).then((r) => {
+          if (r) return r;
+          // Sin señal: la página principal solo se usa como respaldo en la portada.
+          // En otras secciones (crm, creador, tienda, quiero-mi-tienda…) se veía rota
+          // porque sus estilos se buscaban en la carpeta equivocada.
+          const base = new URL("./", self.registration.scope).pathname;
+          if (req.mode === "navigate" && (url.pathname === base || url.pathname === base + "index.html")) {
+            return caches.match("./index.html");
+          }
+          if (req.mode === "navigate") return offlinePage();
+          return Response.error();
+        })
       )
   );
 });
+
+function offlinePage() {
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sin conexión</title></head>
+<body style="font-family:system-ui,sans-serif;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0;padding:24px;text-align:center;background:#faf8f6;color:#1a1714">
+<div><h1 style="font-size:22px;margin:0 0 8px">Sin conexión</h1><p style="color:#6b655f;margin:0 0 18px">No se pudo cargar esta página. Revisa tu señal e intenta de nuevo.</p>
+<button onclick="location.reload()" style="font:inherit;font-weight:700;padding:12px 22px;border-radius:99px;border:0;background:#ff6a00;color:#fff">Reintentar</button></div></body></html>`;
+  return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8" } });
+}
