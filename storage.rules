@@ -1,0 +1,23 @@
+rules_version = '2';
+// Reglas de Firebase Storage — fotos de las tiendas
+// tiendas/<id-de-la-tienda>/<foto>
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /tiendas/{storeId}/{file=**} {
+      // Cualquiera puede VER las fotos (la tienda es pública)
+      allow read: if true;
+      // Solo el admin puede SUBIR: imágenes de máximo 2 MB
+      allow create, update: if request.auth != null
+        && request.auth.token.email == 'raulbenitez563@gmail.com'
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+      // Solo el admin puede BORRAR
+      allow delete: if request.auth != null
+        && request.auth.token.email == 'raulbenitez563@gmail.com';
+    }
+    // Todo lo demás, cerrado
+    match /{all=**} {
+      allow read, write: if false;
+    }
+  }
+}

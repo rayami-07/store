@@ -6,6 +6,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo } from "../tienda/muestras.js";
+import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { aggregate, money, pct, ago } from "../tienda/stats.js";
 
 const app = initializeApp({
@@ -19,6 +21,7 @@ const app = initializeApp({
 });
 const db = getDatabase(app);
 const auth = getAuth(app);
+const storage = getStorage(app);
 const ADMIN_EMAILS = ["raulbenitez563@gmail.com"];
 
 const $ = (id) => document.getElementById(id);
@@ -272,6 +275,40 @@ $("addProd").addEventListener("click", () => {
 $("loadSamples").addEventListener("click", () => { state.products = productosDeEjemplo(state.giro); samplesUntouched = true; renderProds(); pushPreview(); });
 $("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; samplesUntouched = true; pagosTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); scrollTo(0, 0); });
 
+/* ── Fotos a Firebase Storage ──
+   Las fotos nuevas llegan como texto (data:image/...). Al guardar se suben a
+   Storage en tiendas/<id>/ y en la base solo queda el link.
+   Si Storage aún no está activado, se quedan como estaban (respaldo). */
+const isData = (s) => typeof s === "string" && s.startsWith("data:image/");
+async function uploadPhoto(storeId, name, dataUrl) {
+  const ext = dataUrl.startsWith("data:image/png") ? "png" : "jpg";
+  const r = sRef(storage, `tiendas/${storeId}/${name}-${Date.now().toString(36)}.${ext}`);
+  await uploadString(r, dataUrl, "data_url", { cacheControl: "public,max-age=31536000" });
+  return getDownloadURL(r);
+}
+async function photosToStorage(storeId, out) {
+  const pend = (out.logo && isData(out.logo) ? 1 : 0) + out.products.filter((p) => isData(p.photo)).length;
+  if (!pend) return { ok: true, n: 0 };
+  let done = 0;
+  const step = () => { $("saveBtn").innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Subiendo fotos ${++done}/${pend}…`; };
+  try {
+    if (isData(out.logo)) { out.logo = await uploadPhoto(storeId, "logo", out.logo); step(); }
+    for (const p of out.products) {
+      if (isData(p.photo)) { p.photo = await uploadPhoto(storeId, `p-${p.id}`, p.photo); step(); }
+    }
+    return { ok: true, n: pend };
+  } catch (err) {
+    console.warn("Storage no disponible, se guardan dentro de la base:", err.code || err.message);
+    return { ok: false, n: pend };
+  }
+}
+async function deleteStorePhotos(storeId) {
+  try {
+    const { items } = await listAll(sRef(storage, `tiendas/${storeId}`));
+    await Promise.all(items.map((i) => deleteObject(i).catch(() => {})));
+  } catch {}
+}
+
 /* ── Guardar ── */
 function configOut() {
   const g = GIROS[state.giro];
@@ -300,16 +337,20 @@ $("storeForm").addEventListener("submit", async (e) => {
   const now = Date.now();
   const prev = editingId ? (await get(ref(db, `stores/${id}`))).val() : null;
   $("saveBtn").disabled = true;
+  const saveLabel = $("saveBtn").innerHTML;
   try {
+    const up = await photosToStorage(id, out);
+    // Lo subido queda en el formulario como link, para no volver a subirlo
+    if (up.ok && up.n) { state.logo = out.logo; out.products.forEach((p) => { const s = state.products.find((x) => x.id === p.id); if (s) s.photo = p.photo; }); }
     await set(ref(db, `stores/${id}`), { ...out, status: prev?.status || "demo", createdAt: prev?.createdAt || now, updatedAt: now });
     editingId = id;
     showResult(id, out);
-    toast("✅ Demo guardada");
+    toast(up.n && !up.ok ? "✅ Demo guardada (fotos dentro de la base: Storage no está activo)" : "✅ Demo guardada");
     loadDemos();
   } catch (err) {
     toast(err.code === "PERMISSION_DENIED" ? "Falta actualizar las reglas de Firebase" : "No se pudo guardar: " + err.message);
     console.error(err);
-  } finally { $("saveBtn").disabled = false; }
+  } finally { $("saveBtn").disabled = false; $("saveBtn").innerHTML = saveLabel; }
 });
 
 function showResult(id, out) {
@@ -364,7 +405,7 @@ $("demoList").addEventListener("click", async (e) => {
     const id = rm.dataset.remove;
     if (pendingDelete !== id) { pendingDelete = id; rm.innerHTML = "¿Borrar? Toca otra vez"; setTimeout(() => { if (pendingDelete === id) { pendingDelete = ""; loadDemos(); } }, 4000); return; }
     pendingDelete = "";
-    try { await remove(ref(db, `stores/${id}`)); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
+    try { await remove(ref(db, `stores/${id}`)); deleteStorePhotos(id); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
     catch (err) { toast("No se pudo borrar"); }
   }
 });
