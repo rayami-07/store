@@ -12,7 +12,46 @@
     },
     "crm": {
       ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
-      ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+      ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "solicitudes": {
+        "$id": {
+          ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (!data.exists() && newData.exists())",
+          ".validate": "newData.hasChildren(['negocio','giro','whatsapp','ts']) && newData.child('ts').isNumber() && newData.child('ts').val() <= now",
+          "negocio": {
+            ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 60"
+          },
+          "giro": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "whatsapp": {
+            ".validate": "newData.isString() && newData.val().matches(/^[0-9]{10}$/)"
+          },
+          "nombre": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "colonia": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "interes": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "comentario": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "fuente": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "campana": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "ts": {
+            ".validate": true
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     },
     "views": {
       ".read": true,

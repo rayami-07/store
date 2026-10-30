@@ -175,6 +175,11 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       <div class="tile"><b id="tActivos">0</b><small>prospectos activos</small></div>
       <div class="tile"><b id="tClientes">0</b><small>clientes</small></div>
     </div>
+    <section id="secSol" hidden style="display:flex;flex-direction:column;gap:8px">
+      <h2>Solicitudes nuevas <span class="pill" id="solCount">0</span></h2>
+      <p class="sub">Llegaron del formulario "Quiero mi tienda". Agrégalas al CRM o bórralas si son basura.</p>
+      <div class="list" id="listSol"></div>
+    </section>
     <h2>Toca dar seguimiento</h2>
     <div class="list" id="listHoy"></div>
     <h2>Próximos 7 días</h2>
@@ -321,7 +326,9 @@ const ETAPAS = [
 const DESCARTADO = 0;
 const STAGE_COLORS = ["#9AA5A1","#7F9C96","#5E9488","#3E8B78","#1F7D68","#C98A1B","#B4610A","#1E7A3C"];
 const GIROS = ["Fonda / restaurante","Cafetería","Boutique / ropa","Zapatería","Estética","Mascotas","Ferretería","Accesorios","Otro"];
-const ORIGENES = ["Visita en persona","Instagram","Facebook","WhatsApp","Referido","Otro"];
+const ORIGENES = ["Visita en persona","Instagram","Facebook","TikTok","WhatsApp","Referido","QR / volante","Formulario web","Otro"];
+// Giros del formulario público → giros del CRM
+const GIRO_FORM = {"Comida / fonda":"Fonda / restaurante","Cafetería":"Cafetería","Ropa / boutique":"Boutique / ropa","Zapatos":"Zapatería","Estética":"Estética","Mascotas":"Mascotas","Ferretería":"Ferretería","Accesorios":"Accesorios","Otro":"Otro"};
 const PAQUETES = ["—","Vitrina","Pedidos","Control","Dirección"];
 const INTERES = ["Frío","Tibio","Lo quiero"];
 const OBJECIONES = ["—","Ya tengo catálogo de WhatsApp gratis","¿Mis clientes bajan una app?","Está caro","No tengo tiempo","Ya uso otra plataforma","Lo tengo que pensar / consultar","Otra"];
@@ -389,6 +396,11 @@ function iniciar(){
     $("#banner").hidden=false;
     $("#banner").textContent = "No se pudieron leer los prospectos. Revisa que las reglas de Firebase incluyan la sección 'crm'.";
   }));
+  unsubs.push(onValue(ref(fdb, "crm/solicitudes"), snap=>{
+    const v = snap.val() || {};
+    solicitudes = Object.entries(v).map(([id,d])=>({id, ...d})).sort((a,b)=>(b.ts||0)-(a.ts||0));
+    renderSolicitudes();
+  }, ()=>{}));
   unsubs.push(onValue(ref(fdb, ".info/connected"), s=>{
     s.val() ? setSync("on","En línea") : setSync("off","Sin conexión (se sube al reconectar)");
   }));
@@ -398,7 +410,54 @@ function iniciar(){
     $("#f-demoSel").innerHTML = `<option value="">— Sin demo todavía —</option>` + demos.map(d=>`<option value="${esc(d.id)}">${esc(d.name)}</option>`).join("");
   }).catch(()=>{});
 }
-function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; }
+function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; solicitudes=[]; }
+
+// ---------- Solicitudes del formulario público (crm/solicitudes) ----------
+let solicitudes = [];
+function renderSolicitudes(){
+  $("#secSol").hidden = !solicitudes.length;
+  $("#solCount").textContent = solicitudes.length;
+  $("#listSol").innerHTML = solicitudes.map(s=>`
+    <div class="card" style="--stage:#ff6a00;cursor:default">
+      <span class="name">${esc(s.negocio)}</span>
+      <span class="pill">${esc(s.fuente||"Directo")}</span>
+      <span class="meta">
+        <span>${esc(s.giro||"")}</span>${s.colonia?`<span>${esc(s.colonia)}</span>`:""}
+        ${s.nombre?`<span>${esc(s.nombre)}</span>`:""}<span>${s.ts?esc(fmtDT(new Date(s.ts).toISOString())):""}</span>
+      </span>
+      ${s.interes||s.comentario?`<span class="meta" style="color:var(--ink)">${esc([s.interes,s.comentario].filter(Boolean).join(" · "))}</span>`:""}
+      <span class="row" style="grid-column:1/-1;margin-top:6px">
+        <button class="btn primary" type="button" data-sol-add="${esc(s.id)}">Agregar al CRM</button>
+        ${s.whatsapp?`<a class="btn wa" href="${esc(waLink(s.whatsapp))}" target="_blank" rel="noopener">WhatsApp</a>`:""}
+        <button class="btn danger" type="button" data-sol-del="${esc(s.id)}">Borrar</button>
+      </span>
+    </div>`).join("");
+  $("#listSol").querySelectorAll("[data-sol-add]").forEach(b=>b.onclick=()=>convertirSolicitud(b.dataset.solAdd));
+  $("#listSol").querySelectorAll("[data-sol-del]").forEach(b=>b.onclick=async()=>{
+    if(b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="¿Seguro? Toca otra vez"; return; }
+    try{ await remove(ref(fdb, `crm/solicitudes/${b.dataset.solDel}`)); toast("Solicitud borrada"); }catch(e){ toast("No se pudo borrar"); }
+  });
+}
+async function convertirSolicitud(sid){
+  const s = solicitudes.find(x=>x.id===sid); if(!s) return;
+  const ahora = new Date().toISOString();
+  const nota = ["Llegó por el formulario \"Quiero mi tienda\""+(s.campana?` (campaña ${s.campana})`:""), s.interes?"Le interesa: "+s.interes:"", s.comentario?"Comentario: "+s.comentario:""].filter(Boolean).join(". ");
+  const data = {
+    negocio:s.negocio||"Sin nombre", giro:GIRO_FORM[s.giro]||"Otro",
+    contacto:s.nombre||"", whatsapp:s.whatsapp||"", colonia:s.colonia||"",
+    origen: ORIGENES.includes(s.fuente) ? s.fuente : "Formulario web",
+    etapa:1, etapaPrevia:1, proximo:hoy(),
+    criterios:{}, interes:"Tibio", paquete:"—", pagaria:0, objecion:"—", demo:"",
+    entrevista:{}, notas:[{f:ahora, t:nota}], creado: s.ts ? new Date(s.ts).toISOString() : ahora
+  };
+  const id = nuevoId();
+  try{
+    await guardar(id, data);
+    await remove(ref(fdb, `crm/solicitudes/${sid}`));
+    toast("Agregado al CRM. Seguimiento: hoy");
+    verDetalle(id);
+  }catch(e){}
+}
 
 // ---------- Login ----------
 onAuthStateChanged(auth, u=>{
@@ -474,7 +533,7 @@ function render(){
   $("#listHoy").innerHTML = pend.length ? pend.map(card).join("") : `<div class="empty">${prospectos.length? "Nada pendiente para hoy." : "Aún no hay prospectos. Toca <b>+</b> para registrar el primero."}</div>`;
   $("#listSemana").innerHTML = sem.length ? sem.map(card).join("") : `<div class="empty">Sin seguimientos en los próximos 7 días.</div>`;
   bindCards($("#listHoy")); bindCards($("#listSemana"));
-  renderLista(); renderEmbudo();
+  renderLista(); renderEmbudo(); renderSolicitudes();
 }
 
 function renderLista(){

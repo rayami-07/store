@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiero mi tienda · RAYAMI Store</title>
+<meta name="description" content="Pide tu tienda de muestra gratis: catálogo o menú QR con pedidos por WhatsApp para tu negocio en Cuautitlán Izcalli.">
+<meta name="theme-color" content="#ff6a00">
+<meta property="og:title" content="Quiero mi tienda · RAYAMI Store">
+<meta property="og:description" content="Te armamos una muestra con tu nombre y tu logo para que la veas antes de decidir.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap">
+<style>
+/* Layout: una sola columna corta, pensada para abrirse desde la bio de TikTok/Instagram/Facebook en el celular.
+   Misma identidad que /servicios/: rótulo condensado, naranja RAYAMI como único acento. */
+:root{
+  --paper:#ffffff; --bg:#faf8f6; --ink:#1a1714; --muted:#6b655f; --line:#e8e4df;
+  --orange:#ff6a00; --orange-deep:#c94f00; --orange-wash:#fff3ea; --wa:#1fa855; --bad:#b3261e;
+  --display:'Barlow Condensed','Arial Narrow',sans-serif;
+  --body:'DM Sans','Helvetica Neue',Arial,sans-serif;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 var(--body)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--orange);outline-offset:2px}
+.wrap{max-width:520px;margin:0 auto;padding:20px 18px 40px;display:flex;flex-direction:column;gap:18px}
+.logo{font-family:var(--display);font-weight:900;font-size:24px;text-transform:uppercase;text-decoration:none;color:var(--ink);letter-spacing:.3px}
+.logo span{color:var(--orange)}
+h1{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:clamp(38px,11vw,52px);line-height:.92;margin:0;text-wrap:balance}
+h1 span{color:var(--orange)}
+.lede{color:var(--muted);margin:0;font-size:17px}
+.perks{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;list-style:none;font-size:15px}
+.perks li{display:flex;gap:8px;align-items:flex-start}
+.perks li::before{content:"";flex:none;width:8px;height:8px;margin-top:8px;border-radius:2px;background:var(--orange)}
+form,.done{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 16px;display:flex;flex-direction:column;gap:14px}
+.field{display:flex;flex-direction:column;gap:6px}
+label,.lbl{font-weight:700;font-size:14px}
+.hint{color:var(--muted);font-weight:400}
+input,textarea{width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--line);background:var(--paper);font-size:16px}
+textarea{min-height:76px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1.5px solid var(--line);background:var(--paper);border-radius:999px;padding:8px 13px;font-size:15px;cursor:pointer}
+.chip[aria-pressed="true"]{border-color:var(--orange);background:var(--orange-wash);color:var(--orange-deep);font-weight:700}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:10px;min-height:54px;padding:0 24px;border-radius:100px;font-weight:700;font-size:17px;text-decoration:none;border:2px solid transparent;cursor:pointer;width:100%}
+.btn-main{background:var(--orange);color:#fff}
+.btn-main:hover{background:var(--orange-deep)}
+.btn-main:disabled{opacity:.6;cursor:default}
+.btn-wa{background:var(--wa);color:#fff}
+.err{color:var(--bad);font-size:14px;margin:0;min-height:1.2em}
+.legal{color:var(--muted);font-size:13px;margin:0}
+.done h2{font-family:var(--display);font-weight:900;text-transform:uppercase;font-size:34px;line-height:.95;margin:0}
+.done p{margin:0}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+footer{color:var(--muted);font-size:13px;text-align:center}
+footer a{color:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="logo" href="../servicios/">RAYAMI <span>Store</span></a>
+
+  <h1>Quiero <span>mi tienda</span></h1>
+  <p class="lede">Déjanos tus datos y te armamos una muestra con el nombre y los productos de tu negocio. La ves en tu celular antes de decidir, sin costo.</p>
+  <ul class="perks">
+    <li>Catálogo o menú QR con tu logo y tus precios</li>
+    <li>Tus clientes te piden por WhatsApp con el pedido completo</li>
+    <li>Ves qué se vende y cuántos te visitan</li>
+  </ul>
+
+  <form id="form" novalidate>
+    <div class="field"><label for="negocio">Nombre de tu negocio</label><input id="negocio" maxlength="60" autocomplete="organization" placeholder="Ej. Fonda Doña Mary" required></div>
+    <div class="field"><span class="lbl" id="giroLbl">¿Qué vendes?</span><div class="chips" id="giro" role="radiogroup" aria-labelledby="giroLbl"></div></div>
+    <div class="field"><label for="nombre">Tu nombre</label><input id="nombre" maxlength="40" autocomplete="name" placeholder="Ej. María"></div>
+    <div class="field"><label for="whatsapp">Tu WhatsApp</label><input id="whatsapp" type="tel" inputmode="tel" maxlength="16" autocomplete="tel" placeholder="55 1234 5678" required></div>
+    <div class="field"><label for="colonia">Colonia <span class="hint">(opcional)</span></label><input id="colonia" maxlength="40" placeholder="Ej. Centro Urbano"></div>
+    <div class="field"><span class="lbl" id="intLbl">¿Qué te gustaría? <span class="hint">(puedes elegir varias)</span></span><div class="chips" id="interes" role="group" aria-labelledby="intLbl"></div></div>
+    <div class="field"><label for="comentario">¿Algo más que debamos saber? <span class="hint">(opcional)</span></label><textarea id="comentario" maxlength="200" placeholder="Ej. Hoy me piden por WhatsApp y se me revuelven los pedidos"></textarea></div>
+    <div class="hp" aria-hidden="true"><label for="web">No llenar</label><input id="web" tabindex="-1" autocomplete="off"></div>
+    <p class="err" id="err" role="alert"></p>
+    <button class="btn btn-main" type="submit" id="enviar">Quiero mi muestra</button>
+    <p class="legal">Solo usamos tus datos para contactarte sobre tu tienda. Atendemos en Cuautitlán Izcalli.</p>
+  </form>
+
+  <div class="done" id="done" hidden>
+    <h2>¡Listo, <span id="doneNombre"></span>!</h2>
+    <p>Recibimos tus datos. Te escribimos por WhatsApp para armar la muestra de <b id="doneNegocio"></b>.</p>
+    <p>¿Tienes prisa? Mándanos mensaje ahora:</p>
+    <a class="btn btn-wa" id="doneWa" href="https://wa.me/525581074978" target="_blank" rel="noopener">Escribir por WhatsApp</a>
+    <p class="legal">WhatsApp 55 8107 4978</p>
+  </div>
+
+  <footer><a href="../servicios/">Ver cómo funciona</a> · RAYAMI Store · Cuautitlán Izcalli</footer>
+</div>
+
+<script type="module">
+const DB_URL = "https://rayami-store-default-rtdb.firebaseio.com";
+const WA_RAYAMI = "525581074978";
+const GIROS = ["Comida / fonda","Cafetería","Ropa / boutique","Zapatos","Estética","Mascotas","Ferretería","Accesorios","Otro"];
+const INTERESES = ["Catálogo o menú QR","Pedidos por WhatsApp","Saber cuánto vendo y gano"];
+// ?de=tiktok | ig | fb | wa | qr | volante … llega al CRM como "Llegó por"
+const FUENTES = { tiktok:"TikTok", tt:"TikTok", instagram:"Instagram", ig:"Instagram", facebook:"Facebook", fb:"Facebook", whatsapp:"WhatsApp", wa:"WhatsApp", qr:"QR / volante", volante:"QR / volante", google:"Google" };
+const params = new URLSearchParams(location.search);
+const deRaw = (params.get("de") || "").toLowerCase().replace(/[^a-z0-9_-]/g,"").slice(0,20);
+const fuente = FUENTES[deRaw] || (deRaw ? deRaw : "Directo");
+const campana = (params.get("c") || "").replace(/[^\w -]/g,"").slice(0,30);
+
+const $ = id => document.getElementById(id);
+function chips(el, items, multi){
+  el.innerHTML = items.map(v=>`<button type="button" class="chip" aria-pressed="false">${v}</button>`).join("");
+  el.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
+    if(multi){ c.setAttribute("aria-pressed", c.getAttribute("aria-pressed")==="true"?"false":"true"); }
+    else el.querySelectorAll(".chip").forEach(x=>x.setAttribute("aria-pressed", String(x===c)));
+  }));
+}
+const elegidos = el => [...el.querySelectorAll('.chip[aria-pressed="true"]')].map(c=>c.textContent);
+chips($("giro"), GIROS, false);
+chips($("interes"), INTERESES, true);
+
+const yaEnviado = (()=>{ try{ return sessionStorage.getItem("rayami_pedido_demo"); }catch(e){ return null; } })();
+
+$("form").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  $("err").textContent = "";
+  if($("web").value) return; // robot
+  const negocio = $("negocio").value.trim();
+  const tel = $("whatsapp").value.replace(/\D/g,"");
+  const giro = elegidos($("giro"))[0] || "";
+  if(!negocio){ $("err").textContent = "Escribe el nombre de tu negocio."; $("negocio").focus(); return; }
+  if(!giro){ $("err").textContent = "Elige qué vendes."; return; }
+  if(tel.length < 10){ $("err").textContent = "Revisa tu WhatsApp: deben ser 10 dígitos."; $("whatsapp").focus(); return; }
+  if(yaEnviado === negocio){ mostrarListo(negocio); return; }
+  const data = {
+    negocio: negocio.slice(0,60), giro, whatsapp: tel.slice(-10),
+    nombre: $("nombre").value.trim().slice(0,40),
+    colonia: $("colonia").value.trim().slice(0,40),
+    interes: elegidos($("interes")).join(", ").slice(0,120),
+    comentario: $("comentario").value.trim().slice(0,200),
+    fuente: String(fuente).slice(0,20), campana,
+    ts: { ".sv": "timestamp" }
+  };
+  Object.keys(data).forEach(k=>{ if(data[k]==="") delete data[k]; });
+  $("enviar").disabled = true; $("enviar").textContent = "Enviando…";
+  try{
+    const r = await fetch(`${DB_URL}/crm/solicitudes.json`, { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(data) });
+    if(!r.ok) throw new Error(r.status);
+    try{ sessionStorage.setItem("rayami_pedido_demo", negocio); }catch(e){}
+    mostrarListo(negocio);
+  }catch(e){
+    $("err").innerHTML = "No se pudo enviar. Escríbenos directo al WhatsApp 55 8107 4978.";
+    $("enviar").disabled = false; $("enviar").textContent = "Quiero mi muestra";
+  }
+});
+
+function mostrarListo(negocio){
+  const nombre = $("nombre").value.trim();
+  $("doneNombre").textContent = nombre ? nombre.split(" ")[0] : "gracias";
+  $("doneNegocio").textContent = negocio;
+  const msg = `Hola, acabo de pedir mi tienda de muestra. Mi negocio es ${negocio}${$("colonia").value.trim() ? " en " + $("colonia").value.trim() : ""}.`;
+  $("doneWa").href = `https://wa.me/${WA_RAYAMI}?text=${encodeURIComponent(msg)}`;
+  $("form").hidden = true; $("done").hidden = false;
+  window.scrollTo({top:0, behavior:"smooth"});
+}
+</script>
+</body>
+</html>
