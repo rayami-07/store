@@ -1,0 +1,43 @@
+# Sube el servidor de mensajes (functions/) y las reglas de la base a Firebase.
+# Se corre a mano: GitHub → Actions → "Encender servidor de mensajes" → Run workflow.
+# Requiere el plan Blaze y estos secretos del repo (Settings → Secrets and variables → Actions):
+#   FIREBASE_SERVICE_ACCOUNT  JSON de una cuenta de servicio de Google Cloud con permisos de despliegue
+#   META_APP_SECRET           Clave secreta de la app de Meta
+#   META_VERIFY_TOKEN         Palabra que tú inventas y pones igual en la configuración del webhook en Meta
+name: Encender servidor de mensajes
+on: workflow_dispatch
+permissions:
+  contents: read
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Instalar y probar
+        working-directory: functions
+        run: |
+          npm ci
+          npm test
+      - name: Credenciales de Google
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
+      - name: Guardar secretos de Meta en Firebase
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+          APP_SECRET: ${{ secrets.META_APP_SECRET }}
+          VERIFY_TOKEN: ${{ secrets.META_VERIFY_TOKEN }}
+        run: |
+          printf '%s' "$APP_SECRET"   > "$RUNNER_TEMP/s1"
+          printf '%s' "$VERIFY_TOKEN" > "$RUNNER_TEMP/s2"
+          npx --yes firebase-tools@15.33.0 functions:secrets:set META_APP_SECRET   --data-file "$RUNNER_TEMP/s1" --project rayami-store --non-interactive --force
+          npx --yes firebase-tools@15.33.0 functions:secrets:set META_VERIFY_TOKEN --data-file "$RUNNER_TEMP/s2" --project rayami-store --non-interactive --force
+          rm -f "$RUNNER_TEMP/s1" "$RUNNER_TEMP/s2"
+      - name: Subir servidor y reglas
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: npx --yes firebase-tools@15.33.0 deploy --only functions,database --project rayami-store --non-interactive --force
+      - name: Borrar credenciales
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"

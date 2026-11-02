@@ -79,7 +79,9 @@ textarea{min-height:70px;resize:vertical}
 .empty{text-align:center;color:var(--muted);padding:28px 12px;border:1px dashed var(--line);border-radius:var(--r)}
 
 nav.tabs{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);display:flex;justify-content:center;z-index:5;padding-bottom:env(safe-area-inset-bottom)}
-nav.tabs .inner{max-width:640px;width:100%;display:grid;grid-template-columns:1fr 1fr 76px 1fr 1fr;align-items:center}
+nav.tabs .inner{max-width:640px;width:100%;display:grid;grid-template-columns:1fr 1fr 1fr 70px 1fr 1fr;align-items:center}
+nav.tabs button{position:relative}
+.badge{position:absolute;top:4px;left:calc(50% + 6px);min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--bad);color:#fff;font-size:11px;font-weight:700;line-height:18px;text-align:center}
 nav.tabs button{background:none;border:0;padding:10px 4px 12px;font-size:12px;color:var(--muted);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:2px}
 nav.tabs button svg{width:22px;height:22px}
 nav.tabs button[aria-current="page"]{color:var(--accent);font-weight:700}
@@ -158,6 +160,23 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .msgbox{background:var(--surface);border:1px dashed var(--accent);border-radius:10px;padding:12px;font-size:14px;white-space:pre-wrap}
 .byline{color:var(--muted);font-size:12px;text-align:center;margin-top:8px}
 .pill.off{background:var(--bad-soft);color:var(--bad)}
+.canal{font-size:11px;font-weight:700;padding:2px 7px;border-radius:999px;color:#fff;white-space:nowrap}
+.canal.whatsapp{background:#1FA855}.canal.messenger{background:#0866FF}.canal.instagram{background:#C13584}
+.chatcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;display:grid;grid-template-columns:1fr auto;gap:3px 10px;cursor:pointer;text-align:left;width:100%}
+.chatcard .name{font-weight:700;display:flex;gap:8px;align-items:center;min-width:0}
+.chatcard .name span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chatcard time{color:var(--muted);font-size:12px;white-space:nowrap}
+.chatcard .last{color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chatcard.unread .last{color:var(--ink);font-weight:600}
+.nl{background:var(--accent);color:var(--accent-ink);border-radius:999px;font-size:12px;font-weight:700;min-width:22px;height:22px;line-height:22px;text-align:center;padding:0 6px;justify-self:end}
+.msgs{display:flex;flex-direction:column;gap:6px;padding:4px 0}
+.bub{max-width:82%;padding:8px 11px;border-radius:14px;font-size:15px;white-space:pre-wrap;overflow-wrap:anywhere}
+.bub time{display:block;font-size:11px;opacity:.7;margin-top:2px}
+.bub.in{align-self:flex-start;background:var(--surface);border:1px solid var(--line);border-bottom-left-radius:4px}
+.bub.out{align-self:flex-end;background:var(--accent);color:var(--accent-ink);border-bottom-right-radius:4px}
+.composer{display:flex;gap:8px;align-items:flex-end;position:sticky;bottom:0;background:var(--bg);padding-top:8px}
+.composer textarea{min-height:44px;max-height:140px}
+.aviso{background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 12px;font-size:14px}
 </style>
 </head>
 <body>
@@ -209,6 +228,12 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
     <div class="list" id="listSemana"></div>
   </main>
 
+  <main id="view-chats" data-view hidden>
+    <h2>Chats</h2>
+    <div class="chips" id="chipsCanal" role="group" aria-label="Filtrar por canal"></div>
+    <div class="list" id="listChats"></div>
+  </main>
+
   <main id="view-lista" data-view hidden>
     <div class="search"><input id="q" type="search" placeholder="Buscar nombre, contacto, colonia…" aria-label="Buscar"></div>
     <div class="chips" id="chipsEtapa" role="group" aria-label="Filtrar por etapa"></div>
@@ -235,7 +260,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
     <section id="secNegocios" hidden style="display:flex;flex-direction:column;gap:12px">
       <h2>Negocios (tus clientes del CRM)</h2>
       <p class="sub">Cada negocio entra con su correo y ve solo sus propios prospectos.</p>
-      <div class="row"><button class="btn primary" type="button" id="btnNuevoNeg">Dar de alta un negocio</button></div>
+      <div class="row"><button class="btn primary" type="button" id="btnNuevoNeg">Dar de alta un negocio</button><button class="btn" type="button" id="btnCanalesPropios">Canales de mi CRM</button></div>
       <div class="list" id="listNeg"></div>
     </section>
 
@@ -281,6 +306,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 <nav class="tabs" aria-label="Secciones" id="tabsNav" hidden>
   <div class="inner">
     <button type="button" data-tab="hoy" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 10h18"/></svg>Hoy</button>
+    <button type="button" data-tab="chats"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/></svg>Chats<span class="badge" id="chatBadge" hidden>0</span></button>
     <button type="button" data-tab="lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Prospectos</button>
     <button type="button" class="fab" id="btnNuevo" aria-label="Nuevo prospecto"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
     <button type="button" data-tab="embudo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M3 4h18l-7 8v6l-4 2v-8z"/></svg>Embudo</button>
@@ -343,6 +369,37 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   <div class="body" id="detBody"></div>
 </section>
 
+<!-- Hoja: conversación -->
+<section class="sheet" id="sheetChat" aria-modal="true" role="dialog" aria-labelledby="chatTitle">
+  <div class="head"><h3 id="chatTitle">Chat</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+  <div class="body" id="chatBody">
+    <div class="row" id="chatActions"></div>
+    <div class="msgs" id="chatMsgs"></div>
+    <div class="aviso" id="chatAviso" hidden></div>
+    <form class="composer" id="chatForm">
+      <textarea id="chatTxt" rows="1" placeholder="Escribe tu respuesta…" aria-label="Mensaje"></textarea>
+      <button class="btn primary" type="submit" id="chatSend">Enviar</button>
+    </form>
+  </div>
+</section>
+
+<!-- Hoja: canales conectados (solo admin) -->
+<section class="sheet" id="sheetCanales" aria-modal="true" role="dialog" aria-labelledby="canTitle">
+  <div class="head"><h3 id="canTitle">Canales</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+  <form class="body" id="formCanal" autocomplete="off">
+    <p class="sub">Conecta el WhatsApp, la Página de Facebook (incluye Marketplace) o el Instagram de este negocio. Los datos salen de developers.facebook.com. El token se guarda donde solo el servidor lo puede leer.</p>
+    <div class="list" id="listCanales"></div>
+    <h2>Conectar un canal</h2>
+    <div class="field"><label for="c-canal">Canal</label><select id="c-canal"><option value="whatsapp">WhatsApp</option><option value="messenger">Messenger / Marketplace (Página de Facebook)</option><option value="instagram">Instagram</option></select></div>
+    <div class="field"><label for="c-cuenta" id="lblCuenta">ID del número de teléfono</label><input id="c-cuenta" inputmode="numeric" required></div>
+    <div class="field" id="wrapPage" hidden><label for="c-page">ID de la Página de Facebook ligada a ese Instagram</label><input id="c-page" inputmode="numeric"></div>
+    <div class="field"><label for="c-nombre">Nombre para reconocerlo</label><input id="c-nombre" placeholder="Ej. WhatsApp del taller 55 1234 5678"></div>
+    <div class="field"><label for="c-token">Token de acceso</label><input id="c-token" type="password" required autocomplete="off"></div>
+    <p class="err" id="cErr"></p>
+    <div class="row"><button class="btn primary" type="submit" id="btnCanal">Conectar canal</button></div>
+  </form>
+</section>
+
 <!-- Hoja: alta de negocio (solo admin) -->
 <section class="sheet" id="sheetNeg" aria-modal="true" role="dialog" aria-labelledby="negTitle">
   <div class="head"><h3 id="negTitle">Dar de alta un negocio</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
@@ -373,6 +430,7 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, update, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
 const FB_CONFIG = {
@@ -390,6 +448,7 @@ const auth = getAuth(fbApp);
 const ADMIN_EMAILS = ["raulbenitez563@gmail.com"];
 const TIENDA_URL = new URL("../tienda/", location.href).href;
 const CRM_URL = new URL("./", location.href).href;
+const fns = getFunctions(fbApp, "us-central1");
 
 /* ============================================================
    MODOS
@@ -530,6 +589,11 @@ function iniciar(){
       renderSolicitudes();
     }, ()=>{}));
   }
+  unsubs.push(onValue(ref(fdb, `${CTX.base}/chats`), snap=>{
+    const v = snap.val() || {};
+    chats = Object.entries(v).map(([id,d])=>({id, ...d})).sort((a,b)=>(b.actualizado||0)-(a.actualizado||0));
+    renderChats();
+  }, ()=>{}));
   unsubs.push(onValue(ref(fdb, ".info/connected"), s=>{
     s.val() ? setSync("on","En línea") : setSync("off","Sin conexión (se sube al reconectar)");
   }));
@@ -541,7 +605,7 @@ function iniciar(){
     }).catch(()=>{});
   }
 }
-function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; solicitudes=[]; }
+function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; solicitudes=[]; chats=[]; if(unsubChat){ unsubChat(); unsubChat=null; } }
 
 // Cambia etiquetas, catálogos y secciones según el modo activo
 function aplicarModo(){
@@ -925,6 +989,7 @@ function verDetalle(id){
     <div class="row">
       ${wa?`<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener">WhatsApp</a>`:""}
       ${p.demo?`<a class="btn" href="${esc(p.demo)}" target="_blank" rel="noopener">Ver demo</a>`:""}
+      ${chats.some(c=>c.prospectoId===p.id)?`<button class="btn" type="button" id="dChat">Ver chat</button>`:""}
       <button class="btn" type="button" id="dEdit">Editar</button>
     </div>
     ${e!==DESCARTADO && sig ? `<div class="row"><button class="btn primary" type="button" id="dNext">Pasar a: ${esc(sig.n)}</button></div>`:""}
@@ -965,6 +1030,7 @@ function verDetalle(id){
   };
   const log = t => [{f:new Date().toISOString(), t, sys:true}, ...(p.notas||[])].slice(0,200);
   B.querySelector("#dEdit").onclick = ()=>abrirForm(p);
+  B.querySelector("#dChat")?.addEventListener("click", ()=>{ const c=chats.find(x=>x.prospectoId===p.id); if(c) abrirChat(c.id); });
   B.querySelector("#dNext")?.addEventListener("click", ()=>upd({etapa:e+1, etapaPrevia:e+1, ...(e+1===GANADA?{proximo:""}:{}), notas:log(`Etapa: ${etapaNombre(e)} → ${etapaNombre(e+1)}`)}, "Etapa actualizada"));
   B.querySelectorAll("[data-pos]").forEach(b=>b.onclick=()=>upd({proximo:masDias(+b.dataset.pos)}, "Seguimiento: "+fmtFecha(masDias(+b.dataset.pos))));
   B.querySelector("#dProx").onchange = ev=>upd({proximo:ev.target.value}, ev.target.value ? "Seguimiento: "+fmtFecha(ev.target.value) : "Sin fecha de seguimiento");
@@ -1020,6 +1086,7 @@ function renderNegocios(){
       <span class="row" style="grid-column:1/-1;margin-top:6px">
         <button class="btn primary" type="button" data-neg-abrir="${esc(n.id)}">Abrir su CRM</button>
         <button class="btn" type="button" data-neg-msg="${esc(n.id)}">Mensaje de acceso</button>
+        <button class="btn" type="button" data-neg-canales="${esc(n.id)}">Canales</button>
         <button class="btn ${n.estado==="activo"?"danger":""}" type="button" data-neg-estado="${esc(n.id)}">${n.estado==="activo"?"Pausar":"Activar"}</button>
       </span>
     </div>`).join("") : `<div class="empty">Aún no das de alta ningún negocio.</div>`;
@@ -1027,6 +1094,10 @@ function renderNegocios(){
     const n = negocios.find(x=>x.id===b.dataset.negAbrir);
     CTX = { modo:"general", base:`tenantData/${n.id}`, nombre:n.nombre, tid:n.id, propio:false, rol:"admin", cats:n.config?.categorias||[] };
     iniciar(); irTab("hoy");
+  });
+  $("#listNeg").querySelectorAll("[data-neg-canales]").forEach(b=>b.onclick=()=>{
+    const n = negocios.find(x=>x.id===b.dataset.negCanales);
+    abrirCanales({ base:`tenantData/${n.id}`, tid:n.id, nombre:n.nombre });
   });
   $("#listNeg").querySelectorAll("[data-neg-msg]").forEach(b=>b.onclick=()=>{
     const n = negocios.find(x=>x.id===b.dataset.negMsg);
@@ -1115,6 +1186,132 @@ $("#formNeg").addEventListener("submit", async ev=>{
   }finally{
     $("#btnCrearNeg").disabled = false; $("#btnCrearNeg").textContent = "Crear negocio y cuenta";
   }
+});
+
+/* ============================================================
+   CHATS (WhatsApp, Messenger/Marketplace, Instagram)
+   Los mensajes llegan por el servidor (functions/) a <base>/chats y <base>/mensajes.
+============================================================ */
+let chats = [], filtroCanal = "todos", chatAbierto = null, unsubChat = null;
+const CANAL_TXT = { whatsapp:"WhatsApp", messenger:"Messenger", instagram:"Instagram" };
+const llave = s => String(s).replace(/[.#$\[\]\/]/g,"_").slice(0,120);
+function horaCorta(ts){
+  if(!ts) return "";
+  const d = new Date(ts), h = new Date();
+  return ymd(d)===ymd(h) ? pad(d.getHours())+":"+pad(d.getMinutes()) : fmtFecha(ymd(d));
+}
+function renderChats(){
+  const total = chats.reduce((a,c)=>a+(c.noLeidos||0),0);
+  $("#chatBadge").hidden = !total; $("#chatBadge").textContent = total>99?"99+":total;
+  const canales = ["todos",...Object.keys(CANAL_TXT).filter(k=>chats.some(c=>c.canal===k))];
+  $("#chipsCanal").hidden = canales.length<3;
+  $("#chipsCanal").innerHTML = canales.map(k=>`<button type="button" class="chip" data-c="${k}" aria-pressed="${k===filtroCanal}">${k==="todos"?"Todos":CANAL_TXT[k]}</button>`).join("");
+  $("#chipsCanal").querySelectorAll(".chip").forEach(c=>c.onclick=()=>{ filtroCanal=c.dataset.c; renderChats(); });
+  const L = chats.filter(c=>filtroCanal==="todos"||c.canal===filtroCanal);
+  $("#listChats").innerHTML = L.length ? L.map(c=>{
+    const p = prospectos.find(x=>x.id===c.prospectoId);
+    const nombre = p?.negocio || c.nombre || "Sin nombre";
+    return `<button type="button" class="chatcard ${c.noLeidos?"unread":""}" data-chat="${esc(c.id)}">
+      <span class="name"><span>${esc(nombre)}</span><span class="canal ${esc(c.canal)}">${esc(CANAL_TXT[c.canal]||c.canal)}</span></span>
+      <time>${esc(horaCorta(c.actualizado))}</time>
+      <span class="last">${c.ultimo?.dir==="out"?"Tú: ":""}${esc(c.ultimo?.texto||"")}</span>
+      ${c.noLeidos?`<span class="nl">${c.noLeidos}</span>`:"<span></span>"}
+    </button>`; }).join("")
+    : `<div class="empty">${chats.length ? "No hay chats en este canal." : "Aún no hay mensajes. Cuando se conecte WhatsApp, Messenger (incluye Marketplace) o Instagram, las conversaciones aparecen aquí y cada contacto nuevo se vuelve prospecto."}</div>`;
+  $("#listChats").querySelectorAll("[data-chat]").forEach(b=>b.onclick=()=>abrirChat(b.dataset.chat));
+  if(chatAbierto) pintarEstadoChat();
+}
+function abrirChat(id){
+  chatAbierto = id;
+  const c = chats.find(x=>x.id===id); if(!c) return;
+  const p = prospectos.find(x=>x.id===c.prospectoId);
+  $("#chatTitle").textContent = (p?.negocio || c.nombre || "Chat") + " · " + (CANAL_TXT[c.canal]||"");
+  $("#chatActions").innerHTML = (p?`<button class="btn" type="button" id="chatVerP">Ver prospecto</button>`:"") +
+    (c.canal==="whatsapp"?`<a class="btn wa" href="${esc(waLink(String(c.contactoId).slice(-10)))}" target="_blank" rel="noopener">Abrir en mi WhatsApp</a>`:"");
+  $("#chatVerP")?.addEventListener("click", ()=>verDetalle(c.prospectoId));
+  $("#chatMsgs").innerHTML = `<div class="empty">Cargando…</div>`;
+  if(unsubChat) unsubChat();
+  unsubChat = onValue(ref(fdb, `${CTX.base}/mensajes/${id}`), snap=>{
+    const v = snap.val() || {};
+    const M2 = Object.values(v).sort((a,b)=>(a.ts||0)-(b.ts||0)).slice(-150);
+    $("#chatMsgs").innerHTML = M2.length ? M2.map(m=>`<div class="bub ${m.dir==="out"?"out":"in"}">${esc(m.texto)}<time>${esc(fmtDT(new Date(m.ts).toISOString()))}</time></div>`).join("") : `<div class="empty">Sin mensajes.</div>`;
+    const body = $("#chatBody"); body.scrollTop = body.scrollHeight;
+  }, ()=>{ $("#chatMsgs").innerHTML = `<div class="empty">No se pudieron cargar los mensajes.</div>`; });
+  if(c.noLeidos) update(ref(fdb, `${CTX.base}/chats/${id}`), {noLeidos:0}).catch(()=>{});
+  pintarEstadoChat();
+  abrir($("#sheetChat"));
+}
+function pintarEstadoChat(){
+  const c = chats.find(x=>x.id===chatAbierto); if(!c) return;
+  const abierta = c.ventanaHasta && Date.now() < c.ventanaHasta;
+  $("#chatAviso").hidden = abierta;
+  $("#chatAviso").textContent = "Pasaron más de 24 horas desde su último mensaje. Meta no deja escribirle desde aquí hasta que vuelva a escribir." + (c.canal==="whatsapp" ? " Puedes contestarle desde tu WhatsApp con el botón de arriba." : "");
+  $("#chatTxt").disabled = !abierta; $("#chatSend").disabled = !abierta;
+}
+$("#chatTxt").addEventListener("input", e=>{ e.target.style.height="auto"; e.target.style.height=Math.min(140,e.target.scrollHeight)+"px"; });
+$("#chatForm").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const texto = $("#chatTxt").value.trim(); if(!texto || !chatAbierto) return;
+  $("#chatSend").disabled = true;
+  try{
+    await httpsCallable(fns, "enviarMensaje")({ tid: CTX.tid, convId: chatAbierto, texto });
+    $("#chatTxt").value = ""; $("#chatTxt").style.height = "auto";
+  }catch(e){
+    const m = String(e?.message||"");
+    toast(m.includes("ventana") ? "Ya pasaron 24 h: espera a que te vuelva a escribir." :
+          m.includes("token") ? "Este canal no tiene token. Revisa Canales." :
+          e?.code==="functions/not-found" || e?.code==="functions/internal" && !m ? "El servidor de mensajes aún no está encendido." :
+          "No se pudo enviar: " + (m || "revisa tu conexión"));
+  }finally{ pintarEstadoChat(); }
+});
+// Al cerrar la hoja del chat, dejar de escuchar sus mensajes
+document.querySelectorAll("#sheetChat [data-close], #scrim").forEach(el=>el.addEventListener("click", ()=>{ chatAbierto=null; if(unsubChat){ unsubChat(); unsubChat=null; } }));
+
+/* ---------- Canales (solo admin) ---------- */
+let canalCtx = null;
+const ETQ_CUENTA = { whatsapp:"ID del número de teléfono (Phone number ID)", messenger:"ID de la Página de Facebook", instagram:"ID de la cuenta de Instagram" };
+function abrirCanales(ctx){
+  canalCtx = ctx;
+  $("#canTitle").textContent = "Canales · " + ctx.nombre;
+  $("#formCanal").reset(); $("#cErr").textContent = "";
+  $("#lblCuenta").textContent = ETQ_CUENTA.whatsapp; $("#wrapPage").hidden = true;
+  $("#listCanales").innerHTML = `<div class="empty">Cargando…</div>`;
+  get(ref(fdb, "channels")).then(s=>{
+    const v = s.val() || {};
+    const mios = Object.entries(v).filter(([,d])=>d.base===ctx.base);
+    $("#listCanales").innerHTML = mios.length ? mios.map(([k,d])=>`
+      <div class="card" style="--stage:var(--accent);cursor:default">
+        <span class="name">${esc(d.nombre||k)}</span><span class="canal ${esc(d.canal)}">${esc(CANAL_TXT[d.canal]||d.canal)}</span>
+        <span class="meta"><span>ID ${esc(d.cuenta||"")}</span>${d.conectado?`<span>Desde ${esc(fmtFecha(d.conectado.slice(0,10)))}</span>`:""}</span>
+        <span class="row" style="grid-column:1/-1;margin-top:6px"><button class="btn danger" type="button" data-can-del="${esc(k)}">Desconectar</button></span>
+      </div>`).join("") : `<div class="empty">Sin canales conectados.</div>`;
+    $("#listCanales").querySelectorAll("[data-can-del]").forEach(b=>b.onclick=async()=>{
+      if(b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="¿Desconectar? Toca otra vez"; return; }
+      try{ await update(ref(fdb), { [`channels/${b.dataset.canDel}`]:null, [`secrets/${b.dataset.canDel}`]:null }); toast("Canal desconectado"); abrirCanales(canalCtx); }
+      catch(e){ toast("No se pudo desconectar"); }
+    });
+  }).catch(()=>{ $("#listCanales").innerHTML = `<div class="empty">No se pudieron leer los canales. Publica las reglas nuevas.</div>`; });
+  abrir($("#sheetCanales"));
+}
+$("#c-canal").addEventListener("change", ev=>{ $("#lblCuenta").textContent = ETQ_CUENTA[ev.target.value]; $("#wrapPage").hidden = ev.target.value!=="instagram"; });
+$("#btnCanalesPropios").addEventListener("click", ()=>abrirCanales({ base:"crm", tid:null, nombre:"Mi CRM (RAYAMI)" }));
+$("#formCanal").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const canal = $("#c-canal").value, cuenta = $("#c-cuenta").value.trim(), token = $("#c-token").value.trim();
+  $("#cErr").textContent = "";
+  if(!/^\d{5,25}$/.test(cuenta)){ $("#cErr").textContent = "El ID debe ser solo números (lo copias de Meta)."; return; }
+  if(token.length < 20){ $("#cErr").textContent = "El token parece incompleto."; return; }
+  const key = llave(`${canal}_${cuenta}`);
+  const pageId = $("#c-page").value.trim();
+  try{
+    const ya = (await get(ref(fdb, `channels/${key}`))).val();
+    if(ya && ya.base !== canalCtx.base){ $("#cErr").textContent = "Ese canal ya está conectado a otro negocio. Desconéctalo allá primero."; return; }
+    await update(ref(fdb), {
+      [`channels/${key}`]: limpio({ base:canalCtx.base, tid:canalCtx.tid, canal, cuenta, nombre:$("#c-nombre").value.trim()||CANAL_TXT[canal], conectado:new Date().toISOString() }),
+      [`secrets/${key}`]: limpio({ token, ...(canal==="instagram" && pageId ? {pageId} : {}) })
+    });
+    toast("Canal conectado"); abrirCanales(canalCtx);
+  }catch(e){ $("#cErr").textContent = "No se pudo guardar. Publica las reglas nuevas en Firebase."; }
 });
 </script>
 </body>

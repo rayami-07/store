@@ -86,6 +86,14 @@
         ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || ((auth != null && root.child('tenantMembers/' + $tid + '/' + auth.uid).exists()) && root.child('tenants/' + $tid + '/estado').val() === 'activo')"
       }
     },
+    "channels": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+    },
+    "secrets": {
+      ".read": false,
+      ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+    },
     "views": {
       ".read": true,
       "$productId": {
