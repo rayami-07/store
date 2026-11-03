@@ -4,7 +4,7 @@
 ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo } from "../tienda/muestras.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
@@ -553,12 +553,17 @@ const vigPicker = (id, val) => `<div class="vig-row">
   </div>`;
 const ownerFields = (opt) => `
     <label><span>Correo del dueño${opt ? ' <span class="muted">(opcional, puedes agregarlo después)</span>' : ""}</span><input type="email" id="oEmail" autocapitalize="off" placeholder="dueno@gmail.com" /></label>
-    <label>Contraseña temporal<span class="pass-row"><input id="oPass" value="${genPass()}" /><button type="button" class="btn btn-light" data-act="gen">Generar</button></span></label>
-    <p class="hint">Si el correo ya tiene cuenta (por ejemplo del CRM), escribe la contraseña que ya usa y se vincula.</p>`;
+    <div class="field-label">¿Cómo recibe su acceso?</div>
+    <div class="opts-col" id="oModo">
+      <label class="opt-card"><input type="radio" name="oModo" value="correo" checked /> <span><b>Correo de bienvenida</b><small>Le llega un correo de RAYAMI Store para que él cree su contraseña. Tú no la conoces.</small></span></label>
+      <label class="opt-card"><input type="radio" name="oModo" value="pass" /> <span><b>Contraseña temporal</b><small>Tú se la mandas por WhatsApp. También úsala si el correo ya tiene cuenta (por ejemplo del CRM): escribe la que ya usa.</small></span></label>
+    </div>
+    <label id="oPassWrap" hidden>Contraseña<span class="pass-row"><input id="oPass" value="${genPass()}" /><button type="button" class="btn btn-light" data-act="gen">Generar</button></span></label>`;
 function ownersList() {
   const list = Object.entries(owners[omId] || {});
   return list.length ? list.map(([uid, o]) => `<div class="owner"><span><i class="fa-solid fa-user"></i> ${esc(o.email)}${o.ts ? `<small class="muted"> · desde ${fdate(o.ts)}</small>` : ""}</span>
-      <button type="button" class="btn btn-ghost danger" data-unlink="${esc(uid)}">Quitar acceso</button></div>`).join("")
+      <span class="owner-acts"><button type="button" class="btn btn-ghost" data-resend="${esc(o.email)}" title="Le llega un correo para crear o cambiar su contraseña">Reenviar correo</button>
+    <button type="button" class="btn btn-ghost danger" data-unlink="${esc(uid)}">Quitar acceso</button></span></div>`).join("")
     : `<p class="hint" style="margin:0">Nadie tiene acceso todavía.</p>`;
 }
 
@@ -649,24 +654,38 @@ async function commit(changes, msg) {
   try { omAdmin = (await get(ref(db, `storeAdmin/${omId}`))).val() || {}; } catch {}
   toast(msg);
 }
-async function addOwner(email, pass) {
-  appAlta = appAlta || initializeApp(FB_CONFIG, "alta-duenos");
-  const authAlta = getAuth(appAlta);
+const authAltaGet = () => getAuth(appAlta || (appAlta = initializeApp(FB_CONFIG, "alta-duenos")));
+// Correo de bienvenida = correo de "crear contraseña" de Firebase (el texto se edita en
+// Firebase → Authentication → Plantillas). Al terminar, el botón "Continuar" lo lleva a Mi tienda.
+async function sendInvite(email) {
+  const a = authAltaGet();
+  try { await sendPasswordResetEmail(a, email, { url: `${MI_TIENDA_URL}?t=${omId}` }); }
+  catch (err) {
+    if (/continue-uri|unauthorized|invalid-continue/i.test(err.code || "")) await sendPasswordResetEmail(a, email); // dominio aún no autorizado
+    else throw err;
+  }
+}
+async function addOwner(email, pass, invite) {
+  const authAlta = authAltaGet();
   let cred, existed = false;
-  try { cred = await createUserWithEmailAndPassword(authAlta, email, pass); }
+  try { cred = await createUserWithEmailAndPassword(authAlta, email, invite ? genPass() + genPass() : pass); }
   catch (err) {
     if (err.code !== "auth/email-already-in-use") throw err;
+    if (invite) { const x = new Error("existe"); x.code = "ya-existe-correo"; throw x; }
     existed = true;
     try { cred = await signInWithEmailAndPassword(authAlta, email, pass); }
     catch { const x = new Error("existe"); x.code = "ya-existe"; throw x; }
   }
   const uid = cred.user.uid;
   await signOut(authAlta);
-  return { uid, existed, changes: { [`storeOwners/${omId}/${uid}`]: { email, ts: Date.now() }, [`userStores/${uid}/${omId}`]: true } };
+  let mailed = false;
+  if (invite) { try { await sendInvite(email); mailed = true; } catch (err) { console.warn("No se pudo enviar el correo:", err.code || err.message); } }
+  return { uid, existed, mailed, changes: { [`storeOwners/${omId}/${uid}`]: { email, ts: Date.now() }, [`userStores/${uid}/${omId}`]: true } };
 }
 function ownerErr(err) {
   const c = err?.code || "";
-  return c === "ya-existe" ? "Ese correo ya tiene cuenta y la contraseña no coincide. Escribe la que ya usa, o pídele otro correo." :
+  return c === "ya-existe-correo" ? "Ese correo ya tiene cuenta (quizá del CRM). Elige \"Contraseña temporal\" y escribe la contraseña que ya usa para vincularla." :
+    c === "ya-existe" ? "Ese correo ya tiene cuenta y la contraseña no coincide. Escribe la que ya usa, o pídele otro correo." :
     c === "auth/invalid-email" ? "El correo no es válido." :
     c === "auth/weak-password" ? "La contraseña es muy débil." :
     c === "auth/operation-not-allowed" ? "Activa \"Correo/contraseña\" en Firebase Authentication." :
@@ -675,22 +694,34 @@ function ownerErr(err) {
 }
 function readOwnerFields(required) {
   const email = ($("oEmail")?.value || "").trim().toLowerCase(), pass = $("oPass")?.value || "";
+  const invite = document.querySelector('input[name="oModo"]:checked')?.value !== "pass";
   if (!email && !required) return { email: "" };
   if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Revisa el correo del dueño.");
-  if (pass.length < 8) throw new Error("La contraseña debe tener al menos 8 caracteres.");
+  if (!invite && pass.length < 8) throw new Error("La contraseña debe tener al menos 8 caracteres.");
   if (ADMIN_EMAILS.includes(email)) throw new Error("Ese es tu correo de administrador; usa el del dueño.");
-  return { email, pass };
+  return { email, pass, invite };
 }
-function welcome(email, pass) {
+function welcome(email, pass, mailed) {
   const s = demos[omId];
-  return `Hola, tu tienda en línea de ${s.name} ya está lista.\n\n`
+  const head = `Hola, bienvenido a RAYAMI Store. Tu tienda en línea de ${s.name} ya está lista.\n\n`
     + `Tu tienda (compártela con tus clientes):\n${TIENDA_URL}?t=${omId}\n\n`
-    + `Para agregar productos, cambiar precios y ver tus ventas entra aquí:\n${MI_TIENDA_URL}?t=${omId}\n\n`
-    + `Correo: ${email}\n`
+    + `Para agregar productos, cambiar precios y ver tus ventas entra aquí:\n${MI_TIENDA_URL}?t=${omId}\n\n`;
+  if (mailed) return head + `Te enviamos un correo a ${email} para que crees tu contraseña. Si no lo ves, revisa "Spam" o "Promociones".\n\nDespués entra con tu correo y esa contraseña.`;
+  return head + `Correo: ${email}\n`
     + (pass ? `Contraseña temporal: ${pass}\n\nTe recomiendo cambiarla en la pestaña "Cuenta".` : `Contraseña: la misma que ya usas.`);
 }
 
+$("omBody").addEventListener("change", (e) => {
+  if (e.target.name === "oModo") $("oPassWrap").hidden = e.target.value !== "pass";
+});
 $("omBody").addEventListener("click", async (e) => {
+  const rs = e.target.closest("[data-resend]");
+  if (rs) {
+    rs.disabled = true;
+    try { await sendInvite(rs.dataset.resend); await update(ref(db), hist("Correo reenviado", rs.dataset.resend)); toast(`Correo enviado a ${rs.dataset.resend}`); }
+    catch (err) { toast(err.code === "auth/too-many-requests" ? "Demasiados envíos seguidos. Espera unos minutos." : "No se pudo enviar el correo"); }
+    rs.disabled = false; return;
+  }
   const unl = e.target.closest("[data-unlink]");
   if (unl) {
     if (unl.dataset.confirm !== "1") { unl.dataset.confirm = "1"; unl.textContent = "¿Seguro? Toca otra vez"; return; }
@@ -726,22 +757,22 @@ $("omBody").addEventListener("click", async (e) => {
       };
       let ow = null;
       if (o.email) {
-        try { ow = await addOwner(o.email, o.pass); }
+        try { ow = await addOwner(o.email, o.pass, o.invite); }
         catch (err) { $("oErr").textContent = ownerErr(err); busy(false); return; }
-        changes = { ...changes, ...ow.changes, ...hist("Acceso dado", o.email) };
+        changes = { ...changes, ...ow.changes, ...hist("Acceso dado", o.email + (ow.mailed ? " · correo de bienvenida enviado" : "")) };
       }
       await commit(changes, "Tienda activada");
       demos[omId] = { ...s, status: "activa" };
-      if (ow) { (owners[omId] ||= {})[ow.uid] = { email: o.email, ts: Date.now() }; omWelcome = welcome(o.email, ow.existed ? "" : o.pass); }
+      if (ow) { (owners[omId] ||= {})[ow.uid] = { email: o.email, ts: Date.now() }; omWelcome = welcome(o.email, ow.existed || o.invite ? "" : o.pass, ow.mailed); if (o.invite && !ow.mailed) toast("Cuenta creada, pero no se pudo enviar el correo. Usa \"Reenviar correo\"."); }
       renderOM(); return;
     }
     if (act === "owner") {
       let o; try { o = readOwnerFields(true); } catch (err) { $("oErr").textContent = err.message; return; }
       busy(true); $("oErr").textContent = "";
-      let ow; try { ow = await addOwner(o.email, o.pass); } catch (err) { $("oErr").textContent = ownerErr(err); busy(false); return; }
-      await commit({ ...ow.changes, ...hist("Acceso dado", o.email) }, "Acceso listo");
+      let ow; try { ow = await addOwner(o.email, o.pass, o.invite); } catch (err) { $("oErr").textContent = ownerErr(err); busy(false); return; }
+      await commit({ ...ow.changes, ...hist("Acceso dado", o.email + (ow.mailed ? " · correo de bienvenida enviado" : "")) }, ow.mailed || !o.invite ? "Acceso listo" : "Cuenta creada, pero no se pudo enviar el correo. Usa \"Reenviar correo\".");
       (owners[omId] ||= {})[ow.uid] = { email: o.email, ts: Date.now() };
-      omWelcome = welcome(o.email, ow.existed ? "" : o.pass);
+      omWelcome = welcome(o.email, ow.existed || o.invite ? "" : o.pass, ow.mailed);
       renderOM(); return;
     }
     if (act === "ext") {

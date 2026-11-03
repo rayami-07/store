@@ -118,7 +118,9 @@ $("forgot").addEventListener("click", async () => {
   $("lErr").textContent = ""; $("lOk").hidden = true;
   if (!/^\S+@\S+\.\S+$/.test(email)) { $("lErr").textContent = "Escribe tu correo arriba y vuelve a tocar \"Olvidé mi contraseña\"."; $("lEmail").focus(); return; }
   try {
-    await sendPasswordResetEmail(auth, email);
+    // Al crear la contraseña, el botón "Continuar" lo regresa aquí
+    try { await sendPasswordResetEmail(auth, email, { url: location.href }); }
+    catch (err) { if (/continue-uri|unauthorized/i.test(err.code || "")) await sendPasswordResetEmail(auth, email); else throw err; }
     $("lOk").hidden = false;
     $("lOk").textContent = `Si ${email} tiene cuenta, te llegará un correo para crear una contraseña nueva. Revisa también "spam".`;
   } catch (err) { $("lErr").textContent = authError(err); }
