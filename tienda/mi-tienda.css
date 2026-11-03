@@ -1,0 +1,59 @@
+/* Panel del dueño: se apoya en editar.css (mismas tarjetas, lista y hoja) */
+.login { min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 24px 16px; }
+.login-card { width: min(400px, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 26px 22px; display: grid; gap: 14px; }
+.login-card h1 { margin: 0; font-family: var(--display); font-weight: var(--display-weight); text-transform: var(--display-case); font-size: 34px; line-height: 1; }
+.login-card p { margin: 0; }
+.login-card label, .form label { display: grid; gap: 6px; font-weight: 500; font-size: 15px; }
+.login-card input, .form input, .search { border: 1px solid var(--line); border-radius: 10px; padding: 11px 12px; font-size: 16px; width: 100%; min-width: 0; background: #fff; }
+.login-card input:focus, .form input:focus, .search:focus { outline: none; border-color: var(--ink); }
+.login-brand:empty { display: none; }
+.login-brand { display: flex; align-items: center; gap: 10px; font-weight: 700; }
+.login-brand img { height: 40px; width: auto; max-width: 110px; object-fit: contain; border-radius: 6px; }
+.pass-wrap { position: relative; display: block; }
+.pass-wrap input { padding-right: 46px; }
+.eye { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: 0; background: none; color: var(--muted); cursor: pointer; }
+.ok-note { background: #f0fdf4; color: #166534; border-radius: 10px; padding: 10px 12px; font-size: 14px; }
+.login-card .link { justify-self: center; }
+.pick-list { display: grid; gap: 8px; }
+.pick { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer; text-align: left; width: 100%; }
+.pick i { margin-left: auto; color: var(--muted); }
+.pick-logo { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; color: #fff; font-weight: 700; overflow: hidden; flex: none; }
+.pick-logo img { width: 100%; height: 100%; object-fit: cover; }
+
+.top-in { justify-content: space-between; gap: 10px; }
+.top-out { flex: none; }
+.pill.on { color: #166534; background: #f0fdf4; border-color: #bbf7d0; }
+.tabs { display: flex; gap: 4px; padding-bottom: 8px; overflow-x: auto; }
+.tab { border: 0; background: none; padding: 8px 14px; border-radius: 100px; font-weight: 600; color: var(--muted); cursor: pointer; white-space: nowrap; font-size: 15px; }
+.tab.active { background: var(--ink); color: #fff; }
+.main { padding-bottom: 40px; }
+.tab-pane { display: grid; gap: 14px; }
+
+.notice { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 4px 12px; align-items: start; background: #fff7ed; border: 1px solid #fed7aa; color: #7c2d12; border-radius: 14px; padding: 14px; }
+.notice > i { font-size: 20px; margin-top: 2px; }
+.notice .btn { grid-column: 2; justify-self: start; height: 40px; margin-top: 6px; }
+
+.quick { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.qa { display: grid; justify-items: center; gap: 6px; padding: 12px 4px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; text-decoration: none; color: var(--ink); font-size: 13px; font-weight: 600; cursor: pointer; text-align: center; line-height: 1.15; }
+.qa i { font-size: 20px; color: var(--accent); }
+.qa:hover { border-color: var(--muted); }
+
+.search { margin: 0; }
+.form { gap: 14px; }
+.form h2.sub { font-size: 16px; margin-top: 6px; }
+.checks { display: grid; gap: 8px; }
+.checks label { display: flex; flex-direction: row; align-items: center; gap: 10px; font-weight: 400; }
+.checks input { width: 20px; height: 20px; accent-color: var(--ink); flex: none; }
+.pay-fields { display: grid; gap: 12px; }
+.logo-row { display: flex; align-items: center; gap: 14px; }
+.logo-box { width: 72px; height: 72px; border: 1px dashed var(--line); border-radius: 12px; display: grid; place-items: center; overflow: hidden; background: #fafaf9; color: var(--muted); font-size: 22px; flex: none; }
+.logo-box img { width: 100%; height: 100%; object-fit: contain; }
+.file-btn { height: 42px; }
+.mini:disabled, .btn:disabled { opacity: .55; cursor: default; }
+.saving { opacity: .6; pointer-events: none; }
+
+@media (max-width: 380px) {
+  .quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .row2 { grid-template-columns: 1fr; }
+}
+.form label.file-btn { display: inline-flex; flex-direction: row; font-weight: 600; }

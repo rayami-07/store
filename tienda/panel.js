@@ -2,6 +2,7 @@
    PANEL DEL NEGOCIO  (tienda/panel.html?t=<id>)
    - Demo sin sesión: muestra datos de ejemplo para enseñar el panel
    - Admin con sesión: muestra los datos reales (y puede ver el ejemplo)
+   - Dueño con sesión (mi-tienda.html): ve los datos reales de SU tienda
 ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
@@ -154,7 +155,11 @@ async function start(user) {
   const products = Array.isArray(store.products) ? store.products : Object.values(store.products || {});
   sample = sampleData(storeId, products);
   real = { events: {}, leads: {} };
-  if (isAdmin) {
+  let isOwner = false;
+  if (user && !isAdmin) {
+    try { isOwner = !!(await get(ref(db, `userStores/${user.uid}/${storeId}`))).val(); } catch (e) { console.warn(e); }
+  }
+  if (isAdmin || isOwner) {
     try {
       const [ev, ld] = await Promise.all([get(ref(db, `events/${storeId}`)), get(ref(db, `leads/${storeId}`))]);
       real = { events: ev.val() || {}, leads: ld.val() || {} };
@@ -163,14 +168,17 @@ async function start(user) {
   } else if (store.status === "demo") {
     useSample = true;
   } else {
-    return lock(); // tiendas reales: el dueño entrará con su cuenta (siguiente etapa)
+    return lock(); // tiendas reales: solo el dueño (con su cuenta) o el admin
   }
   applyBrand();
   draw();
   $("loading").hidden = true;
   $("app").hidden = false;
 }
-function lock() { $("loading").hidden = true; $("locked").hidden = false; }
+function lock() {
+  $("loading").hidden = true; $("locked").hidden = false;
+  if (/^[a-z0-9-]{3,60}$/.test(storeId)) $("lockedLogin").href = `mi-tienda.html?t=${storeId}`;
+}
 
 let started = false;
 onAuthStateChanged(auth, (u) => { if (started) return; started = true; start(u); });

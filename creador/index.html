@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=3" />
+  <link rel="stylesheet" href="creador.css?v=4" />
 </head>
 <body>
 
@@ -61,7 +61,7 @@
           </div>
           <label>Frase principal<input id="fTagline" maxlength="70" placeholder="Tenis y zapatos para cada ocasión" /></label>
           <div class="row2">
-            <label>WhatsApp del negocio *<input id="fWa" inputmode="tel" required placeholder="55 1234 5678" /></label>
+            <label>WhatsApp del negocio *<input id="fWa" inputmode="tel" required maxlength="20" placeholder="55 1234 5678" /></label>
             <label>Horario<input id="fHorario" maxlength="40" placeholder="Lun a Sáb · 10 a 7" /></label>
           </div>
           <label>Aviso en la barra superior<input id="fAviso" maxlength="90" placeholder="Envíos a todo el Valle de México" /></label>
@@ -183,9 +183,52 @@
     <div class="demo-list" id="demoList"></div>
   </section>
 
+  <!-- ACCESO DEL DUEÑO Y ESTADO DE LA TIENDA -->
+  <div class="modal-wrap" id="ownerModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="omTitle">
+      <div class="modal-head">
+        <div><h3 id="omTitle">Activar y dar acceso</h3><p class="muted" id="omStore"></p></div>
+        <button type="button" class="icon-x" id="omClose" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="field-label">Estado de la tienda</div>
+        <div class="seg seg-full" id="omStatus" role="group" aria-label="Estado">
+          <button type="button" data-st="demo">Demo</button>
+          <button type="button" data-st="activa">Activa</button>
+          <button type="button" data-st="pausada">Pausada</button>
+        </div>
+        <p class="hint" id="omStatusHint"></p>
+
+        <div class="field-label">Dueños con acceso</div>
+        <div class="owners" id="omOwners"></div>
+
+        <form class="om-form" id="omForm" autocomplete="off" novalidate>
+          <div class="field-label">Dar acceso a un dueño</div>
+          <label>Correo del dueño<input type="email" id="oEmail" autocapitalize="off" placeholder="dueno@gmail.com" /></label>
+          <label>Contraseña temporal
+            <span class="pass-row"><input id="oPass" minlength="8" /><button type="button" class="btn btn-light" id="oGen">Generar</button></span>
+          </label>
+          <p class="hint">Si ese correo ya tiene cuenta (por ejemplo del CRM), escribe la contraseña que ya usa y se vincula.</p>
+          <label class="switch" id="oActWrap"><input type="checkbox" id="oActivate" checked /> <span><b>Activar la tienda</b><small>Quita la barra de demo y le permite editar sus productos.</small></span></label>
+          <p class="err" id="oErr"></p>
+          <button type="submit" class="btn btn-dark" id="oBtn"><i class="fa-solid fa-user-plus"></i> Crear cuenta y dar acceso</button>
+        </form>
+
+        <div class="om-done" id="omDone" hidden>
+          <b><i class="fa-solid fa-circle-check"></i> Listo. Mándale estos datos al dueño:</b>
+          <pre id="omMsg"></pre>
+          <div class="res-actions">
+            <a class="btn btn-wa" id="omWa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Mandar por WhatsApp</a>
+            <button type="button" class="btn btn-light" id="omCopy"><i class="fa-regular fa-copy"></i> Copiar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=6"></script>
+<script type="module" src="creador.js?v=7"></script>
 </body>
 </html>

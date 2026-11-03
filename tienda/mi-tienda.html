@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mi tienda</title>
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#161412" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="editar.css?v=5" />
+  <link rel="stylesheet" href="mi-tienda.css?v=1" />
+</head>
+<body>
+<div class="loading" id="loading"><div class="spinner"></div></div>
+
+<!-- ENTRAR -->
+<main class="login" id="loginView" hidden>
+  <form class="login-card" id="loginForm" novalidate>
+    <div class="login-brand" id="loginBrand"></div>
+    <h1>Mi tienda</h1>
+    <p class="muted">Entra con el correo y la contraseña que te enviamos.</p>
+    <label>Correo<input type="email" id="lEmail" autocomplete="username" autocapitalize="off" inputmode="email" required /></label>
+    <label>Contraseña
+      <span class="pass-wrap"><input type="password" id="lPass" autocomplete="current-password" required /><button type="button" class="eye" id="lEye" aria-label="Mostrar contraseña"><i class="fa-regular fa-eye"></i></button></span>
+    </label>
+    <p class="err" id="lErr" role="alert"></p>
+    <button class="btn btn-dark btn-block" type="submit" id="lBtn">Entrar</button>
+    <button class="link" type="button" id="forgot">Olvidé mi contraseña</button>
+    <p class="ok-note" id="lOk" hidden></p>
+  </form>
+</main>
+
+<!-- SIN TIENDA / ELEGIR TIENDA -->
+<main class="login" id="pickView" hidden>
+  <div class="login-card">
+    <h1 id="pickTitle">Elige tu tienda</h1>
+    <p class="muted" id="pickText"></p>
+    <div class="pick-list" id="pickList"></div>
+    <button class="btn btn-light btn-block" type="button" data-logout>Salir</button>
+  </div>
+</main>
+
+<!-- APP -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="wrap top-in">
+      <div class="brand"><img id="logo" alt="" hidden /><div><b id="name"></b><span class="pill" id="statusPill"></span></div></div>
+      <button class="icon-btn top-out" data-logout aria-label="Salir"><i class="fa-solid fa-right-from-bracket"></i></button>
+    </div>
+    <nav class="wrap tabs" role="tablist">
+      <button class="tab active" data-tab="productos" role="tab">Productos</button>
+      <button class="tab" data-tab="negocio" role="tab">Mi negocio</button>
+      <button class="tab" data-tab="cuenta" role="tab">Cuenta</button>
+    </nav>
+  </header>
+
+  <main class="wrap main">
+    <div class="notice" id="paused" hidden>
+      <i class="fa-solid fa-circle-pause"></i>
+      <span><b>Tu tienda está pausada.</b> Tus clientes no la pueden ver y no puedes hacer cambios. Escríbenos para reactivarla.</span>
+      <a class="btn btn-wa" id="pausedWa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Escribir</a>
+    </div>
+
+    <section class="quick">
+      <a class="qa" id="qView" target="_blank" rel="noopener"><i class="fa-solid fa-store"></i><span>Ver mi tienda</span></a>
+      <a class="qa" id="qPanel"><i class="fa-solid fa-chart-column"></i><span>Mis ventas</span></a>
+      <a class="qa" id="qShare" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i><span>Compartir</span></a>
+      <button class="qa" id="qCopy" type="button"><i class="fa-regular fa-copy"></i><span>Copiar link</span></button>
+    </section>
+
+    <!-- PRODUCTOS -->
+    <div class="tab-pane" data-pane="productos">
+      <section class="block">
+        <div class="block-head"><h2>Tus productos <span class="muted" id="count"></span></h2></div>
+        <input class="search" id="search" type="search" placeholder="Buscar producto" aria-label="Buscar producto" hidden />
+        <div class="list" id="list"></div>
+        <div class="add-row">
+          <button class="btn btn-dark" id="addProd"><i class="fa-solid fa-plus"></i> Agregar producto</button>
+          <button class="btn btn-light" id="addCombo"><i class="fa-solid fa-layer-group"></i> Agregar combo</button>
+        </div>
+      </section>
+    </div>
+
+    <!-- MI NEGOCIO -->
+    <div class="tab-pane" data-pane="negocio" hidden>
+      <form class="block form" id="bizForm" novalidate>
+        <h2>Datos de tu tienda</h2>
+        <div class="logo-row">
+          <div class="logo-box" id="logoBox"></div>
+          <label class="btn btn-light file-btn"><i class="fa-solid fa-upload"></i> Cambiar logo<input type="file" id="bLogo" accept="image/*" hidden /></label>
+        </div>
+        <label>Frase principal<input id="bTagline" maxlength="70" placeholder="Lo que te hace especial" /></label>
+        <label>WhatsApp donde recibes pedidos<input id="bWa" inputmode="tel" maxlength="20" placeholder="55 1234 5678" /></label>
+        <label>Horario<input id="bHorario" maxlength="40" placeholder="Lun a Sáb · 10 a 7" /></label>
+        <label>Aviso en la barra de arriba<input id="bAviso" maxlength="90" placeholder="Envíos a todo el Valle de México" /></label>
+
+        <h2 class="sub">Entregas</h2>
+        <div class="checks" id="bEntregas">
+          <label><input type="checkbox" value="recoger" /> Recoger en tienda</label>
+          <label><input type="checkbox" value="domicilio" /> Envío a domicilio</label>
+          <label><input type="checkbox" value="punto" /> Punto de encuentro</label>
+        </div>
+
+        <h2 class="sub">Pagos</h2>
+        <div class="checks" id="bPagos">
+          <label><input type="checkbox" value="entrega" /> Pago al recibir</label>
+          <label><input type="checkbox" value="transferencia" /> Transferencia</label>
+          <label><input type="checkbox" value="link" /> Link de pago (tarjeta)</label>
+        </div>
+        <div class="pay-fields" id="bTransfer">
+          <div class="row2">
+            <label>Banco<input id="bBanco" maxlength="30" placeholder="BBVA" /></label>
+            <label>Titular<input id="bTitular" maxlength="50" /></label>
+          </div>
+          <label>CLABE o número de cuenta<input id="bClabe" inputmode="numeric" maxlength="22" placeholder="18 dígitos" /></label>
+        </div>
+        <label id="bLinkWrap">Link de pago<input id="bLink" type="url" placeholder="https://mpago.la/…" /></label>
+        <p class="muted small">Tus clientes ven estos datos al hacer su pedido para pagarte directo.</p>
+        <p class="err" id="bErr"></p>
+        <button class="btn btn-dark btn-block" type="submit" id="bSave"><i class="fa-solid fa-floppy-disk"></i> Guardar cambios</button>
+      </form>
+    </div>
+
+    <!-- CUENTA -->
+    <div class="tab-pane" data-pane="cuenta" hidden>
+      <section class="block">
+        <h2>Tu cuenta</h2>
+        <p class="muted small" id="accEmail"></p>
+      </section>
+      <form class="block form" id="passForm" novalidate>
+        <h2>Cambiar contraseña</h2>
+        <label>Contraseña actual<input type="password" id="pOld" autocomplete="current-password" /></label>
+        <label>Contraseña nueva <span class="muted">(mínimo 8)</span><input type="password" id="pNew" autocomplete="new-password" minlength="8" /></label>
+        <p class="err" id="pErr"></p>
+        <button class="btn btn-dark btn-block" type="submit" id="pBtn">Cambiar contraseña</button>
+      </form>
+      <section class="block">
+        <h2>¿Necesitas ayuda?</h2>
+        <p class="muted small">Para cambiar colores, el tipo de tienda o tu plan, escríbenos.</p>
+        <a class="btn btn-wa btn-block" id="helpWa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Escribir a soporte</a>
+        <button class="btn btn-light btn-block" type="button" data-logout>Salir</button>
+      </section>
+    </div>
+  </main>
+
+  <!-- Hoja para agregar / editar producto -->
+  <div class="sheet-wrap" id="sheet" hidden>
+    <form class="sheet" id="pForm" novalidate>
+      <div class="sheet-head">
+        <h3 id="sheetTitle">Agregar producto</h3>
+        <button type="button" class="icon-btn" id="sheetClose" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="sheet-body">
+        <label class="photo-pick">
+          <img id="fPhotoPrev" alt="" />
+          <span><i class="fa-solid fa-camera"></i> Toca para poner foto</span>
+          <input type="file" id="fPhoto" accept="image/*" hidden />
+        </label>
+        <label>Nombre<input id="fName" maxlength="60" placeholder="Ej. Tenis blancos" required /></label>
+        <div class="row2">
+          <label>Precio<input id="fPrice" inputmode="decimal" placeholder="$0" required /></label>
+          <label>Precio de oferta <span class="muted">(opcional)</span><input id="fSale" inputmode="decimal" placeholder="$0" /></label>
+        </div>
+        <label>Categoría
+          <select id="fCat"></select>
+        </label>
+        <label id="newCatWrap" hidden>Nombre de la categoría nueva<input id="fNewCat" maxlength="30" placeholder="Ej. Promociones" /></label>
+        <label><span id="descLabel">Descripción <span class="muted">(opcional)</span></span><textarea id="fDesc" rows="2" maxlength="300" placeholder="Material, medidas, qué incluye…"></textarea></label>
+        <details class="opts" id="optsBox">
+          <summary>Tallas, colores u otras opciones</summary>
+          <p class="muted small">Escribe el nombre de la opción y sus valores separados por coma.</p>
+          <div class="var-row"><input id="v0n" placeholder="Talla" /><input id="v0v" placeholder="CH, M, G" /></div>
+          <div class="var-row"><input id="v1n" placeholder="Color" /><input id="v1v" placeholder="Negro, Blanco" /></div>
+        </details>
+        <p class="err" id="fErr"></p>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-light" id="sheetCancel">Cancelar</button>
+        <button type="submit" class="btn btn-dark" id="fSave">Guardar</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="toast" id="toast" role="status"></div>
+</div>
+
+<script type="module" src="mi-tienda.js?v=1"></script>
+</body>
+</html>

@@ -134,7 +134,41 @@
       ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
       "$storeId": {
         ".read": true,
-        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+        "products": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.hasChildren() && newData.numChildren() <= 300"
+        },
+        "tagline": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.isString() && newData.val().length <= 70"
+        },
+        "horario": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
+        "aviso": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.isString() && newData.val().length <= 90"
+        },
+        "whatsapp": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "logo": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.isString() && newData.val().length <= 1000000"
+        },
+        "pagos": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')"
+        },
+        "pedidos": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')"
+        },
+        "updatedAt": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.isNumber()"
+        }
       }
     },
     "events": {
@@ -158,7 +192,8 @@
           "$other": {
             ".validate": false
           }
-        }
+        },
+        ".read": "(auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists())"
       }
     },
     "leads": {
@@ -179,7 +214,21 @@
           "delivery": {
             ".validate": "newData.isString() && newData.val().length <= 20"
           }
-        }
+        },
+        ".read": "(auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists())"
+      }
+    },
+    "storeOwners": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$storeId": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists())",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+      }
+    },
+    "userStores": {
+      "$uid": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid)",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
       }
     }
   }

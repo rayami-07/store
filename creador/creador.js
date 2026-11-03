@@ -3,14 +3,14 @@
    Solo el admin puede entrar (Firebase Authentication + reglas)
 ============================================================ */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getDatabase, ref, set, get, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo } from "../tienda/muestras.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { aggregate, money, pct, ago } from "../tienda/stats.js";
 
-const app = initializeApp({
+const FB_CONFIG = {
   apiKey: "AIzaSyDDVxmRmKb9yIZSV0ZxkPKvQPOK-oAGMWU",
   authDomain: "rayami-store.firebaseapp.com",
   databaseURL: "https://rayami-store-default-rtdb.firebaseio.com",
@@ -18,7 +18,8 @@ const app = initializeApp({
   storageBucket: "rayami-store.firebasestorage.app",
   messagingSenderId: "57542479161",
   appId: "1:57542479161:web:425e75300b964e1f526ce8",
-});
+};
+const app = initializeApp(FB_CONFIG);
 const db = getDatabase(app);
 const auth = getAuth(app);
 const storage = getStorage(app);
@@ -32,6 +33,7 @@ const waNumber = (n) => { const d = String(n || "").replace(/\D/g, ""); return d
 /* ── Estado del formulario ── */
 let state = blank();
 let editingId = "";
+let editingStamp = 0;   // updatedAt de la tienda cuando la abriste (para no pisar cambios del dueño)
 let samplesUntouched = true; // si no han editado productos, cambiar de giro carga sus ejemplos
 let pagosTouched = false;
 const openRows = new Set();   // productos con "descripción y opciones" abiertos
@@ -273,7 +275,7 @@ $("addProd").addEventListener("click", () => {
   $("prods").lastElementChild?.querySelector("input[data-f=name]")?.focus();
 });
 $("loadSamples").addEventListener("click", () => { state.products = productosDeEjemplo(state.giro); samplesUntouched = true; renderProds(); pushPreview(); });
-$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; samplesUntouched = true; pagosTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); scrollTo(0, 0); });
+$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; editingStamp = 0; samplesUntouched = true; pagosTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); scrollTo(0, 0); });
 
 /* ── Fotos a Firebase Storage ──
    Las fotos nuevas llegan como texto (data:image/...). Al guardar se suben a
@@ -336,6 +338,10 @@ $("storeForm").addEventListener("submit", async (e) => {
   const id = editingId || `${slugify(out.name)}-${Math.random().toString(36).slice(2, 6)}`;
   const now = Date.now();
   const prev = editingId ? (await get(ref(db, `stores/${id}`))).val() : null;
+  if (prev && editingStamp && (prev.updatedAt || 0) > editingStamp) {
+    toast("El dueño cambió esta tienda después de que la abriste. Ábrela otra vez desde Mis tiendas para no borrar sus cambios.");
+    loadDemos(); return;
+  }
   $("saveBtn").disabled = true;
   const saveLabel = $("saveBtn").innerHTML;
   try {
@@ -343,7 +349,7 @@ $("storeForm").addEventListener("submit", async (e) => {
     // Lo subido queda en el formulario como link, para no volver a subirlo
     if (up.ok && up.n) { state.logo = out.logo; out.products.forEach((p) => { const s = state.products.find((x) => x.id === p.id); if (s) s.photo = p.photo; }); }
     await set(ref(db, `stores/${id}`), { ...out, status: prev?.status || "demo", createdAt: prev?.createdAt || now, updatedAt: now });
-    editingId = id;
+    editingId = id; editingStamp = now;
     showResult(id, out);
     toast(up.n && !up.ok ? "✅ Demo guardada (fotos dentro de la base: Storage no está activo)" : "✅ Demo guardada");
     loadDemos();
@@ -370,10 +376,14 @@ $("copyLink").addEventListener("click", async () => {
 });
 
 /* ── Mis demos ── */
-let demos = {};
+let demos = {}, owners = {};
+const STATUS = { demo: "Demo", activa: "Activa", pausada: "Pausada" };
+const statusOf = (s) => (STATUS[s?.status] ? s.status : "activa");
 async function loadDemos() {
   try { demos = (await get(ref(db, "stores"))).val() || {}; }
   catch (err) { demos = {}; console.warn(err); }
+  try { owners = (await get(ref(db, "storeOwners"))).val() || {}; }
+  catch (err) { owners = {}; console.warn("Faltan las reglas de storeOwners:", err.code || err.message); }
   const list = Object.entries(demos).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
   $("demoCount").textContent = list.length ? `(${list.length})` : "";
   if (!$("resumenView").hidden) loadResumen();
@@ -382,11 +392,13 @@ async function loadDemos() {
     const fecha = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "";
     return `<div class="demo-item">
       <div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div>
-      <div><div class="demo-name">${esc(s.name)}</div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}</div></div>
+      <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span></div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${
+        Object.values(owners[id] || {}).length ? ` · <i class="fa-solid fa-user"></i> ${Object.values(owners[id]).map((o) => esc(o.email)).join(", ")}` : ""}</div></div>
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
         <a class="btn btn-light" href="${TIENDA_URL}panel.html?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-chart-column"></i> Panel</a>
         <button class="btn btn-light" data-edit="${id}"><i class="fa-solid fa-pen"></i> Editar</button>
+        <button class="btn btn-light" data-owner="${id}"><i class="fa-solid fa-key"></i> ${statusOf(s) === "demo" ? "Activar" : "Dueño"}</button>
         <button class="btn btn-ghost danger" data-remove="${id}"><i class="fa-solid fa-trash"></i></button>
       </div>
     </div>`;
@@ -394,18 +406,24 @@ async function loadDemos() {
 }
 let pendingDelete = "";
 $("demoList").addEventListener("click", async (e) => {
-  const ed = e.target.closest("[data-edit]"), rm = e.target.closest("[data-remove]");
+  const ed = e.target.closest("[data-edit]"), rm = e.target.closest("[data-remove]"), ow = e.target.closest("[data-owner]");
+  if (ow) openOwner(ow.dataset.owner);
   if (ed) {
     const s = demos[ed.dataset.edit];
     state = { ...blank(s.giro || "otro"), ...s, products: Array.isArray(s.products) ? s.products : Object.values(s.products || {}) };
-    editingId = ed.dataset.edit; samplesUntouched = false; pagosTouched = true; openRows.clear();
+    editingId = ed.dataset.edit; editingStamp = s.updatedAt || 0; samplesUntouched = false; pagosTouched = true; openRows.clear();
     $("result").hidden = true; fillForm(); showView("editor");
   }
   if (rm) {
     const id = rm.dataset.remove;
     if (pendingDelete !== id) { pendingDelete = id; rm.innerHTML = "¿Borrar? Toca otra vez"; setTimeout(() => { if (pendingDelete === id) { pendingDelete = ""; loadDemos(); } }, 4000); return; }
     pendingDelete = "";
-    try { await remove(ref(db, `stores/${id}`)); deleteStorePhotos(id); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
+    try {
+      // También se quita el acceso de sus dueños (la cuenta de correo sigue existiendo)
+      const links = {};
+      for (const uid of Object.keys(owners[id] || {})) { links[`storeOwners/${id}/${uid}`] = null; links[`userStores/${uid}/${id}`] = null; }
+      if (Object.keys(links).length) await update(ref(db), links);
+      await remove(ref(db, `stores/${id}`)); deleteStorePhotos(id); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
     catch (err) { toast("No se pudo borrar"); }
   }
 });
@@ -451,10 +469,10 @@ async function loadResumen() {
   $("rbody").innerHTML = rows.length ? rows.map(({ id, s, a }) => {
     const t = a.totals;
     const fresh = t.lastTs && Date.now() - t.lastTs < 86400000;
-    const st = s.status === "demo" ? "demo" : "activa";
+    const st = statusOf(s);
     return `<tr>
       <td><div class="rstore"><div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div><div><b>${esc(s.name)}</b><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)}</div></div></div></td>
-      <td><span class="status ${st}">${st === "demo" ? "Demo" : "Activa"}</span></td>
+      <td><span class="status ${st}">${STATUS[st]}</span></td>
       <td class="num">${t.visit}</td><td class="num">${t.ask}</td><td class="num">${t.order}</td>
       <td class="num">${money(t.sales)}</td><td class="num">${t.visit ? pct(t.conversion) : "—"}</td>
       <td class="${fresh ? "fresh" : "muted"}">${ago(t.lastTs)}</td>
@@ -465,3 +483,129 @@ async function loadResumen() {
 document.querySelectorAll("[data-rdays]").forEach((b) => b.addEventListener("click", () => {
   rdays = +b.dataset.rdays; document.querySelectorAll("[data-rdays]").forEach((x) => x.classList.toggle("active", x === b)); loadResumen();
 }));
+
+/* ── Activar tienda y dar acceso al dueño ──
+   La cuenta del dueño se crea con una "app secundaria" de Firebase para
+   que no se cierre tu sesión de admin. Quién es dueño de qué:
+     storeOwners/<tienda>/<uid> = { email, ts }
+     userStores/<uid>/<tienda>  = true                                    */
+const MI_TIENDA_URL = new URL("../tienda/mi-tienda.html", location.href).href;
+let omId = "", appAlta = null;
+const STATUS_HINT = {
+  demo: "Se ve con la barra de \"Vista previa\". El dueño no puede editar.",
+  activa: "Tienda en línea sin barra de demo. El dueño puede editar sus productos.",
+  pausada: "Tus clientes ven \"no disponible\" y el dueño no puede editar (por ejemplo, si no ha pagado).",
+};
+function genPass() {
+  const abc = "abcdefghjkmnpqrstuvwxyz23456789";
+  const r = crypto.getRandomValues(new Uint32Array(10));
+  return [...r].map((n) => abc[n % abc.length]).join("");
+}
+function renderOwner() {
+  const s = demos[omId]; if (!s) return;
+  const st = statusOf(s);
+  $("omStore").textContent = s.name;
+  document.querySelectorAll("#omStatus [data-st]").forEach((b) => b.classList.toggle("active", b.dataset.st === st));
+  $("omStatusHint").textContent = STATUS_HINT[st];
+  const list = Object.entries(owners[omId] || {});
+  $("omOwners").innerHTML = list.length ? list.map(([uid, o]) => `<div class="owner"><span><i class="fa-solid fa-user"></i> ${esc(o.email)}</span>
+    <button type="button" class="btn btn-ghost danger" data-unlink="${esc(uid)}">Quitar acceso</button></div>`).join("")
+    : `<p class="hint" style="margin:0">Nadie tiene acceso todavía.</p>`;
+  $("oActWrap").hidden = st === "activa";
+  $("oActivate").checked = st === "demo";
+}
+function openOwner(id) {
+  omId = id;
+  $("oEmail").value = ""; $("oPass").value = genPass(); $("oErr").textContent = "";
+  $("omDone").hidden = true; $("omForm").hidden = false;
+  renderOwner();
+  $("ownerModal").hidden = false;
+  setTimeout(() => $("oEmail").focus(), 50);
+}
+function closeOwner() { $("ownerModal").hidden = true; omId = ""; loadDemos(); }
+$("omClose").addEventListener("click", closeOwner);
+$("ownerModal").addEventListener("click", (e) => { if (e.target === $("ownerModal")) closeOwner(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("ownerModal").hidden) closeOwner(); });
+$("oGen").addEventListener("click", () => { $("oPass").value = genPass(); });
+
+async function setStatus(id, status) {
+  await update(ref(db, `stores/${id}`), { status, updatedAt: Date.now() });
+  demos[id] = { ...demos[id], status, updatedAt: Date.now() };
+}
+$("omStatus").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-st]"); if (!b || b.classList.contains("active")) return;
+  try { await setStatus(omId, b.dataset.st); renderOwner(); toast(`Tienda ${STATUS[b.dataset.st].toLowerCase()}`); }
+  catch (err) { toast(err.code === "PERMISSION_DENIED" ? "Falta actualizar las reglas de Firebase" : "No se pudo cambiar el estado"); }
+});
+$("omOwners").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-unlink]"); if (!b) return;
+  if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "¿Seguro? Toca otra vez"; return; }
+  const uid = b.dataset.unlink;
+  try {
+    await update(ref(db), { [`storeOwners/${omId}/${uid}`]: null, [`userStores/${uid}/${omId}`]: null });
+    delete (owners[omId] || {})[uid]; renderOwner(); toast("Acceso quitado");
+  } catch { toast("No se pudo quitar el acceso"); }
+});
+
+$("omForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("oEmail").value.trim().toLowerCase(), pass = $("oPass").value;
+  $("oErr").textContent = "";
+  if (!/^\S+@\S+\.\S+$/.test(email)) { $("oErr").textContent = "Revisa el correo del dueño."; $("oEmail").focus(); return; }
+  if (pass.length < 8) { $("oErr").textContent = "La contraseña debe tener al menos 8 caracteres."; $("oPass").focus(); return; }
+  if (ADMIN_EMAILS.includes(email)) { $("oErr").textContent = "Ese es tu correo de administrador; usa el del dueño."; return; }
+  const btn = $("oBtn"), label = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Creando…`;
+  let existed = false;
+  try {
+    appAlta = appAlta || initializeApp(FB_CONFIG, "alta-duenos");
+    const authAlta = getAuth(appAlta);
+    let cred;
+    try { cred = await createUserWithEmailAndPassword(authAlta, email, pass); }
+    catch (err) {
+      if (err.code !== "auth/email-already-in-use") throw err;
+      existed = true;
+      // Ya tiene cuenta: se vincula si la contraseña es la que ya usa
+      try { cred = await signInWithEmailAndPassword(authAlta, email, pass); }
+      catch { const x = new Error("existe"); x.code = "ya-existe"; throw x; }
+    }
+    const uid = cred.user.uid;
+    await signOut(authAlta);
+    const changes = {
+      [`storeOwners/${omId}/${uid}`]: { email, ts: Date.now() },
+      [`userStores/${uid}/${omId}`]: true,
+    };
+    if ($("oActivate").checked && statusOf(demos[omId]) !== "activa") { changes[`stores/${omId}/status`] = "activa"; changes[`stores/${omId}/updatedAt`] = Date.now(); }
+    await update(ref(db), changes);
+    if (changes[`stores/${omId}/status`]) demos[omId] = { ...demos[omId], status: "activa" };
+    (owners[omId] ||= {})[uid] = { email };
+    renderOwner();
+    showWelcome(email, existed ? "" : pass);
+    toast("Acceso listo");
+  } catch (err) {
+    const c = err?.code || "";
+    $("oErr").textContent =
+      c === "ya-existe" ? "Ese correo ya tiene cuenta y la contraseña no coincide. Escribe la que ya usa, o pídele que use otro correo." :
+      c === "auth/invalid-email" ? "El correo no es válido." :
+      c === "auth/weak-password" ? "La contraseña es muy débil." :
+      c === "auth/operation-not-allowed" ? "Activa \"Correo/contraseña\" en Firebase Authentication." :
+      String(c || err?.message || "").toUpperCase().includes("PERMISSION") ? "Firebase no dejó guardar el acceso. Publica las reglas nuevas." :
+      "No se pudo crear. Revisa tu conexión e intenta de nuevo.";
+    console.error(err);
+  } finally { btn.disabled = false; btn.innerHTML = label; }
+});
+
+function showWelcome(email, pass) {
+  const s = demos[omId];
+  const msg = `Hola, tu tienda en línea de ${s.name} ya está lista.\n\n`
+    + `Tu tienda (compártela con tus clientes):\n${TIENDA_URL}?t=${omId}\n\n`
+    + `Para agregar productos, cambiar precios y ver tus ventas entra aquí:\n${MI_TIENDA_URL}?t=${omId}\n\n`
+    + `Correo: ${email}\n`
+    + (pass ? `Contraseña temporal: ${pass}\n\nTe recomiendo cambiarla en la pestaña "Cuenta".` : `Contraseña: la misma que ya usas.`);
+  $("omMsg").textContent = msg;
+  $("omWa").href = `https://api.whatsapp.com/send?phone=${waNumber(s.whatsapp)}&text=${encodeURIComponent(msg)}`;
+  $("omDone").hidden = false; $("omForm").hidden = true;
+}
+$("omCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("omMsg").textContent); toast("Mensaje copiado"); } catch { toast("Selecciona y copia el mensaje"); }
+});

@@ -103,3 +103,5 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .btn { padding: 0 12px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }
+.locked .btn { justify-self: center; margin-top: 12px; background: var(--ink); color: #fff; }
+.locked .btn i { font-size: inherit; }

@@ -195,3 +195,25 @@ legend { font-weight: 700; padding: 0 6px; }
 .switch b { display: block; font-weight: 600; }
 .switch small { color: var(--muted); }
 .pay-fields { display: grid; gap: 10px; }
+
+/* ── Activar tienda y acceso del dueño ── */
+.status.pausada { background: #f4f4f5; color: #52525b; }
+.demo-name .status { margin-left: 6px; vertical-align: 2px; }
+.modal-wrap { position: fixed; inset: 0; z-index: 40; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.modal { background: var(--card); width: min(520px, 100%); max-height: calc(100dvh - 32px); border-radius: 18px; display: flex; flex-direction: column; overflow: hidden; }
+.modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 18px 18px 10px; border-bottom: 1px solid var(--line); }
+.modal-head h3 { margin: 0; font-size: 20px; }
+.modal-head p { margin: 2px 0 0; }
+.icon-x { width: 36px; height: 36px; flex: none; border-radius: 50%; border: 0; background: var(--bg); cursor: pointer; }
+.modal-body { padding: 14px 18px 20px; overflow-y: auto; display: grid; gap: 10px; }
+.seg-full { display: grid; grid-template-columns: repeat(3, 1fr); }
+.owners { display: grid; gap: 6px; }
+.owner { display: flex; align-items: center; justify-content: space-between; gap: 8px; border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; font-size: 14px; overflow-wrap: anywhere; }
+.owner .btn { height: 32px; padding: 0 10px; flex: none; }
+.om-form { display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 12px; margin-top: 4px; }
+.om-form .err { color: var(--danger); margin: 0; min-height: 1em; font-size: 14px; }
+.pass-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.pass-row .btn { height: 42px; }
+.om-done { display: grid; gap: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 12px; }
+.om-done b { color: #166534; }
+.om-done pre { margin: 0; white-space: pre-wrap; font-family: inherit; font-size: 14px; background: #fff; border-radius: 8px; padding: 10px; border: 1px solid var(--line); }

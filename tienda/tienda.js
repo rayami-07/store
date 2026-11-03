@@ -82,7 +82,8 @@ function render(config) {
   $("heroWa").href = waLink(cfg.whatsapp, hello);
   $("waFab").href = waLink(cfg.whatsapp, hello);
   $("ftrContact").innerHTML = cfg.whatsapp ? `WhatsApp: <b>${esc(cfg.whatsapp)}</b>${cfg.horario ? " · " + esc(cfg.horario) : ""}` : "";
-  $("ftrMade").innerHTML = `Tienda creada con <a href="${new URL("../servicios/", location.href).href}" target="_blank" rel="noopener">${esc(PLATAFORMA.nombre)}</a>`;
+  $("ftrMade").innerHTML = `Tienda creada con <a href="${new URL("../servicios/", location.href).href}" target="_blank" rel="noopener">${esc(PLATAFORMA.nombre)}</a>`
+    + (storeId && cfg.status !== "demo" ? ` · <a href="mi-tienda.html?t=${storeId}" rel="nofollow">Soy el dueño</a>` : "");
 
   const isDemo = cfg.status === "demo";
   $("demoBar").hidden = !isDemo;
@@ -392,6 +393,12 @@ $("waFab")?.addEventListener("click", () => measure("ask"));
 
 /* ── Arranque ── */
 function notFound() { $("loading").hidden = true; $("store").hidden = true; $("notfound").hidden = false; }
+// Tienda pausada por el admin (por ejemplo, falta de pago): no se muestran productos
+function paused(data) {
+  notFound();
+  $("notfound").innerHTML = `<h1>${esc(data.name)}</h1><p>Esta tienda no está disponible por el momento.</p>`
+    + (data.whatsapp ? `<p><a href="${waLink(data.whatsapp)}" rel="noopener">Escribir al negocio por WhatsApp</a></p>` : "");
+}
 
 const params = qp;
 if (params.get("preview")) {
@@ -414,6 +421,7 @@ if (params.get("preview")) {
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (!data || !data.name) return notFound();
+        if (data.status === "pausada") return paused(data);
         if (params.get("prueba")) {
           try {
             const local = JSON.parse(localStorage.getItem(TRIAL_KEY(storeId)) || "null");
