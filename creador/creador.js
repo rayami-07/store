@@ -7,7 +7,7 @@ import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo,
   PLANTILLAS, FORMAS, BOTONES, PORTADAS, TEMA_BASE, plantillasPara, plantillaDelGiro, disenoDePlantilla, temaDe, contraste, inkFor,
-  TEXTURAS, INTENSIDADES, TEXTURA_EN, texturaCSS, ANIMACIONES } from "../tienda/muestras.js";
+  TEXTURAS, INTENSIDADES, TEXTURA_EN, texturaCSS, ANIMACIONES, tresOpciones } from "../tienda/muestras.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { aggregate, money, pct, ago } from "../tienda/stats.js";
@@ -527,7 +527,8 @@ async function loadDemos() {
     const fecha = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "";
     return `<div class="demo-item">
       <div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div>
-      <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span></div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${listState(s, admins[id] || {})}${
+      <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span>${
+        s.opcion?.grupo ? `<a class="op-badge" href="${compararLink(s.opcion.grupo)}" target="_blank" rel="noopener" title="Comparar las opciones">Opción ${s.opcion.n} de ${s.opcion.total} · ${esc(PLANTILLAS[s.tema?.plantilla]?.label || "")} <i class="fa-solid fa-table-columns"></i></a>` : ""}</div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${listState(s, admins[id] || {})}${
         Object.values(owners[id] || {}).length ? ` · <i class="fa-solid fa-user"></i> ${Object.values(owners[id]).map((o) => esc(o.email)).join(", ")}` : ""}</div></div>
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
@@ -572,6 +573,72 @@ $("demoList").addEventListener("click", async (e) => {
       await remove(ref(db, `stores/${id}`)); deleteStorePhotos(id); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
     catch (err) { toast("No se pudo borrar"); }
   }
+});
+
+/* ── 3 opciones de diseño para un cliente ──
+   Crea 3 demos del mismo negocio (mismos productos con fotos reales) con
+   plantillas distintas, ligadas por opcion.grupo, y arma el link de
+   tienda/opciones.html para compararlas lado a lado. */
+const RAUL_WA = "5581074978";
+let opTpls = [];
+function compararLink(grupo) {
+  const ids = Object.entries(demos).filter(([, s]) => s.opcion?.grupo === grupo).sort((a, b) => a[1].opcion.n - b[1].opcion.n).map(([id]) => id);
+  return `${TIENDA_URL}opciones.html?t=${ids.join(",")}`;
+}
+function renderOpTpls() {
+  const g = $("opGiro").value, { sugeridas, otras } = plantillasPara(g);
+  $("opTpls").innerHTML = opTpls.map((k, i) => `<div class="op-tpl">
+      <div class="op-n">Opción ${i + 1}</div>
+      <div class="tpl active" style="cursor:default">${miniTpl(k)}</div>
+      <select data-op="${i}" aria-label="Plantilla de la opción ${i + 1}">
+        <optgroup label="Sugeridas">${sugeridas.map((x) => `<option value="${x}"${x === k ? " selected" : ""}>${esc(PLANTILLAS[x].label)}</option>`).join("")}</optgroup>
+        <optgroup label="Otras">${otras.map((x) => `<option value="${x}"${x === k ? " selected" : ""}>${esc(PLANTILLAS[x].label)}</option>`).join("")}</optgroup>
+      </select>
+    </div>`).join("");
+}
+$("opOpen").addEventListener("click", () => {
+  $("opGiro").innerHTML = Object.entries(GIROS).map(([k, g]) => `<option value="${k}">${g.emoji} ${g.label}</option>`).join("");
+  $("opGiro").value = "comida"; opTpls = tresOpciones("comida");
+  $("opForm").hidden = false; $("opResult").hidden = true; $("opForm").reset(); $("opGiro").value = "comida";
+  renderOpTpls(); $("opModal").hidden = false; $("opName").focus();
+});
+$("opClose").addEventListener("click", () => { $("opModal").hidden = true; });
+$("opGiro").addEventListener("change", () => { opTpls = tresOpciones($("opGiro").value); renderOpTpls(); });
+$("opTpls").addEventListener("change", (e) => { const s = e.target.closest("[data-op]"); if (!s) return; opTpls[+s.dataset.op] = s.value; renderOpTpls(); });
+$("opForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const name = $("opName").value.trim(), giro = $("opGiro").value, g = GIROS[giro];
+  const wa = String($("opWa").value).replace(/\D/g, "").length >= 10 ? $("opWa").value.trim() : RAUL_WA;
+  if (!name) return;
+  $("opCreate").disabled = true;
+  const grupo = `${slugify(name)}-${Math.random().toString(36).slice(2, 6)}`, now = Date.now(), ids = [];
+  const products = productosDeEjemplo(giro);   // mismos productos (con fotos reales) en las 3
+  try {
+    for (const [i, k] of opTpls.entries()) {
+      const id = `${grupo}-op${i + 1}`;
+      await set(ref(db, `stores/${id}`), {
+        plan: "pedidos", name, giro, tagline: "", whatsapp: wa, horario: "", aviso: "",
+        logo: "", categorias: g.categorias, ...disenoDePlantilla(k),
+        pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
+        pagos: { metodos: ["entrega", "transferencia"], anticipado: !!g.pagoAnticipado, banco: "", clabe: "", titular: "", link: "" },
+        products, status: "demo", createdAt: now, updatedAt: now,
+        opcion: { grupo, n: i + 1, total: opTpls.length },
+      });
+      ids.push(id);
+    }
+    const link = `${TIENDA_URL}opciones.html?t=${ids.join(",")}`;
+    $("opLink").value = link; $("opView").href = link;
+    const msg = `Hola, le preparé 3 opciones de cómo se vería la tienda en línea de ${name}. Puede verlas y comparar aquí:\n${link}\n\n¿Cuál le gusta más?`;
+    $("opSend").href = `https://wa.me/${waNumber(wa === RAUL_WA ? "" : wa)}?text=${encodeURIComponent(msg)}`;
+    $("opLinks").innerHTML = ids.map((id, i) => `<a href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener">Opción ${i + 1}: ${esc(PLANTILLAS[opTpls[i]].label)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`).join("");
+    $("opForm").hidden = true; $("opResult").hidden = false;
+    toast("✅ 3 opciones creadas"); loadDemos();
+  } catch (err) {
+    toast(err.code === "PERMISSION_DENIED" ? "Falta actualizar las reglas de Firebase" : "No se pudo crear: " + err.message);
+  } finally { $("opCreate").disabled = false; }
+});
+$("opCopy").addEventListener("click", async () => {
+  try { await navigator.clipboard.writeText($("opLink").value); toast("Link copiado"); } catch { $("opLink").select(); }
 });
 
 /* ── Navegación ── */

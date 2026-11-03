@@ -397,7 +397,7 @@ export const PLANTILLAS = {
   pizarron: { label: "Pizarrón",  giros: ["comida", "cafeteria"],                  color: "#f2c14e", estilo: "amigable",
               fondo: "#1f2b25", tarjetas: "#2a3831", texto: "#f2efe6", forma: "suave",   botones: "redondeado", portada: "dividida",
               textura: "papel", intensidad: "media", texturaEn: "fondo" },
-  fiesta:   { label: "Fiesta",    giros: ["comida", "mascotas", "otro", "jugueteria", "panaderia"], color: "#e4007c", estilo: "amigable",
+  fiesta:   { label: "Fiesta",    giros: ["comida", "mascotas", "otro", "jugueteria", "panaderia", "abarrotes", "papeleria"], color: "#e4007c", estilo: "amigable",
               fondo: "#fff8ef", tarjetas: "#ffe9d6", texto: "#2b1a12", forma: "redonda", botones: "pastilla",   portada: "color",
               textura: "confeti", intensidad: "media", texturaEn: "fondo" },
   dulce:    { label: "Dulce",     giros: ["comida", "belleza", "panaderia", "floreria"],       color: "#d9668b", estilo: "amigable",
@@ -412,10 +412,10 @@ export const PLANTILLAS = {
   barberia: { label: "Barbería",  giros: ["belleza", "otro", "barberia"],         color: "#b8873b", estilo: "moderno",
               fondo: "#151515", tarjetas: "#222222", texto: "#f1ece4", forma: "recta",   botones: "recto",      portada: "dividida",
               textura: "rayas", intensidad: "suave", texturaEn: "fondo" },
-  tecno:    { label: "Tecno",     giros: ["accesorios", "otro", "tecnologia"],      color: "#7c3aed", estilo: "simple",
+  tecno:    { label: "Tecno",     giros: ["accesorios", "otro", "tecnologia", "ferreteria"],      color: "#7c3aed", estilo: "simple",
               fondo: "#0b0b14", tarjetas: "#171728", texto: "#ecebf7", forma: "suave",   botones: "redondeado", portada: "dividida",
               textura: "cuadricula", intensidad: "media", texturaEn: "fondo" },
-  minimal:  { label: "Minimal",   giros: ["ropa", "accesorios", "otro", "muebles", "tecnologia"], color: "#1a1a1a", estilo: "simple",
+  minimal:  { label: "Minimal",   giros: ["ropa", "accesorios", "otro", "muebles", "tecnologia", "barberia", "ferreteria", "papeleria"], color: "#1a1a1a", estilo: "simple",
               fondo: "#fafafa", tarjetas: "#efefef", texto: "#1a1a1a", forma: "recta",   botones: "recto",      portada: "dividida" },
   patitas:  { label: "Patitas",   giros: ["mascotas"],                color: "#f97316", estilo: "amigable",
               fondo: "#fffaf2", tarjetas: "#ffedd5", texto: "#3a2414", forma: "redonda", botones: "pastilla",   portada: "color",
@@ -445,13 +445,13 @@ export const PLANTILLAS = {
   roble:    { label: "Roble",     giros: ["muebles"],                 color: "#7c5a3a", estilo: "elegante",
               fondo: "#f7f3ee", tarjetas: "#e9e1d6", texto: "#2b2219", forma: "suave",   botones: "recto",      portada: "foto",
               textura: "papel", intensidad: "suave", texturaEn: "fondo", animacion: "suave", ofertas: true },
-  nitido:   { label: "Nítido",    giros: ["tecnologia", "accesorios"], color: "#0ea5e9", estilo: "simple",
+  nitido:   { label: "Nítido",    giros: ["tecnologia", "accesorios", "papeleria", "ferreteria"], color: "#0ea5e9", estilo: "simple",
               fondo: "#f8fafc", tarjetas: "#eef2f6", texto: "#0f172a", forma: "suave",   botones: "redondeado", portada: "foto",
               textura: "cuadricula", intensidad: "suave", texturaEn: "fondo", animacion: "dinamica", ofertas: true, chipsFijas: true },
-  street:   { label: "Street",    giros: ["ropa", "calzado"],         color: "#ef4444", estilo: "moderno",
+  street:   { label: "Street",    giros: ["ropa", "calzado", "barberia"],         color: "#ef4444", estilo: "moderno",
               fondo: "#ffffff", tarjetas: "#f2f2f2", texto: "#0a0a0a", forma: "recta",   botones: "recto",      portada: "foto",
               animacion: "dinamica", avisoMov: true, ofertas: true },
-  sabor:    { label: "Sabor",     giros: ["comida", "cafeteria"],     color: "#ea580c", estilo: "amigable",
+  sabor:    { label: "Sabor",     giros: ["comida", "cafeteria", "abarrotes"],     color: "#ea580c", estilo: "amigable",
               fondo: "#fffaf5", tarjetas: "#ffedd5", texto: "#2a1407", forma: "redonda", botones: "pastilla",   portada: "foto",
               animacion: "dinamica", avisoMov: true, ofertas: true, chipsFijas: true },
 };
@@ -464,6 +464,20 @@ export function plantillasPara(giro) {
   return { sugeridas: mine.length ? mine : ["urbano"], otras: all.filter((k) => !mine.includes(k)) };
 }
 export const plantillaDelGiro = (giro) => plantillasPara(giro).sugeridas[0];
+
+// 3 plantillas que se vean distintas entre sí para presentar opciones a un cliente:
+// 1) la del giro, 2) una con fondo contrario (clara/oscura), 3) una con otra portada
+export function tresOpciones(giro) {
+  const { sugeridas } = plantillasPara(giro);
+  const comodin = [...plantillasPara("otro").sugeridas, ...Object.keys(PLANTILLAS)];   // si al giro le faltan
+  const out = [sugeridas[0]];
+  const dark = (k) => luminancia(PLANTILLAS[k].fondo) < 0.2;
+  const portadaNueva = (k) => !out.some((o) => PLANTILLAS[o].portada === PLANTILLAS[k].portada);
+  const pick = (pool, test) => { const k = pool.find((x) => !out.includes(x) && test(x)); if (k) out.push(k); return !!k; };
+  pick(sugeridas, (k) => dark(k) !== dark(out[0])) || pick(sugeridas, portadaNueva) || pick(sugeridas, () => true) || pick(comodin, () => true);
+  pick(sugeridas, portadaNueva) || pick(sugeridas, () => true) || pick(comodin, portadaNueva) || pick(comodin, () => true);
+  return out.slice(0, 3);
+}
 
 // Lo que una plantilla pone en la tienda: { color, estilo, tema }
 export function disenoDePlantilla(key) {
@@ -586,16 +600,47 @@ export function fotoEjemplo(emoji, color = "#111111", fondo = "#f5f5f4") {
   return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
 }
 
+
+/* ============================================================
+   FOTOS REALES DE EJEMPLO (Unsplash, licencia libre: uso comercial
+   gratis, sin pedir permiso). Una por producto de ejemplo, en el
+   mismo orden que GIROS[giro].productos. Se cargan directo de
+   Unsplash a la medida que se necesita.
+============================================================ */
+export const FOTOS = {
+  ropa: ["1581655353564-df123a1eb820", "1620799140188-3b2a02fd9a77", "1602293589930-45aad59ba3ab", "1588850561407-ed78c282e89b", "1611312449408-fcece27cdbb7", "1594633312681-425c7b97ccd1"],
+  calzado: ["1600269452121-4f2416e55c28", "1542291026-7eec264c27ff", "1608256246200-53e635b5b65f", "1603487742131-4160ec999306", "1777987601431-8d27d2039cc4", "1641997465126-c73cc4070337"],
+  comida: ["1568901346375-23c9450c58cd", "1768716697797-35dffd4b27f7", "1513104890138-7c749659a591", "1782839577893-da9383e55c96", "1622268348720-507f204d29b4", "1517427294546-5aa121f68e8a"],
+  belleza: ["1583209814683-c023dd293cc6", "1512496015851-a90fb38ba796", "1458538977777-0549b2370168", "1560264641-1b5191cc63e2", "1596462502278-27bfdc403348", "1763987300719-fd27c51a3227"],
+  mascotas: ["1714068691210-073dc52c6c1d", "1581888227599-779811939961", "1586671267731-da2cf3ceeb80", "1591946614720-90a587da4a36", "1517451330947-7809dead78d5", "1647002380358-fc70ed2f04e0"],
+  ferreteria: ["1504148455328-c376907d081c", "1581621293775-7aac902d7032", "1703756291638-b1774ae3c186", "1525909002-1b05e0c869d8", "1607870411590-d5e9e06da09a", "1650501386688-41f6d0251875"],
+  accesorios: ["1620625515032-6ed0c1790c75", "1511499767150-a48a237f0083", "1775379557015-938546264440", "1622560480654-d96214fdc887", "1619119069152-a2b331eb392a", "1620786514684-ff35b5aae55e"],
+  cafeteria: ["1760175445000-0e01e193d1cd", "1509042239860-f550ce710b93", "1718267050202-9b1b6bfb8545", "1461023058943-07fcbe16d735", "1639667852145-466e29aa49fd", "1524351199678-941a58a3df50"],
+  panaderia: ["1617859047277-9f47d2bd9696", "1623334044303-241021148842", "1588195538326-c5b1e9f80a1b", "1614707267537-b85aaf00c4b7", "1499636136210-6f4ee915583e", "1637572815755-c4b80092dce1"],
+  barberia: ["1503951914875-452162b0f3f1", "1647140655214-e4a2d914971f", "1605497788044-5a32c7078486", "1599351431202-1e0f0137899a", "1775126251039-214af64257ff", "1515377905703-c4788e51af15"],
+  floreria: ["1578439231583-9eca0a363860", "1593026238161-ac5f86e5ef79", "1589100534833-475e31a17b4e", "1611850916723-9a5f14e9e20e", "1485955900006-10f4d324d411", "1479750178258-aec5879046ce"],
+  papeleria: ["1695131020187-d3dcdab5016b", "1513542789411-b6a5d4f31634", "1529651795107-e5a141e34843", "1583485088034-697b5bc54ccd", "1765516833058-c322c800fee1", "1612815154858-60aa4c59eaa6"],
+  abarrotes: ["1686820740687-426a7b9b2043", "1474979266404-7eaacbcd87c5", "1648569883125-d01072540b4c", "1613919113640-25732ec5e61f", "1782292016926-849449fd171d", "1506976785307-8732e854ad03"],
+  tecnologia: ["1590658268037-6bf12165a8df", "1557767382-97b28f5488e7", "1535157412991-2ef801c1748b", "1608043152269-423dbba4e7e1", "1772831902679-3f41c106d7a2", "1579586337278-3befd40fd17a"],
+  deportes: ["1532202193792-e95ef22f1bce", "1554139844-af2fc8ad3a3a", "1579952363873-27f3bade9f55", "1638536532686-d610adfc8e5c", "1646239646963-b0b9be56d6b5", "1625708458528-802ec79b1ed8"],
+  jugueteria: ["1602734846297-9299fc2d4703", "1508896694512-1eade558679c", "1629760946220-5693ee4c46ac", "1612611741189-a9b9eb01d515", "1612506001235-f0d0892aa11b", "1549465220-1a8b9238cd48"],
+  muebles: ["1555041469-a586c61ea9bc", "1777513538143-8525eb3943f6", "1604578762246-41134e37f9cc", "1757417983938-2c2a931d41aa", "1774477178005-bff823e43be8", "1612392549386-b6969764af6f"],
+  otro: ["1617825295690-28ae56c56135", "1595246135406-803418233494", "1626320290598-03656e931a31", "1549465220-1a8b9238cd48", "1648587456176-4969b0124b12", "1600009723489-027195d6b3d3"],
+};
+export const fotoReal = (id, w = 700) => `https://images.unsplash.com/photo-${id}?auto=format&fit=crop&w=${w}&h=${w}&q=70`;
+
 let seq = 0;
-export function productosDeEjemplo(giroKey) {
+// fotos: true = con fotos reales; false = con dibujo de ejemplo (emoji)
+export function productosDeEjemplo(giroKey, { fotos = true } = {}) {
   const g = GIROS[giroKey] || GIROS.otro;
   const acc = ["Gorra bordada"]; // productos sin talla dentro de giros con tallas
-  return g.productos.map(([name, price, category, emoji, salePrice]) => ({
+  const fotosGiro = FOTOS[GIROS[giroKey] ? giroKey : "otro"] || [];
+  return g.productos.map(([name, price, category, emoji, salePrice], i) => ({
     id: "p" + Date.now().toString(36) + (seq++),
     name, price, category, emoji,
     salePrice: salePrice || 0,
     desc: "",
-    photo: "",
+    photo: fotos && fotosGiro[i] ? fotoReal(fotosGiro[i]) : "",
     variantes: acc.includes(name) ? [] : JSON.parse(JSON.stringify(g.variantes || [])),
   }));
 }

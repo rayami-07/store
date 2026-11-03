@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=9" />
+  <link rel="stylesheet" href="creador.css?v=10" />
 </head>
 <body>
 
@@ -230,9 +230,9 @@
 
   <!-- MIS DEMOS -->
   <section class="demos" id="demosView" hidden>
-    <div class="demos-head">
-      <h2>Mis tiendas</h2>
-      <p class="muted">Demos y tiendas que has creado para tus clientes.</p>
+    <div class="demos-head op-head">
+      <div><h2>Mis tiendas</h2><p class="muted">Demos y tiendas que has creado para tus clientes.</p></div>
+      <button type="button" class="btn btn-dark" id="opOpen"><i class="fa-solid fa-wand-magic-sparkles"></i> Crear 3 opciones</button>
     </div>
     <div class="demo-list" id="demoList"></div>
   </section>
@@ -248,9 +248,41 @@
     </div>
   </div>
 
+  <!-- 3 OPCIONES PARA UN CLIENTE -->
+  <div class="modal-wrap" id="opModal" hidden>
+    <div class="modal op-modal" role="dialog" aria-modal="true" aria-labelledby="opTitle">
+      <div class="modal-head">
+        <div><h3 id="opTitle">3 opciones de diseño para un cliente</h3><p class="muted">Se crean 3 demos del mismo negocio con diseños distintos y fotos reales, y una página para compararlas.</p></div>
+        <button type="button" class="icon-x" id="opClose" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body">
+        <form id="opForm" class="op-form">
+          <div class="row2">
+            <label>Nombre del negocio *<input id="opName" required maxlength="40" placeholder="Tacos Don Beto" /></label>
+            <label>Giro<select id="opGiro"></select></label>
+          </div>
+          <label>WhatsApp del negocio <small class="muted">(si lo dejas vacío, los pedidos de prueba llegan a tu WhatsApp)</small><input id="opWa" inputmode="tel" maxlength="20" placeholder="55 1234 5678" /></label>
+          <div class="field-label">Diseños <small class="muted">ya vienen 3 distintos para el giro; cámbialos si quieres</small></div>
+          <div class="op-tpls" id="opTpls"></div>
+          <button type="submit" class="btn btn-dark" id="opCreate"><i class="fa-solid fa-wand-magic-sparkles"></i> Crear las 3 opciones</button>
+        </form>
+        <div class="op-result" id="opResult" hidden>
+          <b><i class="fa-solid fa-circle-check"></i> Listas las 3 opciones</b>
+          <p class="muted">Este link muestra las 3 lado a lado. Ábrelo frente al cliente o mándaselo por WhatsApp.</p>
+          <div class="link-row"><input id="opLink" readonly /><button type="button" class="btn btn-light" id="opCopy"><i class="fa-regular fa-copy"></i> Copiar</button></div>
+          <div class="res-actions">
+            <a class="btn btn-dark" id="opView" target="_blank" rel="noopener"><i class="fa-solid fa-table-columns"></i> Abrir comparación</a>
+            <a class="btn btn-wa" id="opSend" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Mandar al cliente</a>
+          </div>
+          <div class="op-links" id="opLinks"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=12"></script>
+<script type="module" src="creador.js?v=13"></script>
 </body>
 </html>

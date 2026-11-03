@@ -81,7 +81,7 @@ function render(config) {
     + (storeId && cfg.status !== "demo" ? ` · <a href="mi-tienda.html?t=${storeId}" rel="nofollow">Soy el dueño</a>` : "");
 
   const isDemo = cfg.status === "demo";
-  $("demoBar").hidden = !isDemo;
+  $("demoBar").hidden = !isDemo || qp.has("op");   // dentro de "comparar opciones" no se ve la barra de demo
   $("demoCta").href = waLink(PLATAFORMA.whatsapp, `Hola, vi la vista previa de mi tienda "${cfg.name}" y la quiero`);
   $("demoPanel").href = storeId ? `panel.html?t=${storeId}` : "#";
   $("demoPanel").hidden = !storeId;
