@@ -5,7 +5,8 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo } from "../tienda/muestras.js";
+import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo,
+  PLANTILLAS, FORMAS, BOTONES, PORTADAS, TEMA_BASE, plantillasPara, plantillaDelGiro, disenoDePlantilla, temaDe, contraste, inkFor } from "../tienda/muestras.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { aggregate, money, pct, ago } from "../tienda/stats.js";
@@ -36,11 +37,13 @@ let editingId = "";
 let editingStamp = 0;   // updatedAt de la tienda cuando la abriste (para no pisar cambios del dueño)
 let samplesUntouched = true; // si no han editado productos, cambiar de giro carga sus ejemplos
 let pagosTouched = false;
+let designTouched = false;   // si no han tocado el diseño, cambiar de giro pone la plantilla del giro
 const openRows = new Set();   // productos con "descripción y opciones" abiertos
 
 function blank(giro = "ropa") {
   const g = GIROS[giro];
-  return { plan: "pedidos", name: "", giro, tagline: "", whatsapp: "", horario: "", aviso: "", logo: "", color: COLORES[0], estilo: g.estilo, products: productosDeEjemplo(giro),
+  const d = disenoDePlantilla(plantillaDelGiro(giro));
+  return { plan: "pedidos", name: "", giro, tagline: "", whatsapp: "", horario: "", aviso: "", logo: "", color: d.color, estilo: d.estilo, tema: d.tema, products: productosDeEjemplo(giro),
     pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
     pagos: { metodos: ["entrega", "transferencia"], anticipado: !!g.pagoAnticipado, banco: "", clabe: "", titular: "", link: "" } };
 }
@@ -96,7 +99,7 @@ function fillForm() {
   $("fHorario").value = state.horario;
   $("fAviso").value = state.aviso;
   document.querySelectorAll('#optPlan input').forEach((r) => (r.checked = r.value === (state.plan || "pedidos")));
-  renderLogo(); renderSwatches(); renderEstilos(); renderProds(); renderPedidos(); renderPagos();
+  renderLogo(); renderDiseno(); renderProds(); renderPedidos(); renderPagos();
   $("editingNote").hidden = !editingId;
   $("editingNote").textContent = editingId ? `Editando la demo "${state.name}". Al guardar se actualiza el mismo link.` : "";
   pushPreview();
@@ -110,11 +113,11 @@ bind("fHorario", "horario");
 bind("fAviso", "aviso");
 $("fGiro").addEventListener("change", () => {
   state.giro = $("fGiro").value;
-  state.estilo = GIROS[state.giro].estilo;
   $("fTagline").placeholder = GIROS[state.giro].tagline;
+  if (!designTouched) Object.assign(state, disenoDePlantilla(plantillaDelGiro(state.giro)));
   if (samplesUntouched) state.products = productosDeEjemplo(state.giro);
   if (!pagosTouched) { state.pagos.anticipado = !!GIROS[state.giro].pagoAnticipado; renderPagos(); }
-  renderEstilos(); renderProds(); pushPreview();
+  renderDiseno(); renderProds(); pushPreview();
 });
 
 /* Imágenes: se reducen en el navegador antes de guardarlas */
@@ -148,16 +151,61 @@ $("fLogo").addEventListener("change", async (e) => {
 });
 $("logoRemove").addEventListener("click", () => { state.logo = ""; renderLogo(); pushPreview(); });
 
+/* ── Diseño: plantillas + ajustes ──
+   state.color y state.estilo (como antes) + state.tema = { plantilla, fondo, tarjetas, texto, forma, botones, portada } */
+const TEMA_KEYS = ["fondo", "tarjetas", "texto", "forma", "botones", "portada"];
+const norm = (c) => String(c || "").toLowerCase();
+function tplModificada() {
+  const k = state.tema?.plantilla; if (!PLANTILLAS[k]) return false;
+  const d = disenoDePlantilla(k);
+  return norm(d.color) !== norm(state.color) || d.estilo !== state.estilo || TEMA_KEYS.some((t) => norm(d.tema[t]) !== norm(state.tema[t]));
+}
+function changed() { designTouched = true; renderPlantillas(); renderContraste(); renderProds(); pushPreview(); }
+
+function miniTpl(k) {
+  const p = PLANTILLAS[k], st = ESTILOS[p.estilo] || ESTILOS.moderno;
+  const r = FORMAS[p.forma].r, br = BOTONES[p.botones].r, colorHero = p.portada === "color";
+  return `<span class="tpl-mini" style="background:${p.fondo};color:${p.texto}">
+      <span class="tpl-hero" style="${colorHero ? `background:${p.color};color:${inkFor(p.color)};border-radius:${r}` : ""}">
+        <b style="font-family:${st.display};font-weight:${st.weight};${st.upper ? "text-transform:uppercase" : ""}">Aa</b>
+        <i style="background:${colorHero ? "currentColor" : p.color};border-radius:${br}"></i>
+      </span>
+      <span class="tpl-grid">${`<i style="background:${p.tarjetas};border-radius:${r}"></i>`.repeat(3)}</span>
+    </span>`;
+}
+function renderPlantillas() {
+  const { sugeridas, otras } = plantillasPara(state.giro);
+  const cur = state.tema?.plantilla, mod = tplModificada();
+  const card = (k, sug) => `<button type="button" class="tpl${k === cur ? " active" : ""}" data-tpl="${k}" aria-pressed="${k === cur}">
+      ${miniTpl(k)}<span class="tpl-name">${esc(PLANTILLAS[k].label)}${k === cur && mod ? " <small>· ajustada</small>" : sug ? " <small>· sugerida</small>" : ""}</span>
+    </button>`;
+  $("plantillas").innerHTML = `<div class="tpl-grid-wrap">${sugeridas.map((k) => card(k, true)).join("")}</div>
+    <details class="tpl-more"${sugeridas.includes(cur) || !cur ? "" : " open"}><summary>Ver otras plantillas (${otras.length})</summary>
+      <div class="tpl-grid-wrap">${otras.map((k) => card(k, false)).join("")}</div></details>`;
+  $("resetTpl").hidden = !mod;
+  $("tplHint").textContent = !PLANTILLAS[cur]
+    ? "Esta tienda tiene el diseño de antes. Escoge una plantilla para cambiarlo, o ajústalo abajo."
+    : "Escoge una base y luego ajusta lo que quieras. Los cambios se ven al momento en la vista previa.";
+}
+$("plantillas").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tpl]"); if (!b) return;
+  Object.assign(state, disenoDePlantilla(b.dataset.tpl));
+  designTouched = true; renderDiseno(); renderProds(); pushPreview();
+});
+$("resetTpl").addEventListener("click", () => {
+  Object.assign(state, disenoDePlantilla(state.tema.plantilla)); renderDiseno(); renderProds(); pushPreview(); toast("Plantilla restablecida");
+});
+
 function renderSwatches() {
-  const custom = !COLORES.includes(state.color);
-  $("swatches").innerHTML = COLORES.map((c) => `<button type="button" class="sw${c === state.color ? " active" : ""}" style="background:${c}" data-color="${c}" aria-label="Color ${c}"></button>`).join("")
+  const custom = !COLORES.includes(norm(state.color));
+  $("swatches").innerHTML = COLORES.map((c) => `<button type="button" class="sw${c === norm(state.color) ? " active" : ""}" style="background:${c}" data-color="${c}" aria-label="Color ${c}"></button>`).join("")
     + `<input type="color" class="sw-custom${custom ? " active" : ""}" id="customColor" value="${state.color}" title="Otro color" aria-label="Otro color" />`;
-  $("customColor").addEventListener("input", (e) => { state.color = e.target.value; pushPreview(); });
+  $("customColor").addEventListener("input", (e) => { state.color = e.target.value; changed(); });
   $("customColor").addEventListener("change", renderSwatches);
 }
 $("swatches").addEventListener("click", (e) => {
   const b = e.target.closest("[data-color]"); if (!b) return;
-  state.color = b.dataset.color; renderSwatches(); renderProds(); pushPreview();
+  state.color = b.dataset.color; renderSwatches(); changed();
 });
 
 function renderEstilos() {
@@ -168,8 +216,38 @@ function renderEstilos() {
 }
 $("estilos").addEventListener("click", (e) => {
   const b = e.target.closest("[data-estilo]"); if (!b) return;
-  state.estilo = b.dataset.estilo; renderEstilos(); pushPreview();
+  state.estilo = b.dataset.estilo; renderEstilos(); changed();
 });
+
+/* Colores de la página */
+for (const [id, k] of [["tFondo", "fondo"], ["tTarjetas", "tarjetas"], ["tTexto", "texto"]])
+  $(id).addEventListener("input", (e) => { state.tema[k] = e.target.value; changed(); });
+function renderContraste() {
+  const t = state.tema, avisos = [];
+  if (contraste(t.texto, t.fondo) < 4.5) avisos.push("el texto casi no se lee sobre el fondo");
+  if (contraste(t.texto, t.tarjetas) < 3) avisos.push("el texto se pierde sobre las tarjetas");
+  if (contraste(state.color, t.fondo) < 1.6) avisos.push("el color de la marca casi no se distingue del fondo");
+  $("contrastWarn").hidden = !avisos.length;
+  $("contrastWarn").innerHTML = avisos.length ? `<i class="fa-solid fa-triangle-exclamation"></i> Ojo: ${avisos.join("; ")}.` : "";
+}
+
+/* Forma, botones y portada */
+const SEGS = [["optForma", "forma", FORMAS], ["optBotones", "botones", BOTONES], ["optPortada", "portada", PORTADAS]];
+function renderSegs() {
+  for (const [id, k, opts] of SEGS)
+    $(id).innerHTML = Object.entries(opts).map(([v, o]) => `<button type="button" data-v="${v}" class="${state.tema[k] === v ? "active" : ""}">${o.label}</button>`).join("");
+}
+for (const [id, k] of SEGS)
+  $(id).addEventListener("click", (e) => {
+    const b = e.target.closest("[data-v]"); if (!b) return;
+    state.tema[k] = b.dataset.v; renderSegs(); changed();
+  });
+
+function renderDiseno() {
+  state.tema = { plantilla: "", ...temaDe(state), plantilla: state.tema?.plantilla || "" };
+  renderPlantillas(); renderSwatches(); renderEstilos(); renderSegs(); renderContraste();
+  $("tFondo").value = state.tema.fondo; $("tTarjetas").value = state.tema.tarjetas; $("tTexto").value = state.tema.texto;
+}
 
 $("optPlan").addEventListener("change", (e) => { state.plan = e.target.value; pushPreview(); });
 
@@ -212,7 +290,7 @@ function renderProds() {
   $("prods").innerHTML = state.products.map((p, i) => `
     <div class="prod" data-i="${i}">
       <label class="prod-photo" title="Cambiar foto">
-        <img src="${esc(p.photo || fotoEjemplo(p.emoji || GIROS[state.giro].emoji, state.color))}" alt="" />
+        <img src="${esc(p.photo || fotoEjemplo(p.emoji || GIROS[state.giro].emoji, state.color, state.tema?.tarjetas))}" alt="" />
         <i class="fa-solid fa-camera"></i>
         <input type="file" accept="image/*" hidden data-photo="${i}" />
       </label>
@@ -275,7 +353,7 @@ $("addProd").addEventListener("click", () => {
   $("prods").lastElementChild?.querySelector("input[data-f=name]")?.focus();
 });
 $("loadSamples").addEventListener("click", () => { state.products = productosDeEjemplo(state.giro); samplesUntouched = true; renderProds(); pushPreview(); });
-$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; editingStamp = 0; samplesUntouched = true; pagosTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); scrollTo(0, 0); });
+$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; editingStamp = 0; samplesUntouched = true; pagosTouched = false; designTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); scrollTo(0, 0); });
 
 /* ── Fotos a Firebase Storage ──
    Las fotos nuevas llegan como texto (data:image/...). Al guardar se suben a
@@ -319,6 +397,7 @@ function configOut() {
     name: state.name.trim(), giro: state.giro, tagline: state.tagline.trim(),
     whatsapp: state.whatsapp.trim(), horario: state.horario.trim(), aviso: state.aviso.trim(),
     logo: state.logo, color: state.color, estilo: state.estilo, categorias: g.categorias,
+    tema: { ...temaDe(state), plantilla: state.tema?.plantilla || "" },
     pedidos: { datos: state.pedidos?.datos || "opcional", entregas: state.pedidos?.entregas || [] },
     pagos: { ...state.pagos },
     products: state.products.filter((p) => p.name.trim()).map((p) => ({
@@ -419,7 +498,10 @@ $("demoList").addEventListener("click", async (e) => {
   if (ed) {
     const s = demos[ed.dataset.edit];
     state = { ...blank(s.giro || "otro"), ...s, products: Array.isArray(s.products) ? s.products : Object.values(s.products || {}) };
-    editingId = ed.dataset.edit; editingStamp = s.updatedAt || 0; samplesUntouched = false; pagosTouched = true; openRows.clear();
+    // Tiendas hechas antes del editor de diseño: se conserva cómo se veían
+    if (!s.tema) state.tema = { ...TEMA_BASE, plantilla: "" };
+    state.tema = { ...state.tema };
+    editingId = ed.dataset.edit; editingStamp = s.updatedAt || 0; samplesUntouched = false; pagosTouched = true; designTouched = true; openRows.clear();
     $("result").hidden = true; fillForm(); showView("editor");
   }
   if (rm) {

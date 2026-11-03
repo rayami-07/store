@@ -7,9 +7,9 @@
   <meta name="robots" content="noindex" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=5" />
+  <link rel="stylesheet" href="creador.css?v=6" />
 </head>
 <body>
 
@@ -68,7 +68,7 @@
         </fieldset>
 
         <fieldset>
-          <legend>2 · Imagen</legend>
+          <legend>2 · Imagen y diseño</legend>
           <div class="logo-row">
             <div class="logo-box" id="logoBox"><i class="fa-regular fa-image"></i></div>
             <div class="logo-actions">
@@ -77,10 +77,35 @@
               <small>PNG o JPG. Se ajusta solo.</small>
             </div>
           </div>
-          <div class="field-label">Color de la marca</div>
-          <div class="swatches" id="swatches"></div>
-          <div class="field-label">Estilo de títulos</div>
-          <div class="estilos" id="estilos"></div>
+          <div class="tpl-head">
+            <div class="field-label">Plantilla</div>
+            <button type="button" class="btn btn-ghost btn-sm" id="resetTpl" hidden><i class="fa-solid fa-rotate-left"></i> Regresar a la plantilla</button>
+          </div>
+          <p class="hint" id="tplHint">Escoge una base y luego ajusta lo que quieras. Los cambios se ven al momento en la vista previa.</p>
+          <div id="plantillas"></div>
+
+          <details class="ajustes" id="ajustes" open>
+            <summary>Ajustar diseño</summary>
+            <div class="ajustes-in">
+              <div class="field-label">Color de la marca <small class="muted">botones, etiquetas y detalles</small></div>
+              <div class="swatches" id="swatches"></div>
+              <div class="field-label">Estilo de títulos</div>
+              <div class="estilos" id="estilos"></div>
+              <div class="field-label">Colores de la página</div>
+              <div class="row3">
+                <label class="color-field"><input type="color" id="tFondo" /><span>Fondo</span></label>
+                <label class="color-field"><input type="color" id="tTarjetas" /><span>Tarjetas y fotos</span></label>
+                <label class="color-field"><input type="color" id="tTexto" /><span>Texto</span></label>
+              </div>
+              <p class="contrast-warn" id="contrastWarn" hidden></p>
+              <div class="field-label">Esquinas de fotos y tarjetas</div>
+              <div class="seg seg-full" id="optForma"></div>
+              <div class="field-label">Botones</div>
+              <div class="seg seg-full" id="optBotones"></div>
+              <div class="field-label">Portada</div>
+              <div class="seg seg-full seg-2" id="optPortada"></div>
+            </div>
+          </details>
         </fieldset>
 
         <fieldset>
@@ -197,6 +222,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=8"></script>
+<script type="module" src="creador.js?v=9"></script>
 </body>
 </html>

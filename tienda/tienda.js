@@ -4,7 +4,7 @@
    - ?preview=1     vista previa en vivo desde el creador (postMessage)
    Mide visitas, productos vistos, consultas y pedidos (stats.js)
 ============================================================ */
-import { ESTILOS, GIROS, PAGOS, fotoEjemplo } from "./muestras.js";
+import { GIROS, PAGOS, fotoEjemplo, aplicarTema, temaDe } from "./muestras.js";
 import { DB_URL, track, saveLead } from "./stats.js";
 
 // Quien ofrece la plataforma (sale en el pie y en la barra de demo)
@@ -31,14 +31,8 @@ let modalSel = {}; // opciones elegidas en la ficha: { Talla: "M" }
 
 const measure = (t, extra) => { if (!isPreview && !isTrial) track(storeId, t, extra); };
 
-function inkFor(hex) {
-  const h = (hex || "#111111").replace("#", "");
-  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16) / 255)
-    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.45 ? "#111111" : "#ffffff";
-}
 const finalPrice = (p) => (p.salePrice > 0 && p.salePrice < p.price ? p.salePrice : p.price);
-const photoOf = (p) => p.photo || fotoEjemplo(p.emoji || (GIROS[cfg.giro] || GIROS.otro).emoji, cfg.color);
+const photoOf = (p) => p.photo || fotoEjemplo(p.emoji || (GIROS[cfg.giro] || GIROS.otro).emoji, cfg.color, temaDe(cfg).tarjetas);
 const pedidosCfg = () => ({ datos: "opcional", entregas: ["recoger", "domicilio"], ...(cfg.pedidos || {}) });
 const pagosCfg = () => {
   const pc = { metodos: ["entrega", "transferencia"], anticipado: false, banco: "", clabe: "", titular: "", link: "", ...(cfg.pagos || {}) };
@@ -53,13 +47,7 @@ const varsOf = (p) => (p.variantes || []).filter((g) => g && g.nombre && (g.opci
 const prodById = (id) => cfg.products.find((p) => p.id === id);
 
 function applyTheme() {
-  const st = ESTILOS[cfg.estilo] || ESTILOS.moderno;
-  const r = document.documentElement.style;
-  r.setProperty("--accent", cfg.color || "#111111");
-  r.setProperty("--accent-ink", inkFor(cfg.color));
-  r.setProperty("--display", st.display);
-  r.setProperty("--display-weight", st.weight);
-  r.setProperty("--display-case", st.upper ? "uppercase" : "none");
+  aplicarTema(cfg);
   document.title = cfg.name || "Tienda en línea";
 }
 
@@ -76,7 +64,7 @@ function render(config) {
   $("heroEyebrow").textContent = cfg.name || "";
   $("heroTitle").textContent = cfg.tagline || giro.tagline;
   const first = cfg.products[0];
-  $("heroImg").src = first ? photoOf(first) : fotoEjemplo(giro.emoji, cfg.color);
+  $("heroImg").src = first ? photoOf(first) : fotoEjemplo(giro.emoji, cfg.color, temaDe(cfg).tarjetas);
 
   const hello = `Hola ${cfg.name || ""}, vi su tienda en línea y tengo una pregunta`;
   $("heroWa").href = waLink(cfg.whatsapp, hello);

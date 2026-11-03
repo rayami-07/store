@@ -330,7 +330,7 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
 <script type="module">
-  import { GIROS, productosDeEjemplo } from "../tienda/muestras.js";
+  import { GIROS, productosDeEjemplo, disenoDePlantilla } from "../tienda/muestras.js";
 
   const WA = "525581074978";
   document.querySelectorAll(".wa-link").forEach((a) => {
@@ -340,18 +340,19 @@
 
   // Ejemplos de negocio para el celular en vivo
   const EJEMPLOS = {
-    comida:  { name: "Tacos Don Beto",   color: "#c2410c", aviso: "Pedidos para llevar y a domicilio", pagos: { metodos: ["transferencia", "link"], anticipado: true, banco: "BBVA", clabe: "012180000000000000", titular: "Tacos Don Beto" } },
-    ropa:    { name: "Moda Ana",         color: "#111111", aviso: "Envíos a todo México" },
-    calzado: { name: "Zapatería Lupita", color: "#d62839", aviso: "Cambios de talla sin costo" },
-    belleza: { name: "Studio Brillo",    color: "#db2777", aviso: "Productos originales" },
+    comida:  { name: "Tacos Don Beto",   plantilla: "antojo", aviso: "Pedidos para llevar y a domicilio", pagos: { metodos: ["transferencia", "link"], anticipado: true, banco: "BBVA", clabe: "012180000000000000", titular: "Tacos Don Beto" } },
+    ropa:    { name: "Moda Ana",         plantilla: "urbano", aviso: "Envíos a todo México" },
+    calzado: { name: "Zapatería Lupita", plantilla: "noche", aviso: "Cambios de talla sin costo" },
+    belleza: { name: "Studio Brillo",    plantilla: "boutique", aviso: "Productos originales" },
   };
   const frame = document.getElementById("demo");
   let current = "comida", ready = false;
   function configFor(giro) {
     const g = GIROS[giro], e = EJEMPLOS[giro];
     return {
-      name: e.name, giro, tagline: g.tagline, whatsapp: WA, aviso: e.aviso, logo: "", color: e.color,
-      estilo: g.estilo, categorias: g.categorias, status: "activa",
+      name: e.name, giro, tagline: g.tagline, whatsapp: WA, aviso: e.aviso, logo: "",
+      ...disenoDePlantilla(e.plantilla),   // cada ejemplo con una plantilla de diseño distinta
+      categorias: g.categorias, status: "activa",
       products: productosDeEjemplo(giro),
       pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
       pagos: e.pagos || { metodos: ["entrega", "transferencia"], anticipado: false },
