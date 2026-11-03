@@ -230,6 +230,15 @@
         ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid)",
         ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
       }
+    },
+    "storeAdmin": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$storeId": {
+        "vigencia": {
+          ".read": "(auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists())"
+        }
+      }
     }
   }
 }

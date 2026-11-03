@@ -376,7 +376,7 @@ $("copyLink").addEventListener("click", async () => {
 });
 
 /* ── Mis demos ── */
-let demos = {}, owners = {};
+let demos = {}, owners = {}, admins = {};
 const STATUS = { demo: "Demo", activa: "Activa", pausada: "Pausada" };
 const statusOf = (s) => (STATUS[s?.status] ? s.status : "activa");
 async function loadDemos() {
@@ -384,6 +384,7 @@ async function loadDemos() {
   catch (err) { demos = {}; console.warn(err); }
   try { owners = (await get(ref(db, "storeOwners"))).val() || {}; }
   catch (err) { owners = {}; console.warn("Faltan las reglas de storeOwners:", err.code || err.message); }
+  try { admins = (await get(ref(db, "storeAdmin"))).val() || {}; } catch { admins = {}; }
   const list = Object.entries(demos).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
   $("demoCount").textContent = list.length ? `(${list.length})` : "";
   if (!$("resumenView").hidden) loadResumen();
@@ -392,17 +393,24 @@ async function loadDemos() {
     const fecha = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "";
     return `<div class="demo-item">
       <div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div>
-      <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span></div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${
+      <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span></div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${listState(s, admins[id] || {})}${
         Object.values(owners[id] || {}).length ? ` · <i class="fa-solid fa-user"></i> ${Object.values(owners[id]).map((o) => esc(o.email)).join(", ")}` : ""}</div></div>
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
         <a class="btn btn-light" href="${TIENDA_URL}panel.html?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-chart-column"></i> Panel</a>
         <button class="btn btn-light" data-edit="${id}"><i class="fa-solid fa-pen"></i> Editar</button>
-        <button class="btn btn-light" data-owner="${id}"><i class="fa-solid fa-key"></i> ${statusOf(s) === "demo" ? "Activar" : "Dueño"}</button>
+        <button class="btn btn-light" data-owner="${id}"><i class="fa-solid fa-${({ demo: "bolt", activa: "key", pausada: "play" })[statusOf(s)]}"></i> ${({ demo: "Activar", activa: "Vigencia y dueños", pausada: "Reactivar" })[statusOf(s)]}</button>
         <button class="btn btn-ghost danger" data-remove="${id}"><i class="fa-solid fa-trash"></i></button>
       </div>
     </div>`;
   }).join("") : `<div class="empty-demos">Todavía no tienes demos. Crea la primera en la pestaña <b>Editar</b>.</div>`;
+}
+// Lo que importa de cada estado, en una línea de la lista
+function listState(s, a) {
+  const st = statusOf(s);
+  if (st === "activa") { const v = vigInfo(a.vigencia); return ` · <span class="vig ${v.cls}">${a.vigencia ? `Vence ${fdate(a.vigencia)}` : "Sin vigencia"}${v.cls !== "ok" ? ` (${v.t.toLowerCase()})` : ""}</span>`; }
+  if (st === "pausada") return ` · <span class="vig bad">Pausada ${a.pausadaEl ? "desde " + fdate(a.pausadaEl) : ""}</span>`;
+  return "";
 }
 let pendingDelete = "";
 $("demoList").addEventListener("click", async (e) => {
@@ -422,6 +430,7 @@ $("demoList").addEventListener("click", async (e) => {
       // También se quita el acceso de sus dueños (la cuenta de correo sigue existiendo)
       const links = {};
       for (const uid of Object.keys(owners[id] || {})) { links[`storeOwners/${id}/${uid}`] = null; links[`userStores/${uid}/${id}`] = null; }
+      links[`storeAdmin/${id}`] = null;
       if (Object.keys(links).length) await update(ref(db), links);
       await remove(ref(db, `stores/${id}`)); deleteStorePhotos(id); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
     catch (err) { toast("No se pudo borrar"); }
@@ -484,128 +493,302 @@ document.querySelectorAll("[data-rdays]").forEach((b) => b.addEventListener("cli
   rdays = +b.dataset.rdays; document.querySelectorAll("[data-rdays]").forEach((x) => x.classList.toggle("active", x === b)); loadResumen();
 }));
 
-/* ── Activar tienda y dar acceso al dueño ──
-   La cuenta del dueño se crea con una "app secundaria" de Firebase para
-   que no se cierre tu sesión de admin. Quién es dueño de qué:
-     storeOwners/<tienda>/<uid> = { email, ts }
-     userStores/<uid>/<tienda>  = true                                    */
+
+/* ============================================================
+   ESTADO DE LA TIENDA, VIGENCIA Y DUEÑOS
+   - Demo:    fecha de creación, notas y "Activar tienda" (vigencia + dueño opcional)
+   - Activa:  desde cuándo, vigencia (extender), dueños (agregar / quitar), pausar
+   - Pausada: cuándo y por qué, reactivar con nueva vigencia
+   Datos privados (solo admin) en storeAdmin/<tienda>:
+     { notas, activadaEl, vigencia:"AAAA-MM-DD", pausadaEl, motivoPausa, historial }
+   El dueño solo puede leer su "vigencia" (para avisarle cuándo renovar).
+   Cuentas de dueños: storeOwners/<tienda>/<uid> y userStores/<uid>/<tienda>.
+   La cuenta se crea con una "app secundaria" para no cerrar tu sesión de admin.
+============================================================ */
 const MI_TIENDA_URL = new URL("../tienda/mi-tienda.html", location.href).href;
-let omId = "", appAlta = null;
-const STATUS_HINT = {
-  demo: "Se ve con la barra de \"Vista previa\". El dueño no puede editar.",
-  activa: "Tienda en línea sin barra de demo. El dueño puede editar sus productos.",
-  pausada: "Tus clientes ven \"no disponible\" y el dueño no puede editar (por ejemplo, si no ha pagado).",
-};
+const MOTIVOS = ["Falta de pago", "Lo pidió el cliente", "Cambios en la tienda", "Otro"];
+let omId = "", omAdmin = {}, omPausing = false, omWelcome = "", appAlta = null;
+
+const isoLocal = (d) => new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+const todayISO = () => isoLocal(new Date());
+function addMonths(iso, n) {
+  const d = iso ? new Date(iso + "T12:00") : new Date();
+  const day = d.getDate(); d.setMonth(d.getMonth() + n);
+  if (d.getDate() < day) d.setDate(0); // 31 ene + 1 mes = 28/29 feb
+  return isoLocal(d);
+}
+const fdate = (v) => (v ? new Date(typeof v === "number" ? v : v + "T12:00").toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "—");
+// Días de calendario entre hoy y la fecha (vence el 5, hoy es 2 → faltan 3)
+const daysLeft = (iso) => Math.round((new Date(iso + "T12:00") - new Date(todayISO() + "T12:00")) / 86400000);
+function vigInfo(iso) {
+  if (!iso) return { t: "Sin vigencia registrada", cls: "warn" };
+  const d = daysLeft(iso);
+  if (d < 0) return { t: `Vencida hace ${-d} día${d !== -1 ? "s" : ""}`, cls: "bad" };
+  if (d === 0) return { t: "Vence hoy", cls: "bad" };
+  if (d <= 5) return { t: `Vence en ${d} día${d !== 1 ? "s" : ""}`, cls: "warn" };
+  return { t: `Faltan ${d} días`, cls: "ok" };
+}
 function genPass() {
   const abc = "abcdefghjkmnpqrstuvwxyz23456789";
-  const r = crypto.getRandomValues(new Uint32Array(10));
-  return [...r].map((n) => abc[n % abc.length]).join("");
+  return [...crypto.getRandomValues(new Uint32Array(10))].map((n) => abc[n % abc.length]).join("");
 }
-function renderOwner() {
-  const s = demos[omId]; if (!s) return;
-  const st = statusOf(s);
-  $("omStore").textContent = s.name;
-  document.querySelectorAll("#omStatus [data-st]").forEach((b) => b.classList.toggle("active", b.dataset.st === st));
-  $("omStatusHint").textContent = STATUS_HINT[st];
-  const list = Object.entries(owners[omId] || {});
-  $("omOwners").innerHTML = list.length ? list.map(([uid, o]) => `<div class="owner"><span><i class="fa-solid fa-user"></i> ${esc(o.email)}</span>
-    <button type="button" class="btn btn-ghost danger" data-unlink="${esc(uid)}">Quitar acceso</button></div>`).join("")
-    : `<p class="hint" style="margin:0">Nadie tiene acceso todavía.</p>`;
-  $("oActWrap").hidden = st === "activa";
-  $("oActivate").checked = st === "demo";
-}
-function openOwner(id) {
-  omId = id;
-  $("oEmail").value = ""; $("oPass").value = genPass(); $("oErr").textContent = "";
-  $("omDone").hidden = true; $("omForm").hidden = false;
-  renderOwner();
+const hist = (accion, detalle = "") => ({ [`storeAdmin/${omId}/historial/h${Date.now().toString(36)}${Math.random().toString(36).slice(2, 5)}`]: { ts: Date.now(), accion, detalle } });
+const permErr = (err) => (String(err?.code || err?.message || "").toUpperCase().includes("PERMISSION") ? "Falta publicar las reglas nuevas en Firebase" : "No se pudo guardar. Revisa tu conexión");
+
+async function openOwner(id) {
+  omId = id; omPausing = false; omWelcome = "";
+  try { omAdmin = (await get(ref(db, `storeAdmin/${id}`))).val() || {}; } catch (err) { omAdmin = {}; console.warn(err); }
+  renderOM();
   $("ownerModal").hidden = false;
-  setTimeout(() => $("oEmail").focus(), 50);
 }
 function closeOwner() { $("ownerModal").hidden = true; omId = ""; loadDemos(); }
 $("omClose").addEventListener("click", closeOwner);
 $("ownerModal").addEventListener("click", (e) => { if (e.target === $("ownerModal")) closeOwner(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("ownerModal").hidden) closeOwner(); });
-$("oGen").addEventListener("click", () => { $("oPass").value = genPass(); });
 
-async function setStatus(id, status) {
-  await update(ref(db, `stores/${id}`), { status, updatedAt: Date.now() });
-  demos[id] = { ...demos[id], status, updatedAt: Date.now() };
+/* Piezas de la ventana */
+const vigPicker = (id, val) => `<div class="vig-row">
+    <input type="date" id="${id}" value="${val}" min="${todayISO()}" aria-label="Vigente hasta" />
+    <div class="vig-quick">${[[1, "1 mes"], [3, "3 meses"], [12, "1 año"]].map(([n, l]) => `<button type="button" class="chip" data-vq="${id}" data-n="${n}">${l}</button>`).join("")}</div>
+  </div>`;
+const ownerFields = (opt) => `
+    <label><span>Correo del dueño${opt ? ' <span class="muted">(opcional, puedes agregarlo después)</span>' : ""}</span><input type="email" id="oEmail" autocapitalize="off" placeholder="dueno@gmail.com" /></label>
+    <label>Contraseña temporal<span class="pass-row"><input id="oPass" value="${genPass()}" /><button type="button" class="btn btn-light" data-act="gen">Generar</button></span></label>
+    <p class="hint">Si el correo ya tiene cuenta (por ejemplo del CRM), escribe la contraseña que ya usa y se vincula.</p>`;
+function ownersList() {
+  const list = Object.entries(owners[omId] || {});
+  return list.length ? list.map(([uid, o]) => `<div class="owner"><span><i class="fa-solid fa-user"></i> ${esc(o.email)}${o.ts ? `<small class="muted"> · desde ${fdate(o.ts)}</small>` : ""}</span>
+      <button type="button" class="btn btn-ghost danger" data-unlink="${esc(uid)}">Quitar acceso</button></div>`).join("")
+    : `<p class="hint" style="margin:0">Nadie tiene acceso todavía.</p>`;
 }
-$("omStatus").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-st]"); if (!b || b.classList.contains("active")) return;
-  try { await setStatus(omId, b.dataset.st); renderOwner(); toast(`Tienda ${STATUS[b.dataset.st].toLowerCase()}`); }
-  catch (err) { toast(err.code === "PERMISSION_DENIED" ? "Falta actualizar las reglas de Firebase" : "No se pudo cambiar el estado"); }
-});
-$("omOwners").addEventListener("click", async (e) => {
-  const b = e.target.closest("[data-unlink]"); if (!b) return;
-  if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = "¿Seguro? Toca otra vez"; return; }
-  const uid = b.dataset.unlink;
-  try {
-    await update(ref(db), { [`storeOwners/${omId}/${uid}`]: null, [`userStores/${uid}/${omId}`]: null });
-    delete (owners[omId] || {})[uid]; renderOwner(); toast("Acceso quitado");
-  } catch { toast("No se pudo quitar el acceso"); }
+
+function renderOM() {
+  const s = demos[omId]; if (!s) return;
+  const a = omAdmin, st = statusOf(s);
+  $("omTitle").innerHTML = `${esc(s.name)} <span class="status ${st}">${STATUS[st]}</span>`;
+  $("omSub").textContent = `${(GIROS[s.giro] || GIROS.otro).label} · Paquete ${s.plan === "vitrina" ? "Vitrina" : "Pedidos"}`;
+  let html = "";
+
+  if (omWelcome) html += `<div class="om-done">
+      <b><i class="fa-solid fa-circle-check"></i> Listo. Mándale estos datos al dueño:</b>
+      <pre id="omMsg">${esc(omWelcome)}</pre>
+      <div class="res-actions">
+        <a class="btn btn-wa" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=${waNumber(s.whatsapp)}&text=${encodeURIComponent(omWelcome)}"><i class="fa-brands fa-whatsapp"></i> Mandar por WhatsApp</a>
+        <button type="button" class="btn btn-light" data-act="copy"><i class="fa-regular fa-copy"></i> Copiar</button>
+      </div></div>`;
+
+  /* Ficha del estado */
+  const facts = st === "demo"
+    ? [["Creada", fdate(s.createdAt)], ["Última edición", fdate(s.updatedAt)], ["Qué ve el cliente", "La tienda con la barra de \"Vista previa\""], ["Dueño", "No puede editar"]]
+    : st === "activa"
+      ? [["Activa desde", fdate(a.activadaEl)], ["Vigente hasta", `${fdate(a.vigencia)} <span class="vig ${vigInfo(a.vigencia).cls}">${vigInfo(a.vigencia).t}</span>`], ["Qué ve el cliente", "Su tienda completa, sin barra de demo"], ["Dueño", "Edita sus productos y datos"]]
+      : [["Pausada desde", fdate(a.pausadaEl)], ["Motivo", esc(a.motivoPausa || "—")], ["Vigencia anterior", fdate(a.vigencia)], ["Qué ve el cliente", "\"Esta tienda no está disponible\""], ["Dueño", "Entra, pero no puede guardar cambios"]];
+  html += `<dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+
+  /* Acciones según el estado */
+  if (st === "demo") {
+    html += `<section class="om-sec"><h4>Activar tienda</h4>
+      <p class="hint">Cuando el cliente pague. Quita la barra de demo y le permite editar.</p>
+      <div class="field-label">Vigente hasta</div>${vigPicker("aVig", addMonths("", 1))}
+      ${ownerFields(true)}
+      <p class="err" id="oErr"></p>
+      <button type="button" class="btn btn-dark" data-act="activar"><i class="fa-solid fa-bolt"></i> Activar tienda</button>
+    </section>`;
+  }
+  if (st === "activa") {
+    const base = a.vigencia && daysLeft(a.vigencia) >= 0 ? a.vigencia : todayISO();
+    html += `<section class="om-sec"><h4>Vigencia</h4>
+      <p class="hint">Cuando pague otro periodo, extiéndela. Se suma a partir de ${a.vigencia && daysLeft(a.vigencia) >= 0 ? "la fecha actual de vencimiento" : "hoy"}.</p>
+      <div class="vig-quick">${[[1, "+1 mes"], [3, "+3 meses"], [12, "+1 año"]].map(([n, l]) => `<button type="button" class="chip" data-ext="${n}">${l}<small>${fdate(addMonths(base, n))}</small></button>`).join("")}</div>
+      <div class="vig-row"><input type="date" id="eVig" value="${a.vigencia || ""}" aria-label="Otra fecha" /><button type="button" class="btn btn-light" data-act="setvig">Guardar fecha</button></div>
+    </section>
+    <section class="om-sec"><h4>Dueños con acceso</h4>
+      <div class="owners">${ownersList()}</div>
+      <details class="add-owner"${Object.keys(owners[omId] || {}).length ? "" : " open"}><summary><i class="fa-solid fa-user-plus"></i> Agregar ${Object.keys(owners[omId] || {}).length ? "otro correo" : "un correo"}</summary>
+        ${ownerFields(false)}
+        <p class="err" id="oErr"></p>
+        <button type="button" class="btn btn-dark" data-act="owner"><i class="fa-solid fa-user-plus"></i> Crear cuenta y dar acceso</button>
+      </details>
+    </section>
+    <section class="om-sec">${omPausing ? `<h4>Pausar tienda</h4>
+        <p class="hint">Sus clientes verán "no disponible" y el dueño no podrá guardar cambios. Puedes reactivarla cuando quieras.</p>
+        <label>Motivo<select id="pMotivo">${MOTIVOS.map((m) => `<option>${m}</option>`).join("")}</select></label>
+        <label>Detalle <span class="muted">(opcional)</span><input id="pDetalle" maxlength="120" placeholder="Ej. debe el mes de diciembre" /></label>
+        <div class="res-actions"><button type="button" class="btn btn-light" data-act="nopausa">Cancelar</button><button type="button" class="btn btn-dark warn" data-act="pausar"><i class="fa-solid fa-circle-pause"></i> Confirmar pausa</button></div>`
+      : `<button type="button" class="btn btn-light" data-act="pausa"><i class="fa-solid fa-circle-pause"></i> Pausar tienda</button>`}
+    </section>`;
+  }
+  if (st === "pausada") {
+    html += `<section class="om-sec"><h4>Reactivar tienda</h4>
+      <p class="hint">Cuando se resuelva el motivo de la pausa.</p>
+      <div class="field-label">Vigente hasta</div>${vigPicker("rVig", a.vigencia && daysLeft(a.vigencia) > 0 ? a.vigencia : addMonths("", 1))}
+      <button type="button" class="btn btn-dark" data-act="reactivar"><i class="fa-solid fa-play"></i> Reactivar tienda</button>
+    </section>
+    <section class="om-sec"><h4>Dueños con acceso</h4><div class="owners">${ownersList()}</div></section>`;
+  }
+
+  /* Comunes: notas e historial */
+  const h = Object.values(a.historial || {}).sort((x, y) => y.ts - x.ts).slice(0, 12);
+  html += `<section class="om-sec"><h4>Notas</h4>
+      <textarea id="omNotas" rows="3" maxlength="1000" placeholder="Lo que platicaste, qué le interesa, cuánto paga, a qué día cobrar…">${esc(a.notas || "")}</textarea>
+      <button type="button" class="btn btn-light" data-act="notas"><i class="fa-solid fa-floppy-disk"></i> Guardar notas</button>
+    </section>
+    ${h.length ? `<section class="om-sec"><h4>Historial</h4><ul class="hist">${h.map((x) => `<li><span>${fdate(x.ts)}</span><b>${esc(x.accion)}</b>${x.detalle ? ` <span class="muted">${esc(x.detalle)}</span>` : ""}</li>`).join("")}</ul></section>` : ""}
+    ${st !== "demo" ? `<button type="button" class="link-btn" data-act="todemo">Regresar a demo</button>` : ""}`;
+  $("omBody").innerHTML = html;
+}
+
+/* Botones de fechas rápidas: 1 mes / 3 meses / 1 año desde hoy */
+$("omBody").addEventListener("click", (e) => {
+  const q = e.target.closest("[data-vq]");
+  if (q) { $(q.dataset.vq).value = addMonths("", +q.dataset.n); }
 });
 
-$("omForm").addEventListener("submit", async (e) => {
-  e.preventDefault();
-  const email = $("oEmail").value.trim().toLowerCase(), pass = $("oPass").value;
-  $("oErr").textContent = "";
-  if (!/^\S+@\S+\.\S+$/.test(email)) { $("oErr").textContent = "Revisa el correo del dueño."; $("oEmail").focus(); return; }
-  if (pass.length < 8) { $("oErr").textContent = "La contraseña debe tener al menos 8 caracteres."; $("oPass").focus(); return; }
-  if (ADMIN_EMAILS.includes(email)) { $("oErr").textContent = "Ese es tu correo de administrador; usa el del dueño."; return; }
-  const btn = $("oBtn"), label = btn.innerHTML;
-  btn.disabled = true; btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Creando…`;
-  let existed = false;
-  try {
-    appAlta = appAlta || initializeApp(FB_CONFIG, "alta-duenos");
-    const authAlta = getAuth(appAlta);
-    let cred;
-    try { cred = await createUserWithEmailAndPassword(authAlta, email, pass); }
-    catch (err) {
-      if (err.code !== "auth/email-already-in-use") throw err;
-      existed = true;
-      // Ya tiene cuenta: se vincula si la contraseña es la que ya usa
-      try { cred = await signInWithEmailAndPassword(authAlta, email, pass); }
-      catch { const x = new Error("existe"); x.code = "ya-existe"; throw x; }
-    }
-    const uid = cred.user.uid;
-    await signOut(authAlta);
-    const changes = {
-      [`storeOwners/${omId}/${uid}`]: { email, ts: Date.now() },
-      [`userStores/${uid}/${omId}`]: true,
-    };
-    if ($("oActivate").checked && statusOf(demos[omId]) !== "activa") { changes[`stores/${omId}/status`] = "activa"; changes[`stores/${omId}/updatedAt`] = Date.now(); }
-    await update(ref(db), changes);
-    if (changes[`stores/${omId}/status`]) demos[omId] = { ...demos[omId], status: "activa" };
-    (owners[omId] ||= {})[uid] = { email };
-    renderOwner();
-    showWelcome(email, existed ? "" : pass);
-    toast("Acceso listo");
-  } catch (err) {
-    const c = err?.code || "";
-    $("oErr").textContent =
-      c === "ya-existe" ? "Ese correo ya tiene cuenta y la contraseña no coincide. Escribe la que ya usa, o pídele que use otro correo." :
-      c === "auth/invalid-email" ? "El correo no es válido." :
-      c === "auth/weak-password" ? "La contraseña es muy débil." :
-      c === "auth/operation-not-allowed" ? "Activa \"Correo/contraseña\" en Firebase Authentication." :
-      String(c || err?.message || "").toUpperCase().includes("PERMISSION") ? "Firebase no dejó guardar el acceso. Publica las reglas nuevas." :
-      "No se pudo crear. Revisa tu conexión e intenta de nuevo.";
-    console.error(err);
-  } finally { btn.disabled = false; btn.innerHTML = label; }
-});
-
-function showWelcome(email, pass) {
+async function commit(changes, msg) {
+  await update(ref(db), changes);
+  try { omAdmin = (await get(ref(db, `storeAdmin/${omId}`))).val() || {}; } catch {}
+  toast(msg);
+}
+async function addOwner(email, pass) {
+  appAlta = appAlta || initializeApp(FB_CONFIG, "alta-duenos");
+  const authAlta = getAuth(appAlta);
+  let cred, existed = false;
+  try { cred = await createUserWithEmailAndPassword(authAlta, email, pass); }
+  catch (err) {
+    if (err.code !== "auth/email-already-in-use") throw err;
+    existed = true;
+    try { cred = await signInWithEmailAndPassword(authAlta, email, pass); }
+    catch { const x = new Error("existe"); x.code = "ya-existe"; throw x; }
+  }
+  const uid = cred.user.uid;
+  await signOut(authAlta);
+  return { uid, existed, changes: { [`storeOwners/${omId}/${uid}`]: { email, ts: Date.now() }, [`userStores/${uid}/${omId}`]: true } };
+}
+function ownerErr(err) {
+  const c = err?.code || "";
+  return c === "ya-existe" ? "Ese correo ya tiene cuenta y la contraseña no coincide. Escribe la que ya usa, o pídele otro correo." :
+    c === "auth/invalid-email" ? "El correo no es válido." :
+    c === "auth/weak-password" ? "La contraseña es muy débil." :
+    c === "auth/operation-not-allowed" ? "Activa \"Correo/contraseña\" en Firebase Authentication." :
+    String(c || err?.message || "").toUpperCase().includes("PERMISSION") ? "Firebase no dejó guardar. Publica las reglas nuevas." :
+    "No se pudo crear. Revisa tu conexión e intenta de nuevo.";
+}
+function readOwnerFields(required) {
+  const email = ($("oEmail")?.value || "").trim().toLowerCase(), pass = $("oPass")?.value || "";
+  if (!email && !required) return { email: "" };
+  if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Revisa el correo del dueño.");
+  if (pass.length < 8) throw new Error("La contraseña debe tener al menos 8 caracteres.");
+  if (ADMIN_EMAILS.includes(email)) throw new Error("Ese es tu correo de administrador; usa el del dueño.");
+  return { email, pass };
+}
+function welcome(email, pass) {
   const s = demos[omId];
-  const msg = `Hola, tu tienda en línea de ${s.name} ya está lista.\n\n`
+  return `Hola, tu tienda en línea de ${s.name} ya está lista.\n\n`
     + `Tu tienda (compártela con tus clientes):\n${TIENDA_URL}?t=${omId}\n\n`
     + `Para agregar productos, cambiar precios y ver tus ventas entra aquí:\n${MI_TIENDA_URL}?t=${omId}\n\n`
     + `Correo: ${email}\n`
     + (pass ? `Contraseña temporal: ${pass}\n\nTe recomiendo cambiarla en la pestaña "Cuenta".` : `Contraseña: la misma que ya usas.`);
-  $("omMsg").textContent = msg;
-  $("omWa").href = `https://api.whatsapp.com/send?phone=${waNumber(s.whatsapp)}&text=${encodeURIComponent(msg)}`;
-  $("omDone").hidden = false; $("omForm").hidden = true;
 }
-$("omCopy").addEventListener("click", async () => {
-  try { await navigator.clipboard.writeText($("omMsg").textContent); toast("Mensaje copiado"); } catch { toast("Selecciona y copia el mensaje"); }
+
+$("omBody").addEventListener("click", async (e) => {
+  const unl = e.target.closest("[data-unlink]");
+  if (unl) {
+    if (unl.dataset.confirm !== "1") { unl.dataset.confirm = "1"; unl.textContent = "¿Seguro? Toca otra vez"; return; }
+    const uid = unl.dataset.unlink, email = owners[omId]?.[uid]?.email || "";
+    try {
+      await commit({ [`storeOwners/${omId}/${uid}`]: null, [`userStores/${uid}/${omId}`]: null, ...hist("Acceso quitado", email) }, "Acceso quitado");
+      delete owners[omId][uid]; renderOM();
+    } catch (err) { toast(permErr(err)); }
+    return;
+  }
+  const ext = e.target.closest("[data-ext]");
+  const btn = e.target.closest("[data-act]");
+  const act = ext ? "ext" : btn?.dataset.act;
+  if (!act) return;
+  const s = demos[omId], a = omAdmin;
+  const busy = (on) => { if (btn) btn.disabled = on; };
+  try {
+    if (act === "gen") { $("oPass").value = genPass(); return; }
+    if (act === "copy") { try { await navigator.clipboard.writeText(omWelcome); toast("Mensaje copiado"); } catch { toast("Selecciona y copia el mensaje"); } return; }
+    if (act === "pausa") { omPausing = true; renderOM(); return; }
+    if (act === "nopausa") { omPausing = false; renderOM(); return; }
+
+    if (act === "activar") {
+      const vig = $("aVig").value;
+      if (!vig) { $("oErr").textContent = "Elige hasta cuándo está pagada."; return; }
+      let o; try { o = readOwnerFields(false); } catch (err) { $("oErr").textContent = err.message; return; }
+      busy(true); $("oErr").textContent = "";
+      let changes = {
+        [`stores/${omId}/status`]: "activa", [`stores/${omId}/updatedAt`]: Date.now(),
+        [`storeAdmin/${omId}/activadaEl`]: Date.now(), [`storeAdmin/${omId}/vigencia`]: vig,
+        [`storeAdmin/${omId}/pausadaEl`]: null, [`storeAdmin/${omId}/motivoPausa`]: null,
+        ...hist("Activada", `vigente hasta ${fdate(vig)}`),
+      };
+      let ow = null;
+      if (o.email) {
+        try { ow = await addOwner(o.email, o.pass); }
+        catch (err) { $("oErr").textContent = ownerErr(err); busy(false); return; }
+        changes = { ...changes, ...ow.changes, ...hist("Acceso dado", o.email) };
+      }
+      await commit(changes, "Tienda activada");
+      demos[omId] = { ...s, status: "activa" };
+      if (ow) { (owners[omId] ||= {})[ow.uid] = { email: o.email, ts: Date.now() }; omWelcome = welcome(o.email, ow.existed ? "" : o.pass); }
+      renderOM(); return;
+    }
+    if (act === "owner") {
+      let o; try { o = readOwnerFields(true); } catch (err) { $("oErr").textContent = err.message; return; }
+      busy(true); $("oErr").textContent = "";
+      let ow; try { ow = await addOwner(o.email, o.pass); } catch (err) { $("oErr").textContent = ownerErr(err); busy(false); return; }
+      await commit({ ...ow.changes, ...hist("Acceso dado", o.email) }, "Acceso listo");
+      (owners[omId] ||= {})[ow.uid] = { email: o.email, ts: Date.now() };
+      omWelcome = welcome(o.email, ow.existed ? "" : o.pass);
+      renderOM(); return;
+    }
+    if (act === "ext") {
+      const base = a.vigencia && daysLeft(a.vigencia) >= 0 ? a.vigencia : todayISO();
+      const vig = addMonths(base, +ext.dataset.ext);
+      ext.disabled = true;
+      await commit({ [`storeAdmin/${omId}/vigencia`]: vig, ...hist("Vigencia extendida", `hasta ${fdate(vig)}`) }, `Vigente hasta ${fdate(vig)}`);
+      renderOM(); return;
+    }
+    if (act === "setvig") {
+      const vig = $("eVig").value; if (!vig) { toast("Elige una fecha"); return; }
+      busy(true);
+      await commit({ [`storeAdmin/${omId}/vigencia`]: vig, ...hist("Vigencia cambiada", `hasta ${fdate(vig)}`) }, `Vigente hasta ${fdate(vig)}`);
+      renderOM(); return;
+    }
+    if (act === "pausar") {
+      const motivo = $("pMotivo").value, det = $("pDetalle").value.trim();
+      busy(true);
+      await commit({
+        [`stores/${omId}/status`]: "pausada", [`stores/${omId}/updatedAt`]: Date.now(),
+        [`storeAdmin/${omId}/pausadaEl`]: Date.now(), [`storeAdmin/${omId}/motivoPausa`]: det ? `${motivo}: ${det}` : motivo,
+        ...hist("Pausada", det ? `${motivo}: ${det}` : motivo),
+      }, "Tienda pausada");
+      demos[omId] = { ...s, status: "pausada" }; omPausing = false; omWelcome = "";
+      renderOM(); return;
+    }
+    if (act === "reactivar") {
+      const vig = $("rVig").value; if (!vig) { toast("Elige hasta cuándo está pagada"); return; }
+      busy(true);
+      await commit({
+        [`stores/${omId}/status`]: "activa", [`stores/${omId}/updatedAt`]: Date.now(),
+        [`storeAdmin/${omId}/vigencia`]: vig, [`storeAdmin/${omId}/pausadaEl`]: null, [`storeAdmin/${omId}/motivoPausa`]: null,
+        ...hist("Reactivada", `vigente hasta ${fdate(vig)}`),
+      }, "Tienda reactivada");
+      demos[omId] = { ...s, status: "activa" };
+      renderOM(); return;
+    }
+    if (act === "todemo") {
+      if (btn.dataset.confirm !== "1") { btn.dataset.confirm = "1"; btn.textContent = "¿Regresarla a demo? El dueño ya no podrá editar. Toca otra vez"; return; }
+      await commit({ [`stores/${omId}/status`]: "demo", [`stores/${omId}/updatedAt`]: Date.now(), ...hist("Regresada a demo") }, "La tienda volvió a ser demo");
+      demos[omId] = { ...s, status: "demo" }; omWelcome = "";
+      renderOM(); return;
+    }
+    if (act === "notas") {
+      busy(true);
+      await commit({ [`storeAdmin/${omId}/notas`]: $("omNotas").value.trim() || null }, "Notas guardadas");
+      busy(false); return;
+    }
+  } catch (err) { console.error(err); toast(permErr(err)); busy(false); }
 });

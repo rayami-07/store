@@ -64,6 +64,12 @@
       <a class="btn btn-wa" id="pausedWa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Escribir</a>
     </div>
 
+    <div class="notice" id="renew" hidden>
+      <i class="fa-solid fa-calendar-day"></i>
+      <span id="renewTxt"></span>
+      <a class="btn btn-wa" id="renewWa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Renovar</a>
+    </div>
+
     <section class="quick">
       <a class="qa" id="qView" target="_blank" rel="noopener"><i class="fa-solid fa-store"></i><span>Ver mi tienda</span></a>
       <a class="qa" id="qPanel"><i class="fa-solid fa-chart-column"></i><span>Mis ventas</span></a>
@@ -129,6 +135,7 @@
       <section class="block">
         <h2>Tu cuenta</h2>
         <p class="muted small" id="accEmail"></p>
+        <p class="small" id="accPlan" hidden></p>
       </section>
       <form class="block form" id="passForm" novalidate>
         <h2>Cambiar contraseña</h2>
@@ -187,6 +194,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 
-<script type="module" src="mi-tienda.js?v=1"></script>
+<script type="module" src="mi-tienda.js?v=2"></script>
 </body>
 </html>

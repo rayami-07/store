@@ -180,8 +180,25 @@ async function open(id) {
   $("qShare").href = waSend("", `Ya puedes ver nuestros productos y hacer tu pedido aquí:\n${link}`);
   $("helpWa").href = waSend(SOPORTE_WA, `Hola, soy de ${store.name} y necesito ayuda con mi tienda`);
   $("accEmail").textContent = `Entraste como ${user.email}`;
+  showVigencia(store.status === "activa" ? await get(ref(db, `storeAdmin/${id}/vigencia`)).then((x) => x.val()).catch(() => null) : null);
   render(); fillBiz();
   show("app");
+}
+// Vigencia del plan: se ve en Cuenta y, si está por vencer, como aviso arriba
+function showVigencia(iso) {
+  $("renew").hidden = true; $("accPlan").hidden = true;
+  if (!iso) return;
+  const fecha = new Date(iso + "T12:00").toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+  const hoy = new Date(); hoy.setHours(12, 0, 0, 0);
+  const dias = Math.round((new Date(iso + "T12:00") - hoy) / 86400000);
+  const plan = store.plan === "vitrina" ? "Vitrina" : "Pedidos";
+  $("accPlan").hidden = false;
+  $("accPlan").innerHTML = `Plan <b>${plan}</b> · vigente hasta el <b>${fecha}</b>`;
+  if (dias > 5) return;
+  $("renew").hidden = false;
+  $("renewTxt").innerHTML = dias < 0 ? `<b>Tu plan venció el ${fecha}.</b> Renuévalo para que tu tienda siga en línea.`
+    : `<b>Tu plan vence ${dias === 0 ? "hoy" : dias === 1 ? "mañana" : `en ${dias} días`}</b> (${fecha}). Renuévalo para que tu tienda siga en línea.`;
+  $("renewWa").href = waSend(SOPORTE_WA, `Hola, soy de ${store.name} y quiero renovar mi plan ${plan}`);
 }
 $("qCopy").addEventListener("click", async () => {
   const link = `${TIENDA_URL}?t=${storeId}`;
