@@ -60,7 +60,14 @@ function render(config) {
   for (const id of ["logo", "logoFtr"]) { const el = $(id); el.hidden = !cfg.logo; if (cfg.logo) el.src = cfg.logo; }
   $("brandName").textContent = cfg.name || "Mi tienda";
   $("ftrName").textContent = cfg.name || "Mi tienda";
-  $("aviso").textContent = mesa ? `Estás pidiendo para la mesa ${mesa}` : (cfg.aviso || "");
+  const tema = temaDe(cfg);
+  const avisoTxt = mesa ? `Estás pidiendo para la mesa ${mesa}` : (cfg.aviso || "");
+  // Aviso en movimiento: el texto corre de lado a lado (se repite para que no quede hueco)
+  const mov = tema.avisoMov && !mesa && avisoTxt;
+  $("aviso").classList.toggle("mov", !!mov);
+  $("aviso").innerHTML = mov
+    ? `<div class="mq" aria-hidden="true">${`<span>${esc(avisoTxt)}</span>`.repeat(8)}</div><span class="sr-only">${esc(avisoTxt)}</span>`
+    : esc(avisoTxt);
   $("heroEyebrow").textContent = cfg.name || "";
   $("heroTitle").textContent = cfg.tagline || giro.tagline;
   const first = cfg.products[0];
@@ -91,8 +98,10 @@ function render(config) {
 
   $("cartBtn").hidden = isVitrina();
   if (isVitrina()) openCart(false);
+  renderOfertas(tema);
   renderGrid();
   renderCart();
+  setupEfectos();
   $("loading").hidden = true;
   $("notfound").hidden = true;
   $("store").hidden = false;
@@ -108,7 +117,7 @@ function renderGrid() {
   if (s === "desc") list = [...list].sort((a, b) => finalPrice(b) - finalPrice(a));
   $("count").textContent = `(${list.length})`;
   $("empty").hidden = list.length > 0;
-  $("grid").innerHTML = list.map((p) => {
+  $("grid").innerHTML = list.map((p, i) => {
     const sale = p.salePrice > 0 && p.salePrice < p.price;
     const inCart = cart.some((i) => i.id === p.id);
     const off = !!p.agotado;
@@ -117,7 +126,7 @@ function renderGrid() {
       : varsOf(p).length
         ? `<button class="add${inCart ? " in" : ""}" data-open="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Elegir opciones"}</button>`
         : `<button class="add${inCart ? " in" : ""}" data-add="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Agregar"}</button>`;
-    return `<article class="card${off ? " sold-out" : ""}">
+    return `<article class="card reveal${off ? " sold-out" : ""}" style="--d:${(i % 4) * 70}ms">
       <div class="card-img" data-open="${esc(p.id)}"><img src="${esc(photoOf(p))}" alt="${esc(p.name)}" loading="lazy" />${off ? `<span class="tag-off">Agotado</span>` : sale ? `<span class="tag-sale">Oferta</span>` : ""}</div>
       <div class="card-name" data-open="${esc(p.id)}">${esc(p.name)}</div>
       ${p.category ? `<div class="card-cat">${esc(p.category)}</div>` : ""}
@@ -125,6 +134,55 @@ function renderGrid() {
       <div class="card-actions">${isVitrina() ? askBtn : buyBtn + askBtn}</div>
     </article>`;
   }).join("");
+  observar();
+}
+
+/* ── Carrusel de ofertas (productos con precio de oferta) ── */
+function renderOfertas(tema) {
+  const list = tema.ofertas ? cfg.products.filter((p) => p.salePrice > 0 && p.salePrice < p.price && !p.agotado) : [];
+  $("ofertas").hidden = !list.length;
+  $("ofStrip").innerHTML = list.map((p, i) => `
+    <article class="of-card reveal" data-open="${esc(p.id)}" style="--d:${Math.min(i, 5) * 70}ms">
+      <span class="of-pct">-${Math.round((1 - p.salePrice / p.price) * 100)}%</span>
+      <img src="${esc(photoOf(p))}" alt="${esc(p.name)}" loading="lazy" />
+      <div class="of-info"><b>${esc(p.name)}</b><div class="card-price"><span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s></div></div>
+    </article>`).join("");
+}
+
+/* ── Efectos al hacer scroll ──
+   - .reveal: aparece suave cuando entra a la pantalla (IntersectionObserver)
+   - portada "Foto grande": la foto se mueve más lento que la página (parallax)
+   - el encabezado toma sombra al bajar */
+let revealObs = null, efectosListos = false;
+const quietas = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+function observar() {
+  const els = document.querySelectorAll(".reveal:not(.in)");
+  if (!("IntersectionObserver" in window) || quietas()) { els.forEach((el) => el.classList.add("in")); return; }
+  revealObs ||= new IntersectionObserver((entries) => entries.forEach((en) => {
+    if (en.isIntersecting) { en.target.classList.add("in"); revealObs.unobserve(en.target); }
+  }), { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+  els.forEach((el) => revealObs.observe(el));
+}
+function setupEfectos() {
+  if (!efectosListos) {
+    efectosListos = true;
+    document.querySelectorAll(".hero-txt, .hero-img, .of-head, .cat-head, .info-grid > div").forEach((el, i) => {
+      el.classList.add("reveal"); el.style.setProperty("--d", `${(i % 3) * 90}ms`);
+    });
+    let ticking = false;
+    addEventListener("scroll", () => {
+      if (ticking) return; ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const y = scrollY, root = document.documentElement;
+        root.classList.toggle("scrolled", y > 8);
+        const img = $("heroImg");
+        const parallax = root.dataset.portada === "foto" && root.dataset.anim !== "ninguna" && !quietas();
+        img.style.transform = parallax && y < innerHeight * 1.2 ? `translateY(${Math.round(y * 0.25)}px)` : "";
+      });
+    }, { passive: true });
+  }
+  observar();
 }
 
 /* ── Ficha de producto ── */

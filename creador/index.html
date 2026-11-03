@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=8" />
+  <link rel="stylesheet" href="creador.css?v=9" />
 </head>
 <body>
 
@@ -46,10 +46,18 @@
         <button class="mtab" data-pane="preview">Vista previa</button>
       </div>
 
+      <!-- PASO 1 de una tienda nueva: ¿de qué es el negocio? -->
+      <section class="giro-pick pane" data-pane="form" id="giroPick" hidden>
+        <h2>¿De qué es el negocio?</h2>
+        <p class="muted">Con esto se ponen productos de ejemplo y las plantillas de diseño que van con ese giro. Lo puedes cambiar después.</p>
+        <div class="giro-grid" id="giroGrid"></div>
+        <button type="button" class="btn btn-ghost" id="giroSkip">Cerrar</button>
+      </section>
+
       <form id="storeForm" class="pane" data-pane="form" autocomplete="off">
         <div class="editing-note" id="editingNote" hidden></div>
         <div class="diseno-head" id="disenoHead">
-          <div><b>Diseño de <span id="dhName"></span></b><small>Plantilla, colores, letra y forma. Los demás datos están en la pestaña Editar.</small></div>
+          <div><b>Diseño de <span id="dhName"></span></b><small>Giro: <span id="dhGiro"></span> · <button type="button" class="link-btn" data-pickgiro>cambiar giro</button></small></div>
           <button type="button" class="btn btn-light btn-sm" data-goto="demos"><i class="fa-solid fa-store"></i> Cambiar de tienda</button>
         </div>
 
@@ -108,7 +116,7 @@
               <div class="field-label">Botones</div>
               <div class="seg seg-full" id="optBotones"></div>
               <div class="field-label">Portada</div>
-              <div class="seg seg-full seg-2" id="optPortada"></div>
+              <div class="seg seg-full" id="optPortada"></div>
               <div class="field-label">Textura <small class="muted">trama de fondo que combina con tus colores</small></div>
               <div class="texturas" id="optTextura"></div>
               <div class="tex-extra" id="texExtra">
@@ -116,6 +124,14 @@
                 <div class="seg seg-full" id="optIntensidad"></div>
                 <div class="field-label">Dónde va</div>
                 <div class="seg seg-full" id="optTexEn"></div>
+              </div>
+              <div class="field-label">Animaciones al bajar <small class="muted">productos y secciones aparecen con movimiento</small></div>
+              <div class="seg seg-full" id="optAnim"></div>
+              <div class="field-label">Secciones y efectos</div>
+              <div class="sw-list">
+                <label class="switch"><input type="checkbox" id="swOfertas" /> <span><b>Carrusel de ofertas</b><small>Arriba del catálogo, los productos con precio de oferta en una tira que se desliza.</small></span></label>
+                <label class="switch"><input type="checkbox" id="swAvisoMov" /> <span><b>Aviso en movimiento</b><small>El aviso de la barra superior corre de lado a lado, con el color de la marca.</small></span></label>
+                <label class="switch"><input type="checkbox" id="swChips" /> <span><b>Categorías fijas al bajar</b><small>Los botones de categorías se quedan pegados arriba mientras ven el menú.</small></span></label>
               </div>
             </div>
           </details>
@@ -235,6 +251,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=11"></script>
+<script type="module" src="creador.js?v=12"></script>
 </body>
 </html>

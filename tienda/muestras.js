@@ -7,6 +7,7 @@
 export const GIROS = {
   ropa: {
     label: "Ropa",
+    plantilla: "street",   // plantilla con la que arranca este giro
     emoji: "👕",
     estilo: "moderno",
     tagline: "Ropa urbana para todos los días",
@@ -23,6 +24,7 @@ export const GIROS = {
   },
   calzado: {
     label: "Calzado",
+    plantilla: "street",
     emoji: "👟",
     estilo: "moderno",
     tagline: "Tenis y zapatos para cada ocasión",
@@ -38,7 +40,8 @@ export const GIROS = {
     ],
   },
   comida: {
-    label: "Comida",
+    label: "Comida / restaurante",
+    plantilla: "sabor",
     emoji: "🍔",
     estilo: "amigable",
     tagline: "Hecho al momento, directo a tu mesa",
@@ -55,6 +58,7 @@ export const GIROS = {
   },
   belleza: {
     label: "Belleza",
+    plantilla: "boutique",
     emoji: "💄",
     estilo: "elegante",
     tagline: "Cuidado y belleza que se nota",
@@ -70,6 +74,7 @@ export const GIROS = {
   },
   mascotas: {
     label: "Mascotas",
+    plantilla: "patitas",
     emoji: "🐶",
     estilo: "amigable",
     tagline: "Todo para tu mejor amigo",
@@ -85,6 +90,7 @@ export const GIROS = {
   },
   ferreteria: {
     label: "Ferretería",
+    plantilla: "obra",
     emoji: "🔧",
     estilo: "moderno",
     tagline: "Herramienta y material para tu obra",
@@ -100,6 +106,7 @@ export const GIROS = {
   },
   accesorios: {
     label: "Accesorios",
+    plantilla: "lujo",
     emoji: "⌚",
     estilo: "elegante",
     tagline: "Detalles que completan tu estilo",
@@ -113,8 +120,172 @@ export const GIROS = {
       ["Bolsa crossbody", 449, "Bolsas", "👜"],
     ],
   },
+  cafeteria: {
+    label: "Cafetería",
+    plantilla: "horno",
+    emoji: "☕",
+    estilo: "elegante",
+    tagline: "Café de especialidad y algo rico para acompañar",
+    pagoAnticipado: true,
+    categorias: ["Calientes", "Fríos", "Panes", "Postres"],
+    variantes: [{ nombre: "Tamaño", opciones: ["Chico", "Mediano", "Grande"] }],
+    productos: [
+      ["Latte", 55, "Calientes", "☕"],
+      ["Capuchino", 55, "Calientes", "☕"],
+      ["Frappé de moka", 75, "Fríos", "🧋", 65],
+      ["Cold brew", 60, "Fríos", "🥤"],
+      ["Croissant de jamón y queso", 65, "Panes", "🥐"],
+      ["Rebanada de pay de queso", 60, "Postres", "🍰"],
+    ],
+  },
+  panaderia: {
+    label: "Panadería y repostería",
+    plantilla: "horno",
+    emoji: "🥐",
+    estilo: "amigable",
+    tagline: "Pan recién horneado todos los días",
+    categorias: ["Pan dulce", "Pasteles", "Galletas", "Bebidas"],
+    productos: [
+      ["Concha", 14, "Pan dulce", "🍞"],
+      ["Cuernito", 16, "Pan dulce", "🥐"],
+      ["Pastel de tres leches (8 personas)", 380, "Pasteles", "🎂", 340],
+      ["Cupcakes (6 piezas)", 150, "Pasteles", "🧁"],
+      ["Galletas de chispas (docena)", 90, "Galletas", "🍪"],
+      ["Chocolate caliente", 40, "Bebidas", "☕"],
+    ],
+  },
+  barberia: {
+    label: "Barbería",
+    plantilla: "barberia",
+    emoji: "💈",
+    estilo: "moderno",
+    tagline: "Cortes y arreglo de barba con estilo",
+    categorias: ["Cortes", "Barba", "Productos"],
+    productos: [
+      ["Corte clásico", 150, "Cortes", "💇‍♂️"],
+      ["Degradado (fade)", 180, "Cortes", "💈"],
+      ["Corte + barba", 250, "Cortes", "✂️", 220],
+      ["Arreglo de barba", 100, "Barba", "🧔"],
+      ["Cera para cabello", 180, "Productos", "🫙"],
+      ["Aceite para barba", 220, "Productos", "🧴"],
+    ],
+  },
+  floreria: {
+    label: "Florería",
+    plantilla: "floral",
+    emoji: "💐",
+    estilo: "elegante",
+    tagline: "Flores frescas para cada momento",
+    categorias: ["Ramos", "Arreglos", "Plantas", "Regalos"],
+    productos: [
+      ["Ramo de 12 rosas", 450, "Ramos", "🌹", 399],
+      ["Ramo de girasoles", 380, "Ramos", "🌻"],
+      ["Arreglo en caja", 650, "Arreglos", "💐"],
+      ["Orquídea en maceta", 520, "Plantas", "🪴"],
+      ["Suculenta mini", 90, "Plantas", "🌵"],
+      ["Globo + chocolates", 220, "Regalos", "🎈"],
+    ],
+  },
+  papeleria: {
+    label: "Papelería",
+    plantilla: "escolar",
+    emoji: "✏️",
+    estilo: "amigable",
+    tagline: "Todo para la escuela y la oficina",
+    categorias: ["Escolar", "Oficina", "Arte", "Impresiones"],
+    productos: [
+      ["Cuaderno profesional", 45, "Escolar", "📒"],
+      ["Caja de colores (24)", 120, "Arte", "🖍️", 99],
+      ["Juego de geometría", 55, "Escolar", "📐"],
+      ["Paquete de plumas (10)", 60, "Oficina", "🖊️"],
+      ["Mochila escolar", 450, "Escolar", "🎒"],
+      ["Impresión a color (hoja)", 5, "Impresiones", "🖨️"],
+    ],
+  },
+  abarrotes: {
+    label: "Abarrotes",
+    plantilla: "mercado",
+    emoji: "🛒",
+    estilo: "simple",
+    tagline: "Tu tiendita de confianza, con entrega a domicilio",
+    categorias: ["Despensa", "Bebidas", "Botanas", "Limpieza"],
+    productos: [
+      ["Arroz 1 kg", 32, "Despensa", "🍚"],
+      ["Aceite 1 L", 45, "Despensa", "🫗"],
+      ["Refresco 2 L", 38, "Bebidas", "🥤", 34],
+      ["Papas fritas", 20, "Botanas", "🍟"],
+      ["Detergente 1 kg", 42, "Limpieza", "🧼"],
+      ["Huevo (12 piezas)", 48, "Despensa", "🥚"],
+    ],
+  },
+  tecnologia: {
+    label: "Celulares y tecnología",
+    plantilla: "nitido",
+    emoji: "📱",
+    estilo: "simple",
+    tagline: "Celulares, accesorios y tecnología",
+    categorias: ["Celulares", "Audio", "Cargadores", "Fundas"],
+    productos: [
+      ["Audífonos inalámbricos", 599, "Audio", "🎧", 499],
+      ["Cargador rápido 20 W", 249, "Cargadores", "🔌"],
+      ["Funda uso rudo", 199, "Fundas", "📱"],
+      ["Bocina bluetooth", 449, "Audio", "🔊"],
+      ["Mica de cristal", 99, "Fundas", "🛡️"],
+      ["Smartwatch", 899, "Celulares", "⌚"],
+    ],
+  },
+  deportes: {
+    label: "Deportes",
+    plantilla: "energia",
+    emoji: "🏋️",
+    estilo: "moderno",
+    tagline: "Equípate para entrenar",
+    categorias: ["Ropa deportiva", "Balones", "Gym", "Accesorios"],
+    variantes: [{ nombre: "Talla", opciones: ["CH", "M", "G", "XG"] }],
+    productos: [
+      ["Playera dry-fit", 299, "Ropa deportiva", "👕"],
+      ["Short deportivo", 279, "Ropa deportiva", "🩳", 239],
+      ["Balón de futbol", 399, "Balones", "⚽"],
+      ["Mancuernas 5 kg (par)", 699, "Gym", "🏋️"],
+      ["Tapete de yoga", 349, "Gym", "🧘"],
+      ["Botella térmica", 199, "Accesorios", "🥤"],
+    ],
+  },
+  jugueteria: {
+    label: "Juguetería y regalos",
+    plantilla: "juguetes",
+    emoji: "🧸",
+    estilo: "amigable",
+    tagline: "Juguetes y regalos que sacan sonrisas",
+    categorias: ["Juguetes", "Peluches", "Juegos de mesa", "Regalos"],
+    productos: [
+      ["Peluche de oso", 299, "Peluches", "🧸"],
+      ["Carrito a control remoto", 549, "Juguetes", "🚗", 479],
+      ["Juego de mesa familiar", 399, "Juegos de mesa", "🎲"],
+      ["Rompecabezas 500 piezas", 249, "Juegos de mesa", "🧩"],
+      ["Muñeca", 349, "Juguetes", "🪆"],
+      ["Caja de regalo sorpresa", 199, "Regalos", "🎁"],
+    ],
+  },
+  muebles: {
+    label: "Muebles y decoración",
+    plantilla: "roble",
+    emoji: "🛋️",
+    estilo: "elegante",
+    tagline: "Muebles que hacen hogar",
+    categorias: ["Sala", "Comedor", "Recámara", "Decoración"],
+    productos: [
+      ["Sillón de 3 plazas", 8999, "Sala", "🛋️", 7999],
+      ["Mesa de centro", 2499, "Sala", "🪵"],
+      ["Comedor 4 sillas", 9999, "Comedor", "🪑"],
+      ["Cabecera matrimonial", 3499, "Recámara", "🛏️"],
+      ["Lámpara de piso", 1299, "Decoración", "💡"],
+      ["Espejo decorativo", 899, "Decoración", "🪞"],
+    ],
+  },
   otro: {
     label: "Otro giro",
+    plantilla: "urbano",
     emoji: "🛍️",
     estilo: "moderno",
     tagline: "Calidad y buen precio, directo contigo",
@@ -158,9 +329,13 @@ export const BOTONES = {
 export const PORTADAS = {
   dividida: { label: "Texto y foto" },
   color:    { label: "Bloque de color" },
+  foto:     { label: "Foto grande" },
 };
+// Animaciones al hacer scroll: los productos y secciones aparecen al bajar
+export const ANIMACIONES = { ninguna: { label: "Ninguna" }, suave: { label: "Suaves" }, dinamica: { label: "Dinámicas" } };
 export const TEMA_BASE = { fondo: "#ffffff", tarjetas: "#f5f5f4", texto: "#111111", forma: "recta", botones: "pastilla", portada: "dividida",
-  textura: "ninguna", intensidad: "suave", texturaEn: "fondo" };
+  textura: "ninguna", intensidad: "suave", texturaEn: "fondo",
+  animacion: "ninguna", avisoMov: false, ofertas: false, chipsFijas: false };
 
 /* Texturas (tramas): dibujos SVG que se repiten. Toman el color del texto o de la marca,
    así combinan solas con cualquier diseño. tile = tamaño del cuadrito que se repite. */
@@ -197,21 +372,21 @@ export function texturaCSS(key, color, intensidad = "suave", { escala = 1, mas =
 }
 
 export const PLANTILLAS = {
-  urbano:   { label: "Urbano",    giros: ["ropa", "calzado", "otro"], color: "#111111", estilo: "moderno",
+  urbano:   { label: "Urbano",    giros: ["ropa", "calzado", "otro", "deportes"], color: "#111111", estilo: "moderno",
               fondo: "#ffffff", tarjetas: "#f5f5f4", texto: "#111111", forma: "recta",   botones: "pastilla",   portada: "dividida" },
-  noche:    { label: "Noche",     giros: ["ropa", "calzado"],         color: "#ff6a00", estilo: "moderno",
+  noche:    { label: "Noche",     giros: ["ropa", "calzado", "deportes", "barberia"],         color: "#ff6a00", estilo: "moderno",
               fondo: "#0f0f0f", tarjetas: "#1c1c1c", texto: "#f5f5f4", forma: "recta",   botones: "pastilla",   portada: "dividida" },
   antojo:   { label: "Antojo",    giros: ["comida"],                  color: "#d62839", estilo: "amigable",
               fondo: "#fffaf3", tarjetas: "#f8ead8", texto: "#2b1d14", forma: "redonda", botones: "pastilla",   portada: "color" },
-  cafe:     { label: "Café",      giros: ["comida"],                  color: "#6f4e37", estilo: "elegante",
+  cafe:     { label: "Café",      giros: ["comida", "cafeteria", "panaderia"],                  color: "#6f4e37", estilo: "elegante",
               fondo: "#f8f4ee", tarjetas: "#ece3d6", texto: "#2a211b", forma: "suave",   botones: "redondeado", portada: "dividida" },
-  fresco:   { label: "Fresco",    giros: ["comida", "belleza", "otro"], color: "#15803d", estilo: "simple",
+  fresco:   { label: "Fresco",    giros: ["comida", "belleza", "otro", "abarrotes", "cafeteria"], color: "#15803d", estilo: "simple",
               fondo: "#ffffff", tarjetas: "#eef6ef", texto: "#142318", forma: "suave",   botones: "pastilla",   portada: "dividida" },
-  boutique: { label: "Boutique",  giros: ["belleza", "accesorios", "ropa"], color: "#9d4b6a", estilo: "elegante",
+  boutique: { label: "Boutique",  giros: ["belleza", "accesorios", "ropa", "floreria"], color: "#9d4b6a", estilo: "elegante",
               fondo: "#fdf8f6", tarjetas: "#f4e9e6", texto: "#2d1f24", forma: "suave",   botones: "pastilla",   portada: "dividida" },
-  lujo:     { label: "Lujo",      giros: ["accesorios", "belleza"],   color: "#c9a46a", estilo: "elegante",
+  lujo:     { label: "Lujo",      giros: ["accesorios", "belleza", "barberia", "muebles"],   color: "#c9a46a", estilo: "elegante",
               fondo: "#121110", tarjetas: "#1e1c1a", texto: "#f3efe8", forma: "recta",   botones: "recto",      portada: "dividida" },
-  alegre:   { label: "Alegre",    giros: ["mascotas"],                color: "#0f766e", estilo: "amigable",
+  alegre:   { label: "Alegre",    giros: ["mascotas", "jugueteria"],                color: "#0f766e", estilo: "amigable",
               fondo: "#f4fbf9", tarjetas: "#e0f1ec", texto: "#12302b", forma: "redonda", botones: "pastilla",   portada: "color" },
   taller:   { label: "Taller",    giros: ["ferreteria"],              color: "#f59e0b", estilo: "moderno",
               fondo: "#ffffff", tarjetas: "#f1f1ef", texto: "#1c1c1c", forma: "recta",   botones: "recto",      portada: "color" },
@@ -219,28 +394,28 @@ export const PLANTILLAS = {
   fondita:  { label: "Fondita",   giros: ["comida"],                  color: "#c0392b", estilo: "amigable",
               fondo: "#fffdf7", tarjetas: "#fbe9e4", texto: "#3b1f1a", forma: "redonda", botones: "pastilla",   portada: "color",
               textura: "mantel", intensidad: "suave", texturaEn: "fondo" },
-  pizarron: { label: "Pizarrón",  giros: ["comida"],                  color: "#f2c14e", estilo: "amigable",
+  pizarron: { label: "Pizarrón",  giros: ["comida", "cafeteria"],                  color: "#f2c14e", estilo: "amigable",
               fondo: "#1f2b25", tarjetas: "#2a3831", texto: "#f2efe6", forma: "suave",   botones: "redondeado", portada: "dividida",
               textura: "papel", intensidad: "media", texturaEn: "fondo" },
-  fiesta:   { label: "Fiesta",    giros: ["comida", "mascotas", "otro"], color: "#e4007c", estilo: "amigable",
+  fiesta:   { label: "Fiesta",    giros: ["comida", "mascotas", "otro", "jugueteria", "panaderia"], color: "#e4007c", estilo: "amigable",
               fondo: "#fff8ef", tarjetas: "#ffe9d6", texto: "#2b1a12", forma: "redonda", botones: "pastilla",   portada: "color",
               textura: "confeti", intensidad: "media", texturaEn: "fondo" },
-  dulce:    { label: "Dulce",     giros: ["comida", "belleza"],       color: "#d9668b", estilo: "amigable",
+  dulce:    { label: "Dulce",     giros: ["comida", "belleza", "panaderia", "floreria"],       color: "#d9668b", estilo: "amigable",
               fondo: "#fff7fa", tarjetas: "#fde6ee", texto: "#3d2530", forma: "redonda", botones: "pastilla",   portada: "dividida",
               textura: "puntos", intensidad: "suave", texturaEn: "fondo" },
-  natural:  { label: "Natural",   giros: ["belleza", "comida", "otro"], color: "#5a6b3b", estilo: "elegante",
+  natural:  { label: "Natural",   giros: ["belleza", "comida", "otro", "floreria", "cafeteria", "muebles"], color: "#5a6b3b", estilo: "elegante",
               fondo: "#f6f3ea", tarjetas: "#e9e4d4", texto: "#2e3326", forma: "suave",   botones: "pastilla",   portada: "dividida",
               textura: "papel", intensidad: "suave", texturaEn: "fondo" },
-  deportivo:{ label: "Deportivo", giros: ["calzado", "ropa"],         color: "#2563eb", estilo: "moderno",
+  deportivo:{ label: "Deportivo", giros: ["calzado", "ropa", "deportes"],         color: "#2563eb", estilo: "moderno",
               fondo: "#ffffff", tarjetas: "#eef1f5", texto: "#0b1220", forma: "recta",   botones: "pastilla",   portada: "color",
               textura: "rayas", intensidad: "media", texturaEn: "portada" },
-  barberia: { label: "Barbería",  giros: ["belleza", "otro"],         color: "#b8873b", estilo: "moderno",
+  barberia: { label: "Barbería",  giros: ["belleza", "otro", "barberia"],         color: "#b8873b", estilo: "moderno",
               fondo: "#151515", tarjetas: "#222222", texto: "#f1ece4", forma: "recta",   botones: "recto",      portada: "dividida",
               textura: "rayas", intensidad: "suave", texturaEn: "fondo" },
-  tecno:    { label: "Tecno",     giros: ["accesorios", "otro"],      color: "#7c3aed", estilo: "simple",
+  tecno:    { label: "Tecno",     giros: ["accesorios", "otro", "tecnologia"],      color: "#7c3aed", estilo: "simple",
               fondo: "#0b0b14", tarjetas: "#171728", texto: "#ecebf7", forma: "suave",   botones: "redondeado", portada: "dividida",
               textura: "cuadricula", intensidad: "media", texturaEn: "fondo" },
-  minimal:  { label: "Minimal",   giros: ["ropa", "accesorios", "otro"], color: "#1a1a1a", estilo: "simple",
+  minimal:  { label: "Minimal",   giros: ["ropa", "accesorios", "otro", "muebles", "tecnologia"], color: "#1a1a1a", estilo: "simple",
               fondo: "#fafafa", tarjetas: "#efefef", texto: "#1a1a1a", forma: "recta",   botones: "recto",      portada: "dividida" },
   patitas:  { label: "Patitas",   giros: ["mascotas"],                color: "#f97316", estilo: "amigable",
               fondo: "#fffaf2", tarjetas: "#ffedd5", texto: "#3a2414", forma: "redonda", botones: "pastilla",   portada: "color",
@@ -248,12 +423,44 @@ export const PLANTILLAS = {
   obra:     { label: "Obra",      giros: ["ferreteria"],              color: "#ea580c", estilo: "moderno",
               fondo: "#fafaf9", tarjetas: "#ececea", texto: "#1c1917", forma: "recta",   botones: "recto",      portada: "dividida",
               textura: "cuadricula", intensidad: "media", texturaEn: "fondo" },
+  // ── Modernas: foto grande, animaciones y secciones ──
+  horno:    { label: "Horno",     giros: ["panaderia", "cafeteria", "comida"], color: "#b45309", estilo: "elegante",
+              fondo: "#fdf8f1", tarjetas: "#f3e6d3", texto: "#3a2615", forma: "redonda", botones: "pastilla",   portada: "foto",
+              textura: "papel", intensidad: "suave", texturaEn: "fondo", animacion: "suave", ofertas: true, chipsFijas: true },
+  floral:   { label: "Floral",    giros: ["floreria", "belleza"],     color: "#c2557a", estilo: "elegante",
+              fondo: "#fbf7f2", tarjetas: "#f1e6e1", texto: "#2f2a24", forma: "redonda", botones: "pastilla",   portada: "foto",
+              textura: "ondas", intensidad: "suave", texturaEn: "fondo", animacion: "suave", ofertas: true },
+  escolar:  { label: "Escolar",   giros: ["papeleria", "jugueteria"], color: "#2563eb", estilo: "amigable",
+              fondo: "#fffdf5", tarjetas: "#fdf3c7", texto: "#1e293b", forma: "suave",   botones: "pastilla",   portada: "color",
+              textura: "renglones", intensidad: "media", texturaEn: "fondo", animacion: "suave", avisoMov: true, chipsFijas: true },
+  mercado:  { label: "Mercado",   giros: ["abarrotes", "comida"],     color: "#16a34a", estilo: "simple",
+              fondo: "#fbfdf7", tarjetas: "#eef6e4", texto: "#1b2a14", forma: "suave",   botones: "redondeado", portada: "color",
+              animacion: "suave", avisoMov: true, ofertas: true, chipsFijas: true },
+  energia:  { label: "Energía",   giros: ["deportes", "calzado", "ropa"], color: "#a3e635", estilo: "moderno",
+              fondo: "#0c0c0c", tarjetas: "#1a1a1a", texto: "#f5f5f5", forma: "recta",   botones: "recto",      portada: "foto",
+              textura: "rayas", intensidad: "suave", texturaEn: "fondo", animacion: "dinamica", avisoMov: true, ofertas: true },
+  juguetes: { label: "Juguetes",  giros: ["jugueteria", "mascotas"],  color: "#f43f5e", estilo: "amigable",
+              fondo: "#fffaf0", tarjetas: "#fdecc8", texto: "#2d1b0e", forma: "redonda", botones: "pastilla",   portada: "color",
+              textura: "confeti", intensidad: "media", texturaEn: "fondo", animacion: "dinamica", ofertas: true },
+  roble:    { label: "Roble",     giros: ["muebles"],                 color: "#7c5a3a", estilo: "elegante",
+              fondo: "#f7f3ee", tarjetas: "#e9e1d6", texto: "#2b2219", forma: "suave",   botones: "recto",      portada: "foto",
+              textura: "papel", intensidad: "suave", texturaEn: "fondo", animacion: "suave", ofertas: true },
+  nitido:   { label: "Nítido",    giros: ["tecnologia", "accesorios"], color: "#0ea5e9", estilo: "simple",
+              fondo: "#f8fafc", tarjetas: "#eef2f6", texto: "#0f172a", forma: "suave",   botones: "redondeado", portada: "foto",
+              textura: "cuadricula", intensidad: "suave", texturaEn: "fondo", animacion: "dinamica", ofertas: true, chipsFijas: true },
+  street:   { label: "Street",    giros: ["ropa", "calzado"],         color: "#ef4444", estilo: "moderno",
+              fondo: "#ffffff", tarjetas: "#f2f2f2", texto: "#0a0a0a", forma: "recta",   botones: "recto",      portada: "foto",
+              animacion: "dinamica", avisoMov: true, ofertas: true },
+  sabor:    { label: "Sabor",     giros: ["comida", "cafeteria"],     color: "#ea580c", estilo: "amigable",
+              fondo: "#fffaf5", tarjetas: "#ffedd5", texto: "#2a1407", forma: "redonda", botones: "pastilla",   portada: "foto",
+              animacion: "dinamica", avisoMov: true, ofertas: true, chipsFijas: true },
 };
 
 // Plantillas sugeridas para un giro (primero las del giro, luego las demás)
 export function plantillasPara(giro) {
   const all = Object.keys(PLANTILLAS);
-  const mine = all.filter((k) => PLANTILLAS[k].giros.includes(giro));
+  const pref = GIROS[giro]?.plantilla;
+  const mine = all.filter((k) => PLANTILLAS[k].giros.includes(giro)).sort((a, b) => (b === pref) - (a === pref));
   return { sugeridas: mine.length ? mine : ["urbano"], otras: all.filter((k) => !mine.includes(k)) };
 }
 export const plantillaDelGiro = (giro) => plantillasPara(giro).sugeridas[0];
@@ -262,8 +469,9 @@ export const plantillaDelGiro = (giro) => plantillasPara(giro).sugeridas[0];
 export function disenoDePlantilla(key) {
   const p = PLANTILLAS[key] || PLANTILLAS.urbano;
   const { color, estilo, fondo, tarjetas, texto, forma, botones, portada } = p;
-  const { textura, intensidad, texturaEn } = { ...TEMA_BASE, ...p };
-  return { color, estilo, tema: { plantilla: PLANTILLAS[key] ? key : "urbano", fondo, tarjetas, texto, forma, botones, portada, textura, intensidad, texturaEn } };
+  const { textura, intensidad, texturaEn, animacion, avisoMov, ofertas, chipsFijas } = { ...TEMA_BASE, ...p };
+  return { color, estilo, tema: { plantilla: PLANTILLAS[key] ? key : "urbano", fondo, tarjetas, texto, forma, botones, portada,
+    textura, intensidad, texturaEn, animacion, avisoMov, ofertas, chipsFijas } };
 }
 
 /* Utilidades de color */
@@ -296,6 +504,8 @@ export function temaDe(cfg = {}) {
   if (!TEXTURAS[t.textura]) t.textura = TEMA_BASE.textura;
   if (!INTENSIDADES[t.intensidad]) t.intensidad = TEMA_BASE.intensidad;
   if (!TEXTURA_EN[t.texturaEn]) t.texturaEn = TEMA_BASE.texturaEn;
+  if (!ANIMACIONES[t.animacion]) t.animacion = TEMA_BASE.animacion;
+  for (const k of ["avisoMov", "ofertas", "chipsFijas"]) t[k] = t[k] === true;
   return t;
 }
 
@@ -312,7 +522,7 @@ export function variablesDeTema(cfg = {}) {
   // (sobre el color de la marca se ve menos, por eso va un poco más marcada)
   const texHero = t.portada === "color" ? texturaCSS(t.textura, inkFor(accent), t.intensidad, { mas: 1.6 }) : texFondo;
   return {
-    dark, portada: t.portada, texHero: enPortada && t.textura !== "ninguna",
+    dark, portada: t.portada, texHero: enPortada && t.textura !== "ninguna", animacion: t.animacion, chipsFijas: t.chipsFijas,
     vars: {
       "--accent": accent,
       "--accent-ink": inkFor(accent),
@@ -341,12 +551,14 @@ export function variablesDeTema(cfg = {}) {
 
 // Aplica el tema a la página (tienda pública o vista previa)
 export function aplicarTema(cfg, doc = document) {
-  const { dark, portada, texHero, vars } = variablesDeTema(cfg);
+  const { dark, portada, texHero, animacion, chipsFijas, vars } = variablesDeTema(cfg);
   const r = doc.documentElement;
   for (const [k, v] of Object.entries(vars)) r.style.setProperty(k, String(v));
   r.style.colorScheme = dark ? "dark" : "light";
   r.dataset.portada = portada;
   r.dataset.texHero = texHero ? "1" : "";
+  r.dataset.anim = animacion;
+  r.dataset.chipsFijas = chipsFijas ? "1" : "";
   doc.querySelector('meta[name="theme-color"]')?.setAttribute("content", vars["--bg"]);
 }
 

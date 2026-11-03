@@ -7,7 +7,7 @@ import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo,
   PLANTILLAS, FORMAS, BOTONES, PORTADAS, TEMA_BASE, plantillasPara, plantillaDelGiro, disenoDePlantilla, temaDe, contraste, inkFor,
-  TEXTURAS, INTENSIDADES, TEXTURA_EN, texturaCSS } from "../tienda/muestras.js";
+  TEXTURAS, INTENSIDADES, TEXTURA_EN, texturaCSS, ANIMACIONES } from "../tienda/muestras.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { aggregate, money, pct, ago } from "../tienda/stats.js";
@@ -59,7 +59,7 @@ onAuthStateChanged(auth, (u) => {
   const ok = u && ADMIN_EMAILS.includes((u.email || "").toLowerCase());
   $("loginView").hidden = !!ok;
   $("appView").hidden = !ok;
-  if (ok) { fillForm(); loadDemos(); }
+  if (ok) { fillForm(); loadDemos(); if (!editingId) openGiroPick(true); }
 });
 $("loginForm").addEventListener("submit", async (e) => {
   e.preventDefault();
@@ -152,9 +152,37 @@ $("fLogo").addEventListener("change", async (e) => {
 });
 $("logoRemove").addEventListener("click", () => { state.logo = ""; renderLogo(); pushPreview(); });
 
+/* ── Paso 1: ¿de qué es el negocio? ──
+   Al elegir, se usa la misma lógica que cambiar el giro en el formulario
+   (ejemplos del giro y su plantilla, si aún no se tocaron) */
+function renderGiroPick() {
+  $("giroGrid").innerHTML = Object.entries(GIROS).map(([k, g]) => {
+    const p = PLANTILLAS[plantillaDelGiro(k)];
+    return `<button type="button" class="giro-card${k === state.giro && !$("giroPick").dataset.nueva ? " active" : ""}" data-giro="${k}">
+      <span class="giro-emoji">${g.emoji}</span><b>${esc(g.label)}</b>
+      <span class="giro-dots"><i style="background:${p.fondo}"></i><i style="background:${p.color}"></i><i style="background:${p.tarjetas}"></i></span>
+    </button>`;
+  }).join("");
+}
+function openGiroPick(nueva) {
+  $("giroPick").dataset.nueva = nueva ? "1" : "";
+  $("giroSkip").textContent = nueva ? "Saltar por ahora" : "Cerrar";
+  renderGiroPick();
+  $("giroPick").hidden = false; $("storeForm").hidden = true; scrollTo(0, 0);
+}
+function closeGiroPick() { $("giroPick").hidden = true; $("storeForm").hidden = false; }
+$("giroGrid").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-giro]"); if (!b) return;
+  $("fGiro").value = b.dataset.giro; $("fGiro").dispatchEvent(new Event("change"));
+  closeGiroPick();
+  toast(`${GIROS[b.dataset.giro].emoji} ${GIROS[b.dataset.giro].label}: escoge una plantilla en Diseño`);
+});
+$("giroSkip").addEventListener("click", closeGiroPick);
+document.addEventListener("click", (e) => { if (e.target.closest("[data-pickgiro]")) openGiroPick(false); });
+
 /* ── Diseño: plantillas + ajustes ──
    state.color y state.estilo (como antes) + state.tema = { plantilla, fondo, tarjetas, texto, forma, botones, portada } */
-const TEMA_KEYS = ["fondo", "tarjetas", "texto", "forma", "botones", "portada", "textura", "intensidad", "texturaEn"];
+const TEMA_KEYS = ["fondo", "tarjetas", "texto", "forma", "botones", "portada", "textura", "intensidad", "texturaEn", "animacion", "avisoMov", "ofertas", "chipsFijas"];
 const norm = (c) => String(c || "").toLowerCase();
 function tplModificada() {
   const k = state.tema?.plantilla; if (!PLANTILLAS[k]) return false;
@@ -235,7 +263,10 @@ function renderContraste() {
 
 /* Forma, botones y portada */
 const SEGS = [["optForma", "forma", FORMAS], ["optBotones", "botones", BOTONES], ["optPortada", "portada", PORTADAS],
-  ["optIntensidad", "intensidad", INTENSIDADES], ["optTexEn", "texturaEn", TEXTURA_EN]];
+  ["optIntensidad", "intensidad", INTENSIDADES], ["optTexEn", "texturaEn", TEXTURA_EN], ["optAnim", "animacion", ANIMACIONES]];
+/* Interruptores: carrusel de ofertas, aviso en movimiento, categorías fijas */
+const SWITCHES = [["swOfertas", "ofertas"], ["swAvisoMov", "avisoMov"], ["swChips", "chipsFijas"]];
+for (const [id, k] of SWITCHES) $(id).addEventListener("change", (e) => { state.tema[k] = e.target.checked; changed(); });
 function renderSegs() {
   for (const [id, k, opts] of SEGS)
     $(id).innerHTML = Object.entries(opts).map(([v, o]) => `<button type="button" data-v="${v}" class="${state.tema[k] === v ? "active" : ""}">${o.label}</button>`).join("");
@@ -267,6 +298,8 @@ function renderDiseno() {
   state.tema = { plantilla: "", ...temaDe(state), plantilla: state.tema?.plantilla || "" };
   renderPlantillas(); renderSwatches(); renderEstilos(); renderSegs(); renderTexturas(); renderContraste();
   $("tFondo").value = state.tema.fondo; $("tTarjetas").value = state.tema.tarjetas; $("tTexto").value = state.tema.texto;
+  for (const [id, k] of SWITCHES) $(id).checked = !!state.tema[k];
+  const g = GIROS[state.giro] || GIROS.otro; $("dhGiro").textContent = `${g.emoji} ${g.label}`;
 }
 
 $("optPlan").addEventListener("change", (e) => { state.plan = e.target.value; pushPreview(); });
@@ -373,7 +406,7 @@ $("addProd").addEventListener("click", () => {
   $("prods").lastElementChild?.querySelector("input[data-f=name]")?.focus();
 });
 $("loadSamples").addEventListener("click", () => { state.products = productosDeEjemplo(state.giro); samplesUntouched = true; renderProds(); pushPreview(); });
-$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; editingStamp = 0; samplesUntouched = true; pagosTouched = false; designTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); scrollTo(0, 0); });
+$("newDemo").addEventListener("click", () => { state = blank(); editingId = ""; editingStamp = 0; samplesUntouched = true; pagosTouched = false; designTouched = false; openRows.clear(); $("result").hidden = true; fillForm(); openGiroPick(true); });
 
 /* ── Fotos a Firebase Storage ──
    Las fotos nuevas llegan como texto (data:image/...). Al guardar se suben a
@@ -567,7 +600,7 @@ document.querySelectorAll(".mtab").forEach((b) => b.addEventListener("click", ()
   document.querySelectorAll(".mtab").forEach((x) => x.classList.toggle("active", x === b));
   document.querySelectorAll(".editor .pane").forEach((p) => p.classList.toggle("show-pane", p.dataset.pane === b.dataset.pane));
 }));
-document.querySelector('.editor .pane[data-pane="form"]').classList.add("show-pane");
+document.querySelectorAll('.editor .pane[data-pane="form"]').forEach((p) => p.classList.add("show-pane"));
 document.querySelectorAll(".dev").forEach((b) => b.addEventListener("click", () => {
   document.querySelectorAll(".dev").forEach((x) => x.classList.toggle("active", x === b));
   $("frameWrap").className = "frame-wrap " + b.dataset.dev;

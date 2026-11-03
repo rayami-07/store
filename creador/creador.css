@@ -315,3 +315,21 @@ legend { font-weight: 700; padding: 0 6px; }
 .tex-extra { display: grid; gap: 12px; }
 .tex-extra[hidden] { display: none; }
 @media (max-width: 520px) { .texturas { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* ── Paso 1: elegir giro ── */
+.giro-pick { padding: 20px; display: grid; gap: 14px; align-content: start; }
+.giro-pick[hidden] { display: none !important; }
+.giro-pick h2 { margin: 0; font-size: 24px; }
+.giro-pick p { margin: -6px 0 0; }
+.giro-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.giro-card { border: 1px solid var(--line); background: #fff; border-radius: 14px; padding: 14px 10px 12px; cursor: pointer; display: grid; justify-items: center; gap: 6px; font: inherit; color: var(--ink); text-align: center; transition: transform .15s, border-color .15s; }
+.giro-card:hover { border-color: var(--ink); transform: translateY(-2px); }
+.giro-card.active { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.giro-card b { font-size: 13px; font-weight: 600; line-height: 1.2; }
+.giro-emoji { font-size: 32px; line-height: 1; }
+.giro-dots { display: flex; gap: 3px; }
+.giro-dots i { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,.12); }
+.giro-pick > .btn { justify-self: start; }
+.link-btn { border: 0; background: none; padding: 0; color: var(--ink); text-decoration: underline; cursor: pointer; font: inherit; }
+.sw-list { display: grid; gap: 8px; }
+@media (max-width: 520px) { .giro-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
