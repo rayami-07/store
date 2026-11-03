@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=6" />
+  <link rel="stylesheet" href="creador.css?v=7" />
 </head>
 <body>
 
@@ -31,6 +31,7 @@
     <b class="top-title">Creador de tiendas</b>
     <div class="top-tabs" role="tablist">
       <button class="ttab active" data-view="editor">Editar</button>
+      <button class="ttab" data-view="diseno"><i class="fa-solid fa-palette"></i> Diseño</button>
       <button class="ttab" data-view="demos">Mis tiendas <span id="demoCount"></span></button>
       <button class="ttab" data-view="resumen">Resumen</button>
     </div>
@@ -47,6 +48,10 @@
 
       <form id="storeForm" class="pane" data-pane="form" autocomplete="off">
         <div class="editing-note" id="editingNote" hidden></div>
+        <div class="diseno-head" id="disenoHead">
+          <div><b>Diseño de <span id="dhName"></span></b><small>Plantilla, colores, letra y forma. Los demás datos están en la pestaña Editar.</small></div>
+          <button type="button" class="btn btn-light btn-sm" data-goto="demos"><i class="fa-solid fa-store"></i> Cambiar de tienda</button>
+        </div>
 
         <fieldset>
           <legend>1 · Negocio</legend>
@@ -67,7 +72,7 @@
           <label>Aviso en la barra superior<input id="fAviso" maxlength="90" placeholder="Envíos a todo el Valle de México" /></label>
         </fieldset>
 
-        <fieldset>
+        <fieldset id="fsDiseno">
           <legend>2 · Imagen y diseño</legend>
           <div class="logo-row">
             <div class="logo-box" id="logoBox"><i class="fa-regular fa-image"></i></div>
@@ -222,6 +227,6 @@
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=9"></script>
+<script type="module" src="creador.js?v=10"></script>
 </body>
 </html>

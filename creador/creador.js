@@ -411,9 +411,11 @@ const slugify = (s) => s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().
 $("storeForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   const out = configOut();
-  if (!out.name) { toast("Escribe el nombre del negocio"); $("fName").focus(); return; }
-  if (String(out.whatsapp).replace(/\D/g, "").length < 10) { toast("Escribe el WhatsApp a 10 dígitos"); $("fWa").focus(); return; }
-  if (!out.products.length) { toast("Agrega al menos un producto"); return; }
+  // Si falta un dato y estás en la pestaña Diseño, te regresa a Editar para llenarlo
+  const needForm = () => { if ($("editorView").classList.contains("solo-diseno")) showView("editor"); };
+  if (!out.name) { needForm(); toast("Escribe el nombre del negocio"); $("fName").focus(); return; }
+  if (String(out.whatsapp).replace(/\D/g, "").length < 10) { needForm(); toast("Escribe el WhatsApp a 10 dígitos"); $("fWa").focus(); return; }
+  if (!out.products.length) { needForm(); toast("Agrega al menos un producto"); return; }
   const id = editingId || `${slugify(out.name)}-${Math.random().toString(36).slice(2, 6)}`;
   const now = Date.now();
   const prev = editingId ? (await get(ref(db, `stores/${id}`))).val() : null;
@@ -522,12 +524,25 @@ $("demoList").addEventListener("click", async (e) => {
 /* ── Navegación ── */
 function showView(v) {
   document.querySelectorAll(".ttab").forEach((b) => b.classList.toggle("active", b.dataset.view === v));
-  $("editorView").hidden = v !== "editor";
+  $("editorView").hidden = v !== "editor" && v !== "diseno";
+  $("editorView").classList.toggle("solo-diseno", v === "diseno");
   $("demosView").hidden = v !== "demos";
   $("resumenView").hidden = v !== "resumen";
   if (v === "resumen") loadResumen();
+  if (v === "diseno") {
+    // Pestaña Diseño: misma tienda que se está editando, solo con plantillas y ajustes
+    $("dhName").textContent = state.name.trim() ? `"${state.name.trim()}"` : "la tienda nueva";
+    $("ajustes").open = true;
+    scrollTo(0, 0); document.querySelector(".form-col")?.scrollTo?.(0, 0);
+  }
 }
 document.querySelectorAll(".ttab").forEach((b) => b.addEventListener("click", () => showView(b.dataset.view)));
+// El nombre y el WhatsApp son obligatorios: si faltan, el navegador no deja guardar
+// y los campos están en Editar, así que primero se cambia de pestaña
+$("saveBtn").addEventListener("click", () => {
+  if ($("editorView").classList.contains("solo-diseno") && !$("storeForm").checkValidity()) showView("editor");
+});
+$("disenoHead").addEventListener("click", (e) => { const g = e.target.closest("[data-goto]"); if (g) showView(g.dataset.goto); });
 document.querySelectorAll(".mtab").forEach((b) => b.addEventListener("click", () => {
   document.querySelectorAll(".mtab").forEach((x) => x.classList.toggle("active", x === b));
   document.querySelectorAll(".editor .pane").forEach((p) => p.classList.toggle("show-pane", p.dataset.pane === b.dataset.pane));
