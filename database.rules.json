@@ -137,7 +137,7 @@
         ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
         "products": {
           ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
-          ".validate": "newData.hasChildren() && newData.numChildren() <= 300"
+          ".validate": "newData.hasChildren()"
         },
         "tagline": {
           ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
