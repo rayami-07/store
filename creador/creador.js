@@ -553,12 +553,8 @@ const vigPicker = (id, val) => `<div class="vig-row">
   </div>`;
 const ownerFields = (opt) => `
     <label><span>Correo del dueño${opt ? ' <span class="muted">(opcional, puedes agregarlo después)</span>' : ""}</span><input type="email" id="oEmail" autocapitalize="off" placeholder="dueno@gmail.com" /></label>
-    <div class="field-label">¿Cómo recibe su acceso?</div>
-    <div class="opts-col" id="oModo">
-      <label class="opt-card"><input type="radio" name="oModo" value="correo" checked /> <span><b>Correo de bienvenida</b><small>Le llega un correo de RAYAMI Store para que él cree su contraseña. Tú no la conoces.</small></span></label>
-      <label class="opt-card"><input type="radio" name="oModo" value="pass" /> <span><b>Contraseña temporal</b><small>Tú se la mandas por WhatsApp. También úsala si el correo ya tiene cuenta (por ejemplo del CRM): escribe la que ya usa.</small></span></label>
-    </div>
-    <label id="oPassWrap" hidden>Contraseña<span class="pass-row"><input id="oPass" value="${genPass()}" /><button type="button" class="btn btn-light" data-act="gen">Generar</button></span></label>`;
+    <p class="hint">Le llega un correo de bienvenida de RAYAMI Store para que él cree su contraseña.</p>
+    <label id="oPassWrap" hidden>Contraseña que ya usa en RAYAMI<input id="oPass" type="password" autocomplete="off" /></label>`;
 function ownersList() {
   const list = Object.entries(owners[omId] || {});
   return list.length ? list.map(([uid, o]) => `<div class="owner"><span><i class="fa-solid fa-user"></i> ${esc(o.email)}${o.ts ? `<small class="muted"> · desde ${fdate(o.ts)}</small>` : ""}</span>
@@ -684,8 +680,8 @@ async function addOwner(email, pass, invite) {
 }
 function ownerErr(err) {
   const c = err?.code || "";
-  return c === "ya-existe-correo" ? "Ese correo ya tiene cuenta (quizá del CRM). Elige \"Contraseña temporal\" y escribe la contraseña que ya usa para vincularla." :
-    c === "ya-existe" ? "Ese correo ya tiene cuenta y la contraseña no coincide. Escribe la que ya usa, o pídele otro correo." :
+  return c === "ya-existe-correo" ? "Ese correo ya tiene cuenta en RAYAMI (quizá del CRM). Escribe la contraseña que ya usa para vincularla, o usa otro correo." :
+    c === "ya-existe" ? "La contraseña no coincide con la de esa cuenta. Pídesela al dueño o usa otro correo." :
     c === "auth/invalid-email" ? "El correo no es válido." :
     c === "auth/weak-password" ? "La contraseña es muy débil." :
     c === "auth/operation-not-allowed" ? "Activa \"Correo/contraseña\" en Firebase Authentication." :
@@ -694,10 +690,11 @@ function ownerErr(err) {
 }
 function readOwnerFields(required) {
   const email = ($("oEmail")?.value || "").trim().toLowerCase(), pass = $("oPass")?.value || "";
-  const invite = document.querySelector('input[name="oModo"]:checked')?.value !== "pass";
+  // Siempre correo de bienvenida; solo si el correo ya tenía cuenta se pide su contraseña para vincularla
+  const invite = !!$("oPassWrap")?.hidden;
   if (!email && !required) return { email: "" };
   if (!/^\S+@\S+\.\S+$/.test(email)) throw new Error("Revisa el correo del dueño.");
-  if (!invite && pass.length < 8) throw new Error("La contraseña debe tener al menos 8 caracteres.");
+  if (!invite && !pass) throw new Error("Escribe la contraseña que ya usa.");
   if (ADMIN_EMAILS.includes(email)) throw new Error("Ese es tu correo de administrador; usa el del dueño.");
   return { email, pass, invite };
 }
@@ -711,9 +708,6 @@ function welcome(email, pass, mailed) {
     + (pass ? `Contraseña temporal: ${pass}\n\nTe recomiendo cambiarla en la pestaña "Cuenta".` : `Contraseña: la misma que ya usas.`);
 }
 
-$("omBody").addEventListener("change", (e) => {
-  if (e.target.name === "oModo") $("oPassWrap").hidden = e.target.value !== "pass";
-});
 $("omBody").addEventListener("click", async (e) => {
   const rs = e.target.closest("[data-resend]");
   if (rs) {
@@ -739,7 +733,6 @@ $("omBody").addEventListener("click", async (e) => {
   const s = demos[omId], a = omAdmin;
   const busy = (on) => { if (btn) btn.disabled = on; };
   try {
-    if (act === "gen") { $("oPass").value = genPass(); return; }
     if (act === "copy") { try { await navigator.clipboard.writeText(omWelcome); toast("Mensaje copiado"); } catch { toast("Selecciona y copia el mensaje"); } return; }
     if (act === "pausa") { omPausing = true; renderOM(); return; }
     if (act === "nopausa") { omPausing = false; renderOM(); return; }
@@ -758,7 +751,7 @@ $("omBody").addEventListener("click", async (e) => {
       let ow = null;
       if (o.email) {
         try { ow = await addOwner(o.email, o.pass, o.invite); }
-        catch (err) { $("oErr").textContent = ownerErr(err); busy(false); return; }
+        catch (err) { if (err.code === "ya-existe-correo") { $("oPassWrap").hidden = false; $("oPass").focus(); } $("oErr").textContent = ownerErr(err); busy(false); return; }
         changes = { ...changes, ...ow.changes, ...hist("Acceso dado", o.email + (ow.mailed ? " · correo de bienvenida enviado" : "")) };
       }
       await commit(changes, "Tienda activada");
@@ -769,7 +762,7 @@ $("omBody").addEventListener("click", async (e) => {
     if (act === "owner") {
       let o; try { o = readOwnerFields(true); } catch (err) { $("oErr").textContent = err.message; return; }
       busy(true); $("oErr").textContent = "";
-      let ow; try { ow = await addOwner(o.email, o.pass, o.invite); } catch (err) { $("oErr").textContent = ownerErr(err); busy(false); return; }
+      let ow; try { ow = await addOwner(o.email, o.pass, o.invite); } catch (err) { if (err.code === "ya-existe-correo") { $("oPassWrap").hidden = false; $("oPass").focus(); } $("oErr").textContent = ownerErr(err); busy(false); return; }
       await commit({ ...ow.changes, ...hist("Acceso dado", o.email + (ow.mailed ? " · correo de bienvenida enviado" : "")) }, ow.mailed || !o.invite ? "Acceso listo" : "Cuenta creada, pero no se pudo enviar el correo. Usa \"Reenviar correo\".");
       (owners[omId] ||= {})[ow.uid] = { email: o.email, ts: Date.now() };
       omWelcome = welcome(o.email, ow.existed || o.invite ? "" : o.pass, ow.mailed);
