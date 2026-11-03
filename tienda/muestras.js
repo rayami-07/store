@@ -159,7 +159,42 @@ export const PORTADAS = {
   dividida: { label: "Texto y foto" },
   color:    { label: "Bloque de color" },
 };
-export const TEMA_BASE = { fondo: "#ffffff", tarjetas: "#f5f5f4", texto: "#111111", forma: "recta", botones: "pastilla", portada: "dividida" };
+export const TEMA_BASE = { fondo: "#ffffff", tarjetas: "#f5f5f4", texto: "#111111", forma: "recta", botones: "pastilla", portada: "dividida",
+  textura: "ninguna", intensidad: "suave", texturaEn: "fondo" };
+
+/* Texturas (tramas): dibujos SVG que se repiten. Toman el color del texto o de la marca,
+   así combinan solas con cualquier diseño. tile = tamaño del cuadrito que se repite. */
+export const TEXTURAS = {
+  ninguna:   { label: "Ninguna" },
+  puntos:    { label: "Puntos",     tile: [22, 22], svg: (c, o) => `<circle cx="11" cy="11" r="1.7" fill="${c}" fill-opacity="${o * 1.8}"/>` },
+  cuadricula:{ label: "Cuadrícula", tile: [26, 26], svg: (c, o) => `<path d="M26 .5H.5V26" fill="none" stroke="${c}" stroke-opacity="${o}"/>` },
+  rayas:     { label: "Rayas",      tile: [16, 16], svg: (c, o) => `<path d="M-4 4 4-4M0 16 16 0M12 20 20 12" stroke="${c}" stroke-opacity="${o}" stroke-width="1.5"/>` },
+  renglones: { label: "Renglones",  tile: [8, 28],  svg: (c, o) => `<path d="M0 27.5H8" stroke="${c}" stroke-opacity="${o * 1.2}"/>` },
+  rombos:    { label: "Rombos",     tile: [24, 24], svg: (c, o) => `<path d="M12 .5 23.5 12 12 23.5 .5 12Z" fill="none" stroke="${c}" stroke-opacity="${o}"/>` },
+  ondas:     { label: "Ondas",      tile: [40, 16], svg: (c, o) => `<path d="M0 8c10-8 10 8 20 0s10 8 20 0" fill="none" stroke="${c}" stroke-opacity="${o * 1.2}" stroke-width="1.5"/>` },
+  zigzag:    { label: "Zigzag",     tile: [24, 14], svg: (c, o) => `<path d="M0 11 6 3l6 8 6-8 6 8" fill="none" stroke="${c}" stroke-opacity="${o * 1.2}" stroke-width="1.5"/>` },
+  cruces:    { label: "Cruces",     tile: [28, 28], svg: (c, o) => `<path d="M14 10v8M10 14h8" stroke="${c}" stroke-opacity="${o * 1.5}" stroke-width="1.5" stroke-linecap="round"/>` },
+  papel:     { label: "Papel",      tile: [180, 180], svg: (c, o) => {
+      const [r, g, b] = rgbOf(c).map((v) => (v / 255).toFixed(3));
+      return `<filter id="n"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/><feColorMatrix values="0 0 0 0 ${r} 0 0 0 0 ${g} 0 0 0 0 ${b} 0 0 0 ${(o * 4).toFixed(2)} 0"/></filter><rect width="180" height="180" filter="url(#n)"/>`;
+    } },
+  mantel:    { label: "Mantel", marca: true, tile: [32, 32], svg: (c, o) => `<rect width="16" height="32" fill="${c}" fill-opacity="${o * 0.9}"/><rect width="32" height="16" fill="${c}" fill-opacity="${o * 0.9}"/>` },
+  confeti:   { label: "Confeti", marca: true, tile: [96, 96], svg: (c, o) => `<g fill="${c}" fill-opacity="${Math.min(1, o * 3.5)}">
+      <rect x="10" y="14" width="10" height="4" rx="2" transform="rotate(-25 15 16)"/><circle cx="62" cy="20" r="3"/>
+      <rect x="40" y="52" width="10" height="4" rx="2" transform="rotate(35 45 54)"/><circle cx="18" cy="74" r="2.5"/>
+      <rect x="72" y="72" width="9" height="4" rx="2" transform="rotate(-60 76 74)"/><path d="M84 36l3 6-6 0Z"/></g>` },
+};
+export const INTENSIDADES = { suave: { label: "Suave", o: 0.06 }, media: { label: "Media", o: 0.11 }, fuerte: { label: "Fuerte", o: 0.18 } };
+export const TEXTURA_EN = { fondo: { label: "Fondo" }, portada: { label: "Portada" }, ambos: { label: "Las dos" } };
+
+// CSS de una textura: { img: 'url("data:...")', size: "22px 22px" } (o img "none")
+export function texturaCSS(key, color, intensidad = "suave", { escala = 1, mas = 1 } = {}) {
+  const tx = TEXTURAS[key];
+  if (!tx || !tx.svg) return { img: "none", size: "auto" };
+  const [w, h] = tx.tile, o = Math.min(0.5, (INTENSIDADES[intensidad] || INTENSIDADES.suave).o * mas);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${tx.svg("#" + (hex6(color) || "111111"), o)}</svg>`;
+  return { img: `url("data:image/svg+xml,${encodeURIComponent(svg)}")`, size: `${Math.round(w * escala)}px ${Math.round(h * escala)}px` };
+}
 
 export const PLANTILLAS = {
   urbano:   { label: "Urbano",    giros: ["ropa", "calzado", "otro"], color: "#111111", estilo: "moderno",
@@ -180,6 +215,39 @@ export const PLANTILLAS = {
               fondo: "#f4fbf9", tarjetas: "#e0f1ec", texto: "#12302b", forma: "redonda", botones: "pastilla",   portada: "color" },
   taller:   { label: "Taller",    giros: ["ferreteria"],              color: "#f59e0b", estilo: "moderno",
               fondo: "#ffffff", tarjetas: "#f1f1ef", texto: "#1c1c1c", forma: "recta",   botones: "recto",      portada: "color" },
+  // ── Con textura ──
+  fondita:  { label: "Fondita",   giros: ["comida"],                  color: "#c0392b", estilo: "amigable",
+              fondo: "#fffdf7", tarjetas: "#fbe9e4", texto: "#3b1f1a", forma: "redonda", botones: "pastilla",   portada: "color",
+              textura: "mantel", intensidad: "suave", texturaEn: "fondo" },
+  pizarron: { label: "Pizarrón",  giros: ["comida"],                  color: "#f2c14e", estilo: "amigable",
+              fondo: "#1f2b25", tarjetas: "#2a3831", texto: "#f2efe6", forma: "suave",   botones: "redondeado", portada: "dividida",
+              textura: "papel", intensidad: "media", texturaEn: "fondo" },
+  fiesta:   { label: "Fiesta",    giros: ["comida", "mascotas", "otro"], color: "#e4007c", estilo: "amigable",
+              fondo: "#fff8ef", tarjetas: "#ffe9d6", texto: "#2b1a12", forma: "redonda", botones: "pastilla",   portada: "color",
+              textura: "confeti", intensidad: "media", texturaEn: "fondo" },
+  dulce:    { label: "Dulce",     giros: ["comida", "belleza"],       color: "#d9668b", estilo: "amigable",
+              fondo: "#fff7fa", tarjetas: "#fde6ee", texto: "#3d2530", forma: "redonda", botones: "pastilla",   portada: "dividida",
+              textura: "puntos", intensidad: "suave", texturaEn: "fondo" },
+  natural:  { label: "Natural",   giros: ["belleza", "comida", "otro"], color: "#5a6b3b", estilo: "elegante",
+              fondo: "#f6f3ea", tarjetas: "#e9e4d4", texto: "#2e3326", forma: "suave",   botones: "pastilla",   portada: "dividida",
+              textura: "papel", intensidad: "suave", texturaEn: "fondo" },
+  deportivo:{ label: "Deportivo", giros: ["calzado", "ropa"],         color: "#2563eb", estilo: "moderno",
+              fondo: "#ffffff", tarjetas: "#eef1f5", texto: "#0b1220", forma: "recta",   botones: "pastilla",   portada: "color",
+              textura: "rayas", intensidad: "media", texturaEn: "portada" },
+  barberia: { label: "Barbería",  giros: ["belleza", "otro"],         color: "#b8873b", estilo: "moderno",
+              fondo: "#151515", tarjetas: "#222222", texto: "#f1ece4", forma: "recta",   botones: "recto",      portada: "dividida",
+              textura: "rayas", intensidad: "suave", texturaEn: "fondo" },
+  tecno:    { label: "Tecno",     giros: ["accesorios", "otro"],      color: "#7c3aed", estilo: "simple",
+              fondo: "#0b0b14", tarjetas: "#171728", texto: "#ecebf7", forma: "suave",   botones: "redondeado", portada: "dividida",
+              textura: "cuadricula", intensidad: "media", texturaEn: "fondo" },
+  minimal:  { label: "Minimal",   giros: ["ropa", "accesorios", "otro"], color: "#1a1a1a", estilo: "simple",
+              fondo: "#fafafa", tarjetas: "#efefef", texto: "#1a1a1a", forma: "recta",   botones: "recto",      portada: "dividida" },
+  patitas:  { label: "Patitas",   giros: ["mascotas"],                color: "#f97316", estilo: "amigable",
+              fondo: "#fffaf2", tarjetas: "#ffedd5", texto: "#3a2414", forma: "redonda", botones: "pastilla",   portada: "color",
+              textura: "puntos", intensidad: "media", texturaEn: "fondo" },
+  obra:     { label: "Obra",      giros: ["ferreteria"],              color: "#ea580c", estilo: "moderno",
+              fondo: "#fafaf9", tarjetas: "#ececea", texto: "#1c1917", forma: "recta",   botones: "recto",      portada: "dividida",
+              textura: "cuadricula", intensidad: "media", texturaEn: "fondo" },
 };
 
 // Plantillas sugeridas para un giro (primero las del giro, luego las demás)
@@ -194,7 +262,8 @@ export const plantillaDelGiro = (giro) => plantillasPara(giro).sugeridas[0];
 export function disenoDePlantilla(key) {
   const p = PLANTILLAS[key] || PLANTILLAS.urbano;
   const { color, estilo, fondo, tarjetas, texto, forma, botones, portada } = p;
-  return { color, estilo, tema: { plantilla: PLANTILLAS[key] ? key : "urbano", fondo, tarjetas, texto, forma, botones, portada } };
+  const { textura, intensidad, texturaEn } = { ...TEMA_BASE, ...p };
+  return { color, estilo, tema: { plantilla: PLANTILLAS[key] ? key : "urbano", fondo, tarjetas, texto, forma, botones, portada, textura, intensidad, texturaEn } };
 }
 
 /* Utilidades de color */
@@ -224,6 +293,9 @@ export function temaDe(cfg = {}) {
   if (!FORMAS[t.forma]) t.forma = TEMA_BASE.forma;
   if (!BOTONES[t.botones]) t.botones = TEMA_BASE.botones;
   if (!PORTADAS[t.portada]) t.portada = TEMA_BASE.portada;
+  if (!TEXTURAS[t.textura]) t.textura = TEMA_BASE.textura;
+  if (!INTENSIDADES[t.intensidad]) t.intensidad = TEMA_BASE.intensidad;
+  if (!TEXTURA_EN[t.texturaEn]) t.texturaEn = TEMA_BASE.texturaEn;
   return t;
 }
 
@@ -233,8 +305,14 @@ export function variablesDeTema(cfg = {}) {
   const accent = hex6(cfg.color) ? cfg.color : "#111111";
   const st = ESTILOS[cfg.estilo] || ESTILOS.moderno;
   const dark = esOscuro(t.fondo);
+  // Textura: en el fondo usa el color del texto (o de la marca, según la textura);
+  // sobre una portada de color usa el color que va encima de la marca
+  const tx = TEXTURAS[t.textura] || {}, enFondo = t.texturaEn !== "portada", enPortada = t.texturaEn !== "fondo";
+  const texFondo = texturaCSS(t.textura, tx.marca ? accent : t.texto, t.intensidad);
+  // (sobre el color de la marca se ve menos, por eso va un poco más marcada)
+  const texHero = t.portada === "color" ? texturaCSS(t.textura, inkFor(accent), t.intensidad, { mas: 1.6 }) : texFondo;
   return {
-    dark, portada: t.portada,
+    dark, portada: t.portada, texHero: enPortada && t.textura !== "ninguna",
     vars: {
       "--accent": accent,
       "--accent-ink": inkFor(accent),
@@ -253,17 +331,22 @@ export function variablesDeTema(cfg = {}) {
       "--wa-ink": dark ? "#25d366" : "#128c4a",
       "--radius": FORMAS[t.forma].r,
       "--btn-radius": BOTONES[t.botones].r,
+      "--tex-fondo": enFondo ? texFondo.img : "none",
+      "--tex-fondo-size": texFondo.size,
+      "--tex-hero": enPortada ? texHero.img : "none",
+      "--tex-hero-size": texHero.size,
     },
   };
 }
 
 // Aplica el tema a la página (tienda pública o vista previa)
 export function aplicarTema(cfg, doc = document) {
-  const { dark, portada, vars } = variablesDeTema(cfg);
+  const { dark, portada, texHero, vars } = variablesDeTema(cfg);
   const r = doc.documentElement;
   for (const [k, v] of Object.entries(vars)) r.style.setProperty(k, String(v));
   r.style.colorScheme = dark ? "dark" : "light";
   r.dataset.portada = portada;
+  r.dataset.texHero = texHero ? "1" : "";
   doc.querySelector('meta[name="theme-color"]')?.setAttribute("content", vars["--bg"]);
 }
 

@@ -6,7 +6,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
 import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo,
-  PLANTILLAS, FORMAS, BOTONES, PORTADAS, TEMA_BASE, plantillasPara, plantillaDelGiro, disenoDePlantilla, temaDe, contraste, inkFor } from "../tienda/muestras.js";
+  PLANTILLAS, FORMAS, BOTONES, PORTADAS, TEMA_BASE, plantillasPara, plantillaDelGiro, disenoDePlantilla, temaDe, contraste, inkFor,
+  TEXTURAS, INTENSIDADES, TEXTURA_EN, texturaCSS } from "../tienda/muestras.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { aggregate, money, pct, ago } from "../tienda/stats.js";
@@ -153,19 +154,20 @@ $("logoRemove").addEventListener("click", () => { state.logo = ""; renderLogo();
 
 /* ── Diseño: plantillas + ajustes ──
    state.color y state.estilo (como antes) + state.tema = { plantilla, fondo, tarjetas, texto, forma, botones, portada } */
-const TEMA_KEYS = ["fondo", "tarjetas", "texto", "forma", "botones", "portada"];
+const TEMA_KEYS = ["fondo", "tarjetas", "texto", "forma", "botones", "portada", "textura", "intensidad", "texturaEn"];
 const norm = (c) => String(c || "").toLowerCase();
 function tplModificada() {
   const k = state.tema?.plantilla; if (!PLANTILLAS[k]) return false;
   const d = disenoDePlantilla(k);
   return norm(d.color) !== norm(state.color) || d.estilo !== state.estilo || TEMA_KEYS.some((t) => norm(d.tema[t]) !== norm(state.tema[t]));
 }
-function changed() { designTouched = true; renderPlantillas(); renderContraste(); renderProds(); pushPreview(); }
+function changed() { designTouched = true; renderPlantillas(); renderTexturas(); renderContraste(); renderProds(); pushPreview(); }
 
 function miniTpl(k) {
   const p = PLANTILLAS[k], st = ESTILOS[p.estilo] || ESTILOS.moderno;
   const r = FORMAS[p.forma].r, br = BOTONES[p.botones].r, colorHero = p.portada === "color";
-  return `<span class="tpl-mini" style="background:${p.fondo};color:${p.texto}">
+  const tx = p.textura && p.textura !== "ninguna" ? texturaCSS(p.textura, TEXTURAS[p.textura]?.marca ? p.color : p.texto, "fuerte") : null;
+  return `<span class="tpl-mini" style="background-color:${p.fondo};color:${p.texto}${tx ? `;background-image:${tx.img.replaceAll('"', "'")};background-size:${tx.size}` : ""}">
       <span class="tpl-hero" style="${colorHero ? `background:${p.color};color:${inkFor(p.color)};border-radius:${r}` : ""}">
         <b style="font-family:${st.display};font-weight:${st.weight};${st.upper ? "text-transform:uppercase" : ""}">Aa</b>
         <i style="background:${colorHero ? "currentColor" : p.color};border-radius:${br}"></i>
@@ -232,7 +234,8 @@ function renderContraste() {
 }
 
 /* Forma, botones y portada */
-const SEGS = [["optForma", "forma", FORMAS], ["optBotones", "botones", BOTONES], ["optPortada", "portada", PORTADAS]];
+const SEGS = [["optForma", "forma", FORMAS], ["optBotones", "botones", BOTONES], ["optPortada", "portada", PORTADAS],
+  ["optIntensidad", "intensidad", INTENSIDADES], ["optTexEn", "texturaEn", TEXTURA_EN]];
 function renderSegs() {
   for (const [id, k, opts] of SEGS)
     $(id).innerHTML = Object.entries(opts).map(([v, o]) => `<button type="button" data-v="${v}" class="${state.tema[k] === v ? "active" : ""}">${o.label}</button>`).join("");
@@ -240,12 +243,29 @@ function renderSegs() {
 for (const [id, k] of SEGS)
   $(id).addEventListener("click", (e) => {
     const b = e.target.closest("[data-v]"); if (!b) return;
-    state.tema[k] = b.dataset.v; renderSegs(); changed();
+    state.tema[k] = b.dataset.v; renderSegs(); renderTexturas(); changed();
   });
+
+/* Texturas: cada botón enseña la trama con los colores actuales de la tienda */
+function renderTexturas() {
+  const t = state.tema;
+  $("optTextura").innerHTML = Object.entries(TEXTURAS).map(([k, tx]) => {
+    const big = tx.tile && tx.tile[0] > 60;   // en la muestra chiquita, las tramas grandes se ven a escala
+    const css = texturaCSS(k, tx.marca ? state.color : t.texto, t.intensidad === "suave" ? "media" : t.intensidad, { escala: big ? 0.45 : 0.8 });
+    return `<button type="button" class="tex${t.textura === k ? " active" : ""}" data-tex="${k}">
+      <span class="tex-sw" style="background-color:${t.fondo};background-image:${css.img.replaceAll('"', "'")};background-size:${css.size}">${k === "ninguna" ? '<i class="fa-solid fa-ban"></i>' : ""}</span>
+      <span>${tx.label}</span></button>`;
+  }).join("");
+  $("texExtra").hidden = t.textura === "ninguna";
+}
+$("optTextura").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tex]"); if (!b) return;
+  state.tema.textura = b.dataset.tex; renderTexturas(); changed();
+});
 
 function renderDiseno() {
   state.tema = { plantilla: "", ...temaDe(state), plantilla: state.tema?.plantilla || "" };
-  renderPlantillas(); renderSwatches(); renderEstilos(); renderSegs(); renderContraste();
+  renderPlantillas(); renderSwatches(); renderEstilos(); renderSegs(); renderTexturas(); renderContraste();
   $("tFondo").value = state.tema.fondo; $("tTarjetas").value = state.tema.tarjetas; $("tTexto").value = state.tema.texto;
 }
 

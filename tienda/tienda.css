@@ -241,3 +241,11 @@ button { font: inherit; cursor: pointer; }
 [data-portada="color"] .hero-img { border-radius: min(var(--radius), 16px); }
 @media (min-width: 901px) { [data-portada="color"] .hero { padding: 48px; width: calc(100% - 80px); } }
 @media (max-width: 900px) { [data-portada="color"] .hero { padding: 24px 16px; margin-top: 14px; } }
+
+/* ── v6: texturas (tramas) ── */
+body { background-image: var(--tex-fondo, none); background-size: var(--tex-fondo-size, auto); }
+.hero { background-image: var(--tex-hero, none); background-size: var(--tex-hero-size, auto); }
+/* Portada "texto y foto" con textura: se vuelve un bloque con esquinas, igual que la de color */
+[data-tex-hero="1"][data-portada="dividida"] .hero { background-color: var(--bg); width: calc(100% - 32px); max-width: 1200px; margin: 20px auto 0; padding: 36px 28px; border-radius: var(--radius); border: 1px solid var(--line); }
+@media (min-width: 901px) { [data-tex-hero="1"][data-portada="dividida"] .hero { padding: 48px; width: calc(100% - 80px); } }
+@media (max-width: 900px) { [data-tex-hero="1"][data-portada="dividida"] .hero { padding: 24px 16px; margin-top: 14px; } }
