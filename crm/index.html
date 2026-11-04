@@ -272,9 +272,9 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
     </div>
 
     <section id="secCats" hidden style="display:flex;flex-direction:column;gap:8px">
-      <h2>Tus productos o servicios</h2>
-      <p class="sub">Aparecen como opciones en "¿Qué le interesa?" y en los filtros. Sepáralos con comas.</p>
-      <div class="field"><label for="catsInput">Productos o servicios</label><input id="catsInput" placeholder="Ej. Afinación, Frenos, Hojalatería"></div>
+      <h2 id="catsTitulo">Tus productos o servicios</h2>
+      <p class="sub" id="catsSub">Aparecen como opciones en "¿Qué le interesa?" y en los filtros. Sepáralos con comas.</p>
+      <div class="field"><label for="catsInput" id="catsLbl">Productos o servicios</label><input id="catsInput" placeholder="Ej. Afinación, Frenos, Hojalatería"></div>
       <div class="row"><button class="btn" type="button" id="btnCats">Guardar lista</button></div>
     </section>
 
@@ -489,7 +489,7 @@ const MODOS = {
       {k:"inventario",q:"¿Cómo llevas tu inventario y tus cuentas?"},
       {k:"cuanto",   q:"Si esto te ahorrara tiempo o te trajera más pedidos, ¿cuánto pagarías al mes?"}
     ],
-    paquetes: ["—","Vitrina","Pedidos","Control","Dirección"],
+    paquetes: ["—","Vitrina","Pedidos","Control","Dirección","CRM","CRM + mensajes"],
     lblNombre: "Negocio *", phNombre: "Ej. Fonda Doña Mary",
     lblCat: "Giro *", catObligatoria: true, lblCatCorto: "Giro",
     lblMonto: "¿Cuánto pagaría al mes? ($)", lblMontoCorto: "Pagaría", sufMonto: "/mes",
@@ -597,6 +597,9 @@ function iniciar(){
   unsubs.push(onValue(ref(fdb, ".info/connected"), s=>{
     s.val() ? setSync("on","En línea") : setSync("off","Sin conexión (se sube al reconectar)");
   }));
+  if(CTX.modo==="rayami"){
+    get(ref(fdb, "crm/config/paquetes")).then(s=>{ const v=s.val(); if(Array.isArray(v) && v.length){ CTX.paquetes=v; aplicarModo(); render(); } }).catch(()=>{});
+  }
   if(M.demo){
     get(ref(fdb, "stores")).then(s=>{
       const v = s.val() || {};
@@ -609,16 +612,30 @@ function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; solicitude
 
 // Cambia etiquetas, catálogos y secciones según el modo activo
 function aplicarModo(){
-  M = MODOS[CTX.modo]; ETAPAS = M.etapas; GANADA = ETAPAS[ETAPAS.length-1].id;
+  M = { ...MODOS[CTX.modo] };
+  // Tu CRM: la lista de paquetes/servicios que vendes se puede editar (crm/config/paquetes)
+  if(CTX.modo==="rayami" && Array.isArray(CTX.paquetes) && CTX.paquetes.length) M.paquetes = ["—", ...CTX.paquetes];
+  ETAPAS = M.etapas; GANADA = ETAPAS[ETAPAS.length-1].id;
   CATS = CTX.modo==="rayami" ? GIROS : (CTX.cats && CTX.cats.length ? CTX.cats : []);
   $("#hdrNombre").textContent = CTX.nombre;
   document.title = "CRM " + CTX.nombre;
   $("#ctxbar").hidden = !(esAdmin && !CTX.propio);
   $("#ctxTxt").textContent = `Estás viendo el CRM de ${CTX.nombre}`;
   $("#secNegocios").hidden = !(esAdmin && CTX.propio);
-  $("#lnkCreador").hidden = !esAdmin;
-  $("#secCats").hidden = CTX.modo!=="general" || !(esAdmin || CTX.rol==="owner");
-  $("#catsInput").value = (CTX.cats||[]).join(", ");
+  $("#lnkCreador").hidden = !(esAdmin && CTX.propio);
+  const editaPropios = CTX.modo==="rayami" && esAdmin && CTX.propio;
+  $("#secCats").hidden = !(editaPropios || (CTX.modo==="general" && (esAdmin || CTX.rol==="owner")));
+  if(CTX.modo==="rayami"){
+    $("#catsTitulo").textContent = "Tus paquetes y servicios";
+    $("#catsSub").textContent = "Lo que le vendes a tus prospectos. Aparecen en \"Paquete que le interesa\". Sepáralos con comas.";
+    $("#catsLbl").textContent = "Paquetes y servicios"; $("#catsInput").placeholder = "Ej. Vitrina, Pedidos, CRM, CRM + mensajes";
+    $("#catsInput").value = M.paquetes.filter(x=>x!=="—").join(", ");
+  } else {
+    $("#catsTitulo").textContent = CTX.propio ? "Tus productos o servicios" : `Productos o servicios de ${CTX.nombre}`;
+    $("#catsSub").textContent = "Aparecen como opciones en \"¿Qué le interesa?\" y en los filtros. Sepáralos con comas.";
+    $("#catsLbl").textContent = "Productos o servicios"; $("#catsInput").placeholder = "Ej. Afinación, Frenos, Hojalatería";
+    $("#catsInput").value = (CTX.cats||[]).join(", ");
+  }
   $("#secSol").hidden = true;
   $("#embTitulo").textContent = M.embudo;
   $("#tCatTitulo").textContent = CTX.modo==="rayami" ? "Por giro" : "Por producto o servicio";
@@ -712,8 +729,9 @@ $("#btnPass").addEventListener("click", async ()=>{
 $("#btnCats").addEventListener("click", async ()=>{
   const cats = [...new Set($("#catsInput").value.split(",").map(s=>s.trim()).filter(Boolean))].slice(0,30).map(s=>s.slice(0,40));
   try{
-    await set(ref(fdb, `tenants/${CTX.tid}/config/categorias`), cats);
-    CTX.cats = cats; aplicarModo(); render(); toast("Lista guardada");
+    if(CTX.modo==="rayami"){ await set(ref(fdb, "crm/config/paquetes"), cats); CTX.paquetes = cats; }
+    else { await set(ref(fdb, `tenants/${CTX.tid}/config/categorias`), cats); CTX.cats = cats; }
+    aplicarModo(); render(); toast("Lista guardada");
   }catch(e){ toast("No se pudo guardar la lista"); }
 });
 
