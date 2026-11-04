@@ -643,8 +643,7 @@ function aplicarModo(){
   // Formulario
   $("#lblNombre").textContent = M.lblNombre; $("#f-negocio").placeholder = M.phNombre;
   $("#lblCat").textContent = M.lblCat;
-  radioChips($("#f-giro"), CATS);
-  $("#f-giro").closest(".field").hidden = !CATS.length;
+  pintarCats(CATS);
   radioChips($("#f-interes"), M.interes);
   $("#f-origen").innerHTML = opt(M.origenes);
   $("#wrapPaquete").hidden = !M.paquetes;
@@ -906,6 +905,41 @@ async function convertirSolicitud(sid){
 }
 
 // ---------- Formulario de prospecto ----------
+// Servicios del negocio en el formulario, con botón "+ Agregar" para dueño o admin
+const puedeEditarCats = () => CTX.modo==="general" && (esAdmin || CTX.rol==="owner");
+function pintarCats(lista){
+  const el = $("#f-giro");
+  radioChips(el, lista);
+  el.closest(".field").hidden = !lista.length && !puedeEditarCats();
+  if(!puedeEditarCats()) return;
+  const add = document.createElement("button");
+  add.type = "button"; add.className = "chip"; add.style.borderStyle = "dashed"; add.textContent = "+ Agregar";
+  add.onclick = ()=>{
+    const box = document.createElement("span");
+    box.style.cssText = "display:flex;gap:6px;flex:none";
+    box.innerHTML = `<input id="nuevoCat" maxlength="40" placeholder="Nuevo servicio" aria-label="Nuevo servicio" style="width:170px;padding:7px 10px"><button type="button" class="chip" id="okCat">Agregar</button>`;
+    add.replaceWith(box);
+    const inp = box.querySelector("#nuevoCat"); inp.focus();
+    const seleccionado = chipVal(el);
+    const ok = async ()=>{
+      const v = inp.value.trim().slice(0,40);
+      if(!v){ pintarCats(lista); setChip(el, seleccionado); return; }
+      const nuevos = [...new Set([...(CTX.cats||[]), v])].slice(0,30);
+      try{
+        await set(ref(fdb, `tenants/${CTX.tid}/config/categorias`), nuevos);
+        CTX.cats = nuevos; CATS = nuevos; $("#catsInput").value = nuevos.join(", ");
+        pintarCats([...nuevos, ...lista.filter(x=>!nuevos.includes(x))]);
+        setChip(el, v); toast("Servicio agregado");
+      }catch(e){ toast("No se pudo agregar el servicio"); }
+    };
+    box.querySelector("#okCat").onclick = ok;
+    inp.addEventListener("keydown", e=>{
+      if(e.key==="Enter"){ e.preventDefault(); ok(); }
+      if(e.key==="Escape"){ e.preventDefault(); e.stopPropagation(); pintarCats(lista); setChip(el, seleccionado); }
+    });
+  };
+  el.appendChild(add);
+}
 function radioChips(el, items){
   el.innerHTML = items.map(v=>`<button type="button" class="chip" data-v="${esc(v)}" aria-pressed="false">${esc(v)}</button>`).join("");
   el.querySelectorAll(".chip").forEach(c=>c.addEventListener("click",()=>{
@@ -925,8 +959,7 @@ function abrirForm(p){
   $("#formTitle").textContent = p ? "Editar prospecto" : "Nuevo prospecto";
   $("#f-negocio").value = p?.negocio||"";
   // Si la categoría guardada ya no está en la lista, se agrega para no perderla
-  if(p?.giro && !CATS.includes(p.giro)){ radioChips($("#f-giro"), [...CATS, p.giro]); $("#f-giro").closest(".field").hidden=false; }
-  else radioChips($("#f-giro"), CATS);
+  pintarCats(p?.giro && !CATS.includes(p.giro) ? [...CATS, p.giro] : CATS);
   setChip($("#f-giro"), p?.giro||"");
   $("#f-contacto").value = p?.contacto||"";
   $("#f-whatsapp").value = p?.whatsapp||"";
