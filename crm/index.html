@@ -153,6 +153,8 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 .err{color:var(--bad);font-size:14px;margin:0;min-height:1em}
 </style>
 <style>
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.chip .del{margin-left:6px;font-weight:700;opacity:.6}
 .ctxbar{margin:0 16px 8px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ctxbar button{background:none;border:1px solid currentColor;color:inherit;border-radius:8px;padding:5px 10px;font-weight:600;cursor:pointer}
 .linkbtn{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;padding:4px 0;text-align:left}
@@ -274,8 +276,12 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
     <section id="secCats" hidden style="display:flex;flex-direction:column;gap:8px">
       <h2 id="catsTitulo">Tus productos o servicios</h2>
       <p class="sub" id="catsSub">Aparecen como opciones en "¿Qué le interesa?" y en los filtros. Sepáralos con comas.</p>
-      <div class="field"><label for="catsInput" id="catsLbl">Productos o servicios</label><input id="catsInput" placeholder="Ej. Afinación, Frenos, Hojalatería"></div>
-      <div class="row"><button class="btn" type="button" id="btnCats">Guardar lista</button></div>
+      <div class="chips" id="catsList" style="flex-wrap:wrap" aria-label="Lista actual"></div>
+      <form class="row" id="catsForm" style="flex-wrap:nowrap">
+        <label for="catsInput" id="catsLbl" class="sr">Nuevo servicio</label>
+        <input id="catsInput" maxlength="40" placeholder="Escribe un servicio nuevo" style="flex:1;min-width:0">
+        <button class="btn primary" type="submit" id="btnCats" style="flex:none">Agregar</button>
+      </form>
     </section>
 
     <h2>Cómo calificar a un prospecto</h2>
@@ -627,15 +633,14 @@ function aplicarModo(){
   $("#secCats").hidden = !(editaPropios || (CTX.modo==="general" && (esAdmin || CTX.rol==="owner")));
   if(CTX.modo==="rayami"){
     $("#catsTitulo").textContent = "Tus paquetes y servicios";
-    $("#catsSub").textContent = "Lo que le vendes a tus prospectos. Aparecen en \"Paquete que le interesa\". Sepáralos con comas.";
-    $("#catsLbl").textContent = "Paquetes y servicios"; $("#catsInput").placeholder = "Ej. Vitrina, Pedidos, CRM, CRM + mensajes";
-    $("#catsInput").value = M.paquetes.filter(x=>x!=="—").join(", ");
+    $("#catsSub").textContent = "Lo que le vendes a tus prospectos. Aparecen en \"Paquete que le interesa\". Toca la × para quitar uno.";
+    $("#catsInput").placeholder = "Ej. Manejo de anuncios";
   } else {
     $("#catsTitulo").textContent = CTX.propio ? "Tus productos o servicios" : `Productos o servicios de ${CTX.nombre}`;
-    $("#catsSub").textContent = "Aparecen como opciones en \"¿Qué le interesa?\" y en los filtros. Sepáralos con comas.";
-    $("#catsLbl").textContent = "Productos o servicios"; $("#catsInput").placeholder = "Ej. Afinación, Frenos, Hojalatería";
-    $("#catsInput").value = (CTX.cats||[]).join(", ");
+    $("#catsSub").textContent = "Aparecen como opciones en \"¿Qué le interesa?\" al registrar un prospecto. Toca la × para quitar uno.";
+    $("#catsInput").placeholder = "Ej. Frenos";
   }
+  pintarListaCats();
   $("#secSol").hidden = true;
   $("#embTitulo").textContent = M.embudo;
   $("#tCatTitulo").textContent = CTX.modo==="rayami" ? "Por giro" : "Por producto o servicio";
@@ -725,13 +730,35 @@ $("#btnPass").addEventListener("click", async ()=>{
   }catch(e){ $("#pErr").textContent = e?.code==="auth/wrong-password"||e?.code==="auth/invalid-credential" ? "La contraseña actual no es correcta." : "No se pudo cambiar. Intenta de nuevo."; }
 });
 
-$("#btnCats").addEventListener("click", async ()=>{
-  const cats = [...new Set($("#catsInput").value.split(",").map(s=>s.trim()).filter(Boolean))].slice(0,30).map(s=>s.slice(0,40));
+// Lista de servicios (negocio) o paquetes (tu CRM) en Más: agregar uno por uno y quitar con ×
+const listaActual = () => CTX.modo==="rayami" ? M.paquetes.filter(x=>x!=="—") : (CTX.cats||[]);
+async function guardarLista(cats, msg){
+  cats = [...new Set(cats.map(s=>String(s).trim().slice(0,40)).filter(Boolean))].slice(0,30);
   try{
     if(CTX.modo==="rayami"){ await set(ref(fdb, "crm/config/paquetes"), cats); CTX.paquetes = cats; }
     else { await set(ref(fdb, `tenants/${CTX.tid}/config/categorias`), cats); CTX.cats = cats; }
-    aplicarModo(); render(); toast("Lista guardada");
-  }catch(e){ toast("No se pudo guardar la lista"); }
+    aplicarModo(); render(); toast(msg);
+    return true;
+  }catch(e){ toast("No se pudo guardar. Revisa tu conexión."); return false; }
+}
+function pintarListaCats(){
+  const L = listaActual();
+  $("#catsList").innerHTML = L.length
+    ? L.map((c,i)=>`<span class="chip" aria-pressed="false">${esc(c)}<button type="button" class="del linkbtn" data-del-cat="${i}" aria-label="Quitar ${esc(c)}">×</button></span>`).join("")
+    : `<span class="sub">Todavía no hay ninguno. Agrega el primero abajo.</span>`;
+  $("#catsList").querySelectorAll("[data-del-cat]").forEach(b=>b.onclick=()=>{
+    const L2 = listaActual().filter((_,i)=>i!==+b.dataset.delCat);
+    guardarLista(L2, "Quitado");
+  });
+}
+$("#catsForm").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const v = $("#catsInput").value.trim();
+  if(!v){ $("#catsInput").focus(); return; }
+  if(listaActual().some(x=>x.toLowerCase()===v.toLowerCase())){ toast("Ya está en la lista"); return; }
+  $("#btnCats").disabled = true;
+  if(await guardarLista([...listaActual(), v], "Agregado: "+v)) $("#catsInput").value = "";
+  $("#btnCats").disabled = false; $("#catsInput").focus();
 });
 
 // ---------- Navegación ----------
@@ -927,7 +954,7 @@ function pintarCats(lista){
       const nuevos = [...new Set([...(CTX.cats||[]), v])].slice(0,30);
       try{
         await set(ref(fdb, `tenants/${CTX.tid}/config/categorias`), nuevos);
-        CTX.cats = nuevos; CATS = nuevos; $("#catsInput").value = nuevos.join(", ");
+        CTX.cats = nuevos; CATS = nuevos; pintarListaCats();
         pintarCats([...nuevos, ...lista.filter(x=>!nuevos.includes(x))]);
         setChip(el, v); toast("Servicio agregado");
       }catch(e){ toast("No se pudo agregar el servicio"); }
