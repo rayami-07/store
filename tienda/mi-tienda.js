@@ -176,7 +176,8 @@ async function open(id) {
   $("paused").hidden = store.status === "activa" || isAdmin;
   $("paused").querySelector("b").textContent = store.status === "pausada" ? "Tu tienda está pausada." : "Tu tienda aún no está activa.";
   $("pausedWa").href = waSend(SOPORTE_WA, `Hola, soy de ${store.name} y quiero activar mi tienda`);
-  const link = `${TIENDA_URL}?t=${id}`;
+  // Link corto (rayamistore.com/<nombre>) si el admin ya le creó uno
+  const link = store.corto ? new URL(`../${store.corto}`, TIENDA_URL).href : `${TIENDA_URL}?t=${id}`;
   $("qView").href = link;
   $("qPanel").href = `panel.html?t=${id}`;
   $("qShare").href = waSend("", `Ya puedes ver nuestros productos y hacer tu pedido aquí:\n${link}`);
@@ -203,7 +204,7 @@ function showVigencia(iso) {
   $("renewWa").href = waSend(SOPORTE_WA, `Hola, soy de ${store.name} y quiero renovar mi plan ${plan}`);
 }
 $("qCopy").addEventListener("click", async () => {
-  const link = `${TIENDA_URL}?t=${storeId}`;
+  const link = store.corto ? new URL(`../${store.corto}`, TIENDA_URL).href : `${TIENDA_URL}?t=${storeId}`;
   try { await navigator.clipboard.writeText(link); toast("Link copiado"); } catch { toast(link); }
 });
 

@@ -494,7 +494,7 @@ $("storeForm").addEventListener("submit", async (e) => {
     // Lo subido queda en el formulario como link, para no volver a subirlo
     if (up.ok && up.n) { state.logo = out.logo; out.products.forEach((p) => { const s = state.products.find((x) => x.id === p.id); if (s) s.photo = p.photo; }); }
     await set(ref(db, `stores/${id}`), { ...out, status: prev?.status || "demo", createdAt: prev?.createdAt || now, updatedAt: now,
-      ...(prev?.opcion ? { opcion: prev.opcion } : {}) });
+      ...(prev?.opcion ? { opcion: prev.opcion } : {}), ...(prev?.corto ? { corto: prev.corto } : {}) });
     // Si es una de las "3 opciones", el contenido (productos, nombre, logo, WhatsApp,
     // pagos…) se copia a las otras; solo el diseño queda distinto en cada una.
     let otras = 0;
@@ -503,7 +503,7 @@ $("storeForm").addEventListener("submit", async (e) => {
       const hermanas = Object.entries(demos).filter(([k, x]) => k !== id && x.opcion?.grupo === prev.opcion.grupo);
       for (const [k] of hermanas) await update(ref(db, `stores/${k}`), { ...contenido, updatedAt: now });
       otras = hermanas.length;
-      demos[id] = { ...out, opcion: prev.opcion };
+      demos[id] = { ...out, opcion: prev.opcion, ...(prev.corto ? { corto: prev.corto } : {}) };
     }
     editingId = id; editingStamp = now;
     showResult(id, out, prev?.opcion);
@@ -582,7 +582,7 @@ function itemHTML(id, s) {
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
         <a class="btn btn-light" href="${TIENDA_URL}panel.html?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-chart-column"></i> Panel</a>
-        <button class="btn btn-light" data-copy="${TIENDA_URL}?t=${id}" title="Copiar el link de la tienda"><i class="fa-regular fa-copy"></i> Link</button>
+        <button class="btn btn-light" data-copy="${linkTienda(id)}" title="Copiar el link de la tienda"><i class="fa-regular fa-copy"></i> Link</button>
         <button class="btn btn-light" data-edit="${id}"><i class="fa-solid fa-pen"></i> Editar</button>
         <button class="btn btn-light" data-owner="${id}"><i class="fa-solid fa-${({ demo: "bolt", activa: "key", pausada: "play" })[statusOf(s)]}"></i> ${({ demo: "Activar", activa: "Vigencia y dueños", pausada: "Reactivar" })[statusOf(s)]}</button>
         <button class="btn btn-ghost danger" data-remove="${id}"><i class="fa-solid fa-trash"></i></button>
@@ -640,7 +640,13 @@ $("pickModal").addEventListener("click", async (e) => {
   try {
     const borrar = Object.keys(demos).filter((k) => k !== keep && demos[k].opcion?.grupo === pickGrupo);
     const changes = { [`stores/${keep}/opcion`]: null };
-    for (const k of borrar) { changes[`stores/${k}`] = null; changes[`storeAdmin/${k}`] = null; }
+    for (const k of borrar) {
+      changes[`stores/${k}`] = null; changes[`storeAdmin/${k}`] = null;
+      // Si la que se borra tenía link corto y la elegida no, el link pasa a la elegida
+      const c = demos[k].corto;
+      if (c && !demos[keep].corto && !changes[`stores/${keep}/corto`]) { changes[`links/${c}`] = keep; changes[`stores/${keep}/corto`] = c; }
+      else if (c) changes[`links/${c}`] = null;
+    }
     await update(ref(db), changes);
     const quedan = { ...demos }; borrar.forEach((k) => delete quedan[k]);
     for (const k of borrar) if (!Object.values(quedan).some((x) => JSON.stringify(x).includes(`tiendas%2F${k}%2F`))) deleteStorePhotos(k);
@@ -691,6 +697,7 @@ $("demoList").addEventListener("click", async (e) => {
       const links = {};
       for (const uid of Object.keys(owners[id] || {})) { links[`storeOwners/${id}/${uid}`] = null; links[`userStores/${uid}/${id}`] = null; }
       links[`storeAdmin/${id}`] = null;
+      if (demos[id]?.corto) links[`links/${demos[id].corto}`] = null;
       if (Object.keys(links).length) await update(ref(db), links);
       await remove(ref(db, `stores/${id}`));
       // Si otra demo (por ejemplo una de sus "opciones") usa estas fotos, no se borran
@@ -784,7 +791,7 @@ $("opForm").addEventListener("submit", async (e) => {
       const diseno = disenoDePlantilla(k);
       if (keepColor) diseno.color = base.color;
       const nuevo = base
-        ? { ...base, ...diseno, products, status: "demo", createdAt: now, updatedAt: now, opcion }
+        ? { ...base, ...diseno, products, status: "demo", createdAt: now, updatedAt: now, opcion, corto: null }
         : { plan: "pedidos", name, giro, tagline: "", whatsapp: wa, horario: "", aviso: "",
             logo: "", categorias: g.categorias, ...diseno,
             pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
@@ -893,6 +900,11 @@ document.querySelectorAll("[data-rdays]").forEach((b) => b.addEventListener("cli
 const MI_TIENDA_URL = new URL("../tienda/mi-tienda.html", location.href).href;
 // Entrada única para todos los dueños: escriben su correo y llegan a SU tienda
 const ENTRAR_URL = new URL("../entrar/", location.href).href;
+/* Link corto: rayamistore.com/<nombre> (lo resuelve /404.html con links/<nombre> en Firebase) */
+const SITE_URL = new URL("../", location.href).href;
+const RESERVADOS = ["tienda", "creador", "crm", "ropa", "entrar", "servicios", "privacidad", "quiero-mi-tienda", "icons", "functions",
+  "admin", "api", "app", "login", "www", "mail", "rayami", "rayamistore", "soporte", "ayuda", "blog", "precios", "planes"];
+const linkTienda = (id) => (demos[id]?.corto ? SITE_URL + demos[id].corto : `${TIENDA_URL}?t=${id}`);
 const MOTIVOS = ["Falta de pago", "Lo pidió el cliente", "Cambios en la tienda", "Otro"];
 let omId = "", omAdmin = {}, omPausing = false, omWelcome = "", appAlta = null;
 
@@ -975,10 +987,14 @@ function renderOM() {
 
   /* Links para mandarle al cliente cuando los pierda */
   const ownersN = Object.keys(owners[omId] || {}).length;
-  const tiendaLink = `${TIENDA_URL}?t=${omId}`;
+  const tiendaLink = linkTienda(omId);
   html += `<section class="om-sec"><h4>Links</h4>
     <div class="link-line"><div><b>Tienda</b><small>Para sus clientes: redes, estados, QR</small><code>${esc(tiendaLink)}</code></div>
       <button type="button" class="btn btn-light" data-copy="${esc(tiendaLink)}"><i class="fa-regular fa-copy"></i> Copiar</button></div>
+    <div class="short-box"><b>Link corto</b> <small class="muted">gratis, fácil de dictar o poner en un letrero</small>
+      <div class="short-row"><span>${esc(SITE_URL.replace(/^https?:\/\//, ""))}</span><input id="shortIn" maxlength="30" autocapitalize="off" spellcheck="false" value="${esc(s.corto || "")}" placeholder="${esc(slugify(s.name).replace(/-/g, "").slice(0, 30))}" aria-label="Link corto" />
+        <button type="button" class="btn btn-light" data-act="short">${s.corto ? "Cambiar" : "Crear"}</button></div>
+      <p class="err" id="shortErr"></p></div>
     ${st !== "demo" ? `<div class="link-line"><div><b>Entrada del dueño</b><small>La misma para todos tus clientes: entran con su correo</small><code>${esc(ENTRAR_URL)}</code></div>
       <button type="button" class="btn btn-light" data-copy="${esc(ENTRAR_URL)}"><i class="fa-regular fa-copy"></i> Copiar</button></div>` : ""}
     ${ownersN ? `<div class="res-actions">
@@ -1102,7 +1118,7 @@ function readOwnerFields(required) {
 function welcome(email, pass, mailed) {
   const s = demos[omId];
   const head = `Hola, bienvenido a RAYAMI Store. Tu tienda en línea de ${s.name} ya está lista.\n\n`
-    + `Tu tienda (compártela con tus clientes):\n${TIENDA_URL}?t=${omId}\n\n`
+    + `Tu tienda (compártela con tus clientes):\n${linkTienda(omId)}\n\n`
     + `Para agregar productos, cambiar precios y ver tus ventas entra aquí con tu correo:\n${ENTRAR_URL}\n\n`;
   if (mailed) return head + `Te enviamos un correo a ${email} para que crees tu contraseña. Si no lo ves, revisa "Spam" o "Promociones".\n\nDespués entra con tu correo y esa contraseña.`;
   return head + `Correo: ${email}\n`
@@ -1114,7 +1130,7 @@ function reminder() {
   const s = demos[omId];
   const emails = Object.values(owners[omId] || {}).map((o) => o.email).join(" o ");
   return `Hola, te comparto los links de ${s.name}:\n\n`
-    + `Tu tienda (para tus clientes):\n${TIENDA_URL}?t=${omId}\n\n`
+    + `Tu tienda (para tus clientes):\n${linkTienda(omId)}\n\n`
     + `Para administrarla entra aquí con tu correo${emails ? ` (${emails})` : ""}:\n${ENTRAR_URL}\n\n`
     + `Si no recuerdas tu contraseña, toca "Olvidé mi contraseña" y te llega un correo para crear una nueva.`;
 }
@@ -1147,6 +1163,23 @@ $("omBody").addEventListener("click", async (e) => {
   const busy = (on) => { if (btn) btn.disabled = on; };
   try {
     if (act === "copy") { try { await navigator.clipboard.writeText(omWelcome); toast("Mensaje copiado"); } catch { toast("Selecciona y copia el mensaje"); } return; }
+    if (act === "short") {
+      // "Tacos Lupita" → "tacoslupita" (sin espacios ni acentos; los guiones que escribas se respetan)
+      const slug = ($("shortIn").value || $("shortIn").placeholder).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase()
+        .replace(/\s+/g, "").replace(/[^a-z0-9-]/g, "").replace(/-+/g, "-").replace(/^-|-$/g, "").slice(0, 30);
+      const err = (t) => { $("shortErr").textContent = t; };
+      if (slug.length < 3) return err("Usa al menos 3 letras o números.");
+      if (RESERVADOS.includes(slug)) return err("Ese nombre está reservado. Prueba otro.");
+      if (slug === s.corto) return err("");
+      busy(true);
+      const dueno = (await get(ref(db, `links/${slug}`))).val();
+      if (dueno && dueno !== omId) { busy(false); return err(`"${slug}" ya lo usa otra tienda. Prueba otro, por ejemplo ${slug}-izcalli.`); }
+      const ch = { [`links/${slug}`]: omId, [`stores/${omId}/corto`]: slug, ...hist("Link corto", SITE_URL + slug) };
+      if (s.corto && s.corto !== slug) ch[`links/${s.corto}`] = null;
+      await commit(ch, `Link corto listo: ${SITE_URL.replace(/^https?:\/\//, "")}${slug}`);
+      demos[omId] = { ...s, corto: slug };
+      renderOM(); return;
+    }
     if (act === "pausa") { omPausing = true; renderOM(); return; }
     if (act === "nopausa") { omPausing = false; renderOM(); return; }
 

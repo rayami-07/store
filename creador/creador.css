@@ -382,3 +382,10 @@ legend { font-weight: 700; padding: 0 6px; }
 .pick-opt .tpl { width: 100%; }
 .pick-opt small { color: var(--muted); }
 .pick-opt a { font-size: 13px; color: var(--muted); }
+.short-box { display: grid; gap: 6px; border: 1px dashed var(--line); border-radius: 10px; padding: 10px 12px; }
+.short-box small { font-size: 12px; }
+.short-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.short-row > span { font-size: 14px; color: var(--muted); }
+.short-row input { flex: 1 1 140px; width: auto; height: 38px; }
+.short-row .btn { height: 38px; }
+.short-box .err { color: var(--danger); margin: 0; font-size: 13px; min-height: 0; }

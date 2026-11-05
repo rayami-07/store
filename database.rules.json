@@ -239,6 +239,13 @@
           ".read": "(auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists())"
         }
       }
+    },
+    "links": {
+      ".read": true,
+      "$slug": {
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+        ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{3,60}$/) && $slug.matches(/^[a-z0-9-]{3,30}$/)"
+      }
     }
   }
 }
