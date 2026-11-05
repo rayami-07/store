@@ -107,3 +107,9 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .add-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .add-row .btn { white-space: normal; text-align: center; line-height: 1.15; padding: 0 10px; font-size: 15px; }
 @media (max-width: 360px) { .add-row { grid-template-columns: 1fr; } }
+/* La foto se encimaba sobre Nombre/Precio: en la hoja (con scroll) las filas del grid se encogían.
+   Ahora la hoja es una columna que no encoge a sus hijos, y la foto tiene alto fijo. */
+.sheet-body { display: flex; flex-direction: column; }
+.sheet-body > * { flex-shrink: 0; }
+.photo-pick { aspect-ratio: auto; height: clamp(150px, 30vh, 240px); width: 100%; }
+.sheet .row2 { align-items: end; }
