@@ -1527,7 +1527,7 @@ Titular: *RAYAMI STORE*
 Monto a depositar: *${formatPrice(sum)}*
 
 ⚠️ Adjunta tu comprobante de pago a este mensaje para confirmar tu pedido.
-Puedes rastrear tu pedido en: rayami-07.github.io/store/#seguimiento-${preCode}`;
+Puedes rastrear tu pedido en: rayamistore.com/ropa/#seguimiento-${preCode}`;
 }
 
 window.sendOrderWA = async function() {
@@ -1573,7 +1573,7 @@ Titular: *RAYAMI STORE*
 Monto a depositar: *${formatPrice(sum)}*
 
 ⚠️ Adjunta tu comprobante de pago a este mensaje.
-Rastrea tu pedido en: rayami-07.github.io/store/#seguimiento-${trackCode}`;
+Rastrea tu pedido en: rayamistore.com/ropa/#seguimiento-${trackCode}`;
 
   window.open(`https://api.whatsapp.com/send?phone=${WA_NUMBER}&text=${encodeURIComponent(text)}`,"_blank");
 
@@ -2585,7 +2585,7 @@ window.approveSeller = async function(fbKey) {
   await set(ref(db, `sellers/${fbKey}`), { ...data, status: "active" });
   showToast("✅ Vendedor aprobado");
   if (seller.phone) {
-    const msg = `🎉 ¡Hola ${seller.name}! Tu cuenta de vendedor en RAYAMI STORE fue aprobada. Ya puedes subir tus productos. Entra en: rayami-07.github.io/store`;
+    const msg = `🎉 ¡Hola ${seller.name}! Tu cuenta de vendedor en RAYAMI STORE fue aprobada. Ya puedes subir tus productos. Entra en: rayamistore.com/ropa`;
     window.open(`https://wa.me/52${seller.phone.replace(/\D/g,'')}?text=${encodeURIComponent(msg)}`, "_blank");
   }
 };

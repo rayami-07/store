@@ -1,1101 +1,382 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <!-- Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-THQTMWFBWM"></script>
-  <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
-    gtag('config', 'G-THQTMWFBWM');
-  </script>
-
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>RAYAMI Store · Productos nuevos y usados</title>
-  <meta name="description" content="Encuentra deportes, tenis, ropa, mascotas y más. Productos nuevos y usados al mejor precio." />
-  <link rel="stylesheet" href="styles.css?v=23" />
-  <link rel="stylesheet" href="tienda-v2.css?v=3" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>RAYAMI Tiendas · Tu negocio vendiendo por WhatsApp</title>
+  <meta name="description" content="Tienda en línea o menú QR para tu negocio: tus productos, pedidos por WhatsApp y un panel para ver cómo vendes." />
+  <meta name="theme-color" content="#ffffff" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <!-- PWA -->
-  <link rel="manifest" href="manifest.json" />
-  <meta name="theme-color" content="#0d0d0d" />
-  <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png" />
-  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black" />
-  <meta name="apple-mobile-web-app-title" content="RAYAMI" />
+  <style>
+    /* Layout: columna de lectura a la izquierda; el producto (celular en vivo) es el héroe.
+       Rótulo condensado para titulares, texto sobrio, naranja RAYAMI como único acento. */
+    :root {
+      --paper: #ffffff;
+      --ink: #1a1714;
+      --muted: #6b655f;
+      --line: #e8e4df;
+      --orange: #ff6a00;
+      --orange-deep: #c94f00;
+      --orange-wash: #fff3ea;
+      --wa: #1fa855;
+      --display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+      --body: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; background: var(--paper); color: var(--ink); font-family: var(--body); font-size: 17px; line-height: 1.55; }
+    img, svg { max-width: 100%; display: block; }
+    a { color: inherit; }
+    .wrap { max-width: 1160px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left)); padding-right: max(20px, env(safe-area-inset-right)); }
+    h1, h2, h3 { margin: 0; text-wrap: balance; }
+    h2 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: clamp(36px, 5vw, 56px); line-height: .95; letter-spacing: -.2px; }
+    p { margin: 0; }
+    .lede { color: var(--muted); max-width: 58ch; font-size: 18px; }
+    section { padding-block: 72px; }
+    :focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; padding: 0 26px; border-radius: 100px; font-weight: 700; font-size: 16px; text-decoration: none; border: 2px solid transparent; transition: background .15s, border-color .15s; }
+    .btn-wa { background: var(--wa); color: #fff; }
+    .btn-wa:hover { background: #188f47; }
+    .btn-line { border-color: var(--ink); color: var(--ink); background: transparent; }
+    .btn-line:hover { background: var(--ink); color: #fff; }
+
+    /* Nav */
+    .nav { position: sticky; top: 0; z-index: 20; background: rgba(255,255,255,.95); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
+    .nav-in { display: flex; align-items: center; gap: 24px; height: 64px; }
+    .logo { font-family: var(--display); font-weight: 900; font-size: 26px; text-transform: uppercase; text-decoration: none; letter-spacing: .3px; white-space: nowrap; }
+    .logo span { color: var(--orange); }
+    .nav-links { display: flex; gap: 22px; margin-left: auto; font-weight: 500; font-size: 15px; }
+    .nav-links a { text-decoration: none; color: var(--muted); }
+    .nav-links a:hover { color: var(--ink); }
+    .nav .btn { height: 40px; padding: 0 16px; font-size: 14px; }
+
+    /* Hero */
+    .hero { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); gap: 48px; align-items: center; padding-block: 56px 40px; }
+    .hero h1 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: clamp(54px, 8.2vw, 112px); line-height: .86; letter-spacing: -1px; }
+    .hero h1 .rot { display: block; color: var(--orange); }
+    .hero .lede { margin-top: 22px; }
+    .hero-btns { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+    .hero-note { margin-top: 14px; font-size: 14px; color: var(--muted); }
+
+    .phone-col { display: grid; justify-items: center; gap: 16px; }
+    .giros { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+    .giros button { font: inherit; font-size: 14px; font-weight: 500; border: 1.5px solid var(--line); background: #fff; color: var(--ink); border-radius: 100px; padding: 7px 14px; cursor: pointer; }
+    .giros button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: #fff; }
+    .phone { width: min(360px, 100%); aspect-ratio: 9 / 18.5; border: 10px solid var(--ink); border-radius: 40px; overflow: hidden; background: #fff; box-shadow: 0 30px 60px -20px rgba(26,23,20,.35); position: relative; }
+    .phone iframe { width: 100%; height: 100%; border: 0; display: block; }
+    .phone-hint { font-size: 13px; color: var(--muted); text-align: center; }
+
+    /* Pasos */
+    .steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; margin-top: 36px; counter-reset: s; }
+    .step { border-top: 3px solid var(--ink); padding-top: 18px; display: grid; gap: 8px; }
+    .step::before { counter-increment: s; content: counter(s); font-family: var(--display); font-weight: 900; font-size: 64px; line-height: .8; color: var(--orange); }
+    .step h3 { font-size: 20px; }
+    .step p { color: var(--muted); }
+
+    /* Servicios: lista con estado */
+    .svc-list { margin-top: 32px; border-top: 1px solid var(--line); }
+    .svc { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto; gap: 18px; align-items: start; padding-block: 22px; border-bottom: 1px solid var(--line); }
+    .svc i { font-size: 24px; color: var(--ink); width: 48px; height: 48px; display: grid; place-items: center; border-radius: 12px; background: #f4f2ef; }
+    .svc.ok i { background: var(--orange-wash); color: var(--orange-deep); }
+    .svc h3 { font-size: 21px; }
+    .svc p { color: var(--muted); margin-top: 4px; max-width: 62ch; }
+    .tag { font-size: 13px; font-weight: 700; padding: 4px 12px; border-radius: 100px; white-space: nowrap; margin-top: 4px; }
+    .tag.ok { background: #e9f8ef; color: #136c39; }
+    .tag.soon { background: #f4f2ef; color: var(--muted); }
+
+    /* QR e impresión */
+    .qr-band { background: var(--orange-wash); }
+    .qr-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 56px; align-items: center; }
+    .stand { justify-self: center; width: min(300px, 100%); }
+    .stand-card { background: #fff; border-radius: 18px 18px 6px 6px; padding: 26px 24px 22px; text-align: center; box-shadow: 0 2px 0 rgba(0,0,0,.04), 0 24px 40px -18px rgba(201,79,0,.45); position: relative; }
+    .stand-card::after { content: ""; position: absolute; left: 50%; bottom: -26px; width: 78%; height: 26px; transform: translateX(-50%); background: linear-gradient(#e7e1da, #d7cfc6); border-radius: 0 0 10px 10px; }
+    .stand-name { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 28px; line-height: 1; }
+    .stand-qr { margin: 16px auto 12px; width: 190px; aspect-ratio: 1; }
+    .stand-qr svg { width: 100%; height: 100%; }
+    .stand-txt { font-weight: 700; }
+    .stand-mesa { display: inline-block; margin-top: 10px; background: var(--ink); color: #fff; border-radius: 100px; padding: 4px 14px; font-size: 14px; font-weight: 700; }
+    .qr-list { display: grid; gap: 20px; margin-top: 28px; }
+    .qr-item { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 14px; }
+    .qr-item i { color: var(--orange-deep); font-size: 20px; margin-top: 3px; }
+    .qr-item b { display: block; }
+    .qr-item span { color: var(--muted); }
+
+    /* Planes */
+    .plans { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 36px; border: 2px solid var(--ink); border-radius: 20px; overflow: hidden; }
+    .plan { padding: 28px 26px; display: flex; flex-direction: column; gap: 14px; border-right: 2px solid var(--ink); min-width: 0; }
+    .plan:last-child { border-right: 0; }
+    .plan.feat { background: var(--ink); color: #fff; }
+    .plan h3 { font-family: var(--display); font-weight: 900; text-transform: uppercase; font-size: 40px; line-height: 1; }
+    .plan .for { color: var(--muted); font-size: 15px; }
+    .plan.feat .for { color: #c9c3bc; }
+    .plan ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; font-size: 15px; }
+    .plan li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; }
+    .plan li i { margin-top: 4px; color: var(--orange); font-size: 13px; }
+    .plan li.soon { color: var(--muted); }
+    .plan.feat li.soon { color: #a8a199; }
+    .plan li small { display: block; font-size: 12px; }
+    .plan .btn { margin-top: auto; height: 46px; font-size: 15px; }
+    .plan.feat .btn-line { border-color: #fff; color: #fff; }
+    .plan.feat .btn-line:hover { background: #fff; color: var(--ink); }
+    .extras-note { margin-top: 18px; color: var(--muted); font-size: 15px; }
+
+    /* Para quién */
+    .who { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .who span { border: 1.5px solid var(--line); border-radius: 100px; padding: 8px 16px; font-weight: 500; }
+
+    /* Preguntas */
+    .faq { margin-top: 28px; border-top: 1px solid var(--line); max-width: 820px; }
+    .faq details { border-bottom: 1px solid var(--line); }
+    .faq summary { cursor: pointer; list-style: none; padding: 20px 40px 20px 0; font-weight: 700; font-size: 18px; position: relative; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary::after { content: "+"; position: absolute; right: 4px; top: 14px; font-size: 28px; font-weight: 400; color: var(--orange); transition: transform .2s; }
+    .faq details[open] summary::after { transform: rotate(45deg); }
+    .faq p { padding-bottom: 20px; color: var(--muted); max-width: 66ch; }
+
+    /* Cierre */
+    .close { background: var(--orange); color: #fff; }
+    .close-in { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: end; }
+    .close h2 { font-size: clamp(42px, 6.5vw, 84px); }
+    .close p { margin-top: 14px; font-size: 18px; max-width: 52ch; }
+    .close .btn-wa { background: var(--ink); height: 58px; font-size: 17px; }
+    .close .btn-wa:hover { background: #000; }
+    footer { padding-block: 28px calc(28px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 14px; }
+    .foot-in { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+    @media (max-width: 920px) {
+      .nav-links { display: none; }
+      .nav .btn { margin-left: auto; }
+      .hero { grid-template-columns: 1fr; padding-top: 36px; gap: 36px; }
+      .steps, .plans { grid-template-columns: 1fr; }
+      .plan { border-right: 0; border-bottom: 2px solid var(--ink); }
+      .plan:last-child { border-bottom: 0; }
+      .qr-grid { grid-template-columns: 1fr; gap: 48px; }
+      .close-in { grid-template-columns: 1fr; align-items: start; }
+      section { padding-block: 56px; }
+    }
+    @media (max-width: 520px) {
+      .svc { grid-template-columns: 44px minmax(0, 1fr); }
+      .svc i { width: 40px; height: 40px; font-size: 19px; }
+      .svc .tag { grid-column: 2; justify-self: start; margin-top: 0; }
+      .hero-btns .btn { flex: 1 1 100%; }
+      .logo { font-size: 22px; }
+    }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+  </style>
 </head>
 <body>
 
-<!-- ============================================================
-     VISTA CLIENTE
-============================================================ -->
-<div id="clientView" class="v2">
-
-  <!-- BARRA SUPERIOR -->
-  <div class="v2-util">
-    <div class="v2-util-inner">
-      <span class="v2-util-left">Envíos en México · Atención directa por WhatsApp</span>
-      <div class="v2-util-links">
-        <button onclick="showSellerLogin()">Vender aquí</button>
-        <span>|</span>
-        <a href="https://wa.me/525581074978" target="_blank">Ayuda</a>
-        <span>|</span>
-        <button onclick="showLogin()">Admin</button>
-      </div>
-    </div>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="#">RAYAMI <span>Tiendas</span></a>
+    <nav class="nav-links" aria-label="Secciones">
+      <a href="#como">Cómo funciona</a>
+      <a href="#servicios">Servicios</a>
+      <a href="#planes">Planes</a>
+      <a href="#preguntas">Preguntas</a>
+    </nav>
+    <a class="btn btn-wa wa-link" data-msg="Hola, quiero una muestra gratis de mi tienda en línea"><i class="fa-brands fa-whatsapp"></i> Pide tu muestra</a>
   </div>
+</header>
 
-  <!-- NAVBAR -->
-  <nav class="navbar" id="navbar">
-    <div class="nav-inner">
-      <a href="#" class="nav-logo">
-        <img src="https://i.ibb.co/LXPfzxZb/logo.jpg" alt="RAYAMI STORE" class="nav-logo-img" id="navLogoImg" />
-        <span class="nav-logo-text">RAYAMI<span>STORE</span></span>
-      </a>
-      <div class="v2-nav-cats">
-        <button class="cat-card" data-cat="tenis">Tenis</button>
-        <button class="cat-card" data-cat="ropa">Ropa</button>
-        <button class="cat-card" data-cat="deportes">Deportes</button>
-        <button class="cat-card" data-cat="accesorios">Accesorios</button>
-        <button class="cat-card" data-cat="mascotas">Mascotas</button>
-        <button class="cat-card v2-nav-sale" data-cat="ofertas">Ofertas</button>
-      </div>
-      <div class="v2-nav-right">
-        <div class="search-wrap">
-          <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
-          <input type="search" id="searchInput" name="buscar-producto" placeholder="Buscar" autocomplete="off" autocorrect="off" spellcheck="false" data-lpignore="true" readonly onfocus="this.removeAttribute('readonly')" />
-        </div>
-        <button class="btn-cart-nav" onclick="openCart()" id="cartNavBtn" aria-label="Carrito">
-          <i class="fa-solid fa-bag-shopping"></i>
-          <span id="cartBadge" class="cart-badge" style="display:none;">0</span>
-        </button>
-        <button class="hamburger" id="hamburger" aria-label="Menú">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
-    </div>
-    <div class="mobile-menu" id="mobileMenu">
-      <a href="#catalogo" class="mm-link">Catálogo</a>
-      <a href="#contacto" class="mm-link mm-wa">WhatsApp</a>
-      <button class="mm-link mm-seller" onclick="showSellerLogin()">Soy vendedor</button>
-      <button class="mm-link mm-admin" onclick="showLogin()">Admin</button>
-    </div>
-  </nav>
-
-  <!-- FRANJA PROMO -->
-  <div class="promo-bar">
-    🔥 Ofertas reales en tenis, ropa y accesorios · <a href="#catalogo">Ver catálogo</a>
-  </div>
-
-  <!-- HERO -->
-  <section class="hero" id="inicio">
-    <div class="hero-content">
-      <span class="hero-eyebrow">Nuevos y seminuevos seleccionados</span>
-      <h1 class="hero-title">Tenis, ropa<br/>y accesorios</h1>
-      <p class="hero-sub">Encuentra ofertas reales en tenis, ropa, deporte y más. Pregunta, aparta y recibe en México.</p>
+<main>
+  <section class="wrap hero">
+    <div>
+      <h1>Tu negocio vendiendo <span class="rot">por WhatsApp</span></h1>
+      <p class="lede">Una página con tus productos, tus precios y tu logo. Tus clientes eligen, arman su pedido y te llega directo a WhatsApp. Tú ves cuántos entran y qué se vende.</p>
       <div class="hero-btns">
-        <a href="#catalogo" class="btn-primary">Comprar</a>
-        <a href="https://wa.me/525581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="btn-wa">WhatsApp</a>
+        <a class="btn btn-wa wa-link" data-msg="Hola, quiero que me armen una muestra gratis de mi tienda en línea"><i class="fa-brands fa-whatsapp"></i> Quiero mi muestra gratis</a>
+        <a class="btn btn-line" href="#servicios">Ver servicios</a>
       </div>
+      <p class="hero-note">Te armamos una muestra con tu nombre y tu logo para que la veas antes de decidir.</p>
     </div>
-    <div class="hero-visual">
-      <div class="hero-showcase" id="heroShowcase">
-        <div class="hero-showcase-card active" id="heroCard0">
-          <div class="hsc-img-wrap"><div class="hsc-placeholder">👟</div></div>
-          <div class="hsc-info">
-            <span class="hsc-tag">Cargando…</span>
-            <span class="hsc-name">Productos disponibles</span>
-            <span class="hsc-price">—</span>
-          </div>
-        </div>
-      </div>
-      <div class="hero-showcase-dots" id="heroShowcaseDots"></div>
-    </div>
-  </section>
 
-  <!-- DESTACADOS (se oculta solo si no hay) -->
-  <section class="section" id="destacados">
-    <div class="container">
-      <h2 class="section-title">Destacados</h2>
-      <div class="product-grid" id="featuredGrid"></div>
-      <p id="emptyFeatured" style="display:none;"></p>
+    <div class="phone-col">
+      <div class="giros" role="group" aria-label="Ver ejemplo de">
+        <button data-giro="comida" aria-pressed="true">Comida</button>
+        <button data-giro="ropa" aria-pressed="false">Ropa</button>
+        <button data-giro="calzado" aria-pressed="false">Calzado</button>
+        <button data-giro="belleza" aria-pressed="false">Belleza</button>
+      </div>
+      <div class="phone"><iframe id="demo" title="Ejemplo de tienda en línea"></iframe></div>
+      <p class="phone-hint">Es un ejemplo real: toca productos, elige tallas y arma un pedido.</p>
     </div>
   </section>
 
-  <!-- CATÁLOGO -->
-  <section class="section" id="catalogo">
-    <div class="container">
-      <div class="v2-cat-head">
-        <h2 class="section-title">Catálogo <span class="cat-count" id="productCount">0 productos</span></h2>
-        <div class="v2-cat-tools">
-          <button class="v2-filter-toggle" id="v2FilterToggle" type="button">
-            <span>Ocultar filtros</span> <i class="fa-solid fa-sliders"></i>
-          </button>
-          <label class="v2-sort">
-            <span>Ordenar por</span>
-            <select id="sortSelect">
-              <option value="recientes">Lo más nuevo</option>
-              <option value="precio-asc">Precio: menor a mayor</option>
-              <option value="precio-desc">Precio: mayor a menor</option>
-            </select>
-          </label>
+  <section class="wrap" id="como">
+    <h2>Cómo funciona</h2>
+    <div class="steps">
+      <div class="step"><h3>Armamos tu tienda</h3><p>Nos mandas tus productos, fotos y precios. La dejamos lista con tu logo y tus colores.</p></div>
+      <div class="step"><h3>La compartes</h3><p>Con tu link en redes y estados de WhatsApp, o con un QR en tu mostrador y tus mesas.</p></div>
+      <div class="step"><h3>Recibes pedidos</h3><p>Te llegan a WhatsApp con productos, tallas, total y forma de pago. En tu panel ves cómo vas.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap" id="servicios">
+    <h2>Lo que incluye</h2>
+    <p class="lede" style="margin-top:14px">Empieza con tu tienda y agrega lo que tu negocio vaya necesitando.</p>
+    <div class="svc-list">
+      <div class="svc ok"><i class="fa-solid fa-qrcode"></i><div><h3>Catálogo o menú QR</h3><p>Tu página con fotos, precios, ofertas, tallas y colores. Funciona en cualquier celular, sin descargar nada.</p></div><span class="tag ok">Disponible</span></div>
+      <div class="svc ok"><i class="fa-brands fa-whatsapp"></i><div><h3>Pedidos por WhatsApp</h3><p>Carrito, preguntas sin compromiso, entrega a domicilio o para recoger, y pago al recibir, por transferencia o con link de pago. Si quieres, cobras antes de preparar.</p></div><span class="tag ok">Disponible</span></div>
+      <div class="svc ok"><i class="fa-solid fa-chart-column"></i><div><h3>Panel de ventas</h3><p>Visitas, productos que más interesan, consultas, pedidos y ventas por día. Para saber qué funciona.</p></div><span class="tag ok">Disponible</span></div>
+      <div class="svc"><i class="fa-solid fa-boxes-stacked"></i><div><h3>Inventario</h3><p>Existencias por producto y talla, descuento automático al vender y aviso cuando algo se está acabando.</p></div><span class="tag soon">Próximamente</span></div>
+      <div class="svc"><i class="fa-solid fa-calculator"></i><div><h3>Finanzas</h3><p>Ventas contra gastos, costo y margen por producto, utilidad, flujo semanal y corte de caja, con reportes en Excel.</p></div><span class="tag soon">Próximamente</span></div>
+      <div class="svc"><i class="fa-solid fa-store"></i><div><h3>Para crecer</h3><p>Dominio propio, cobro con tarjeta, varios usuarios (dueño y cajero) y sucursales.</p></div><span class="tag soon">Próximamente</span></div>
+    </div>
+  </section>
+
+  <section class="qr-band" id="qr">
+    <div class="wrap qr-grid">
+      <div class="stand" aria-hidden="true">
+        <div class="stand-card">
+          <div class="stand-name">Tacos Don Beto</div>
+          <div class="stand-qr" id="qrBox"></div>
+          <div class="stand-txt">Escanea, pide y paga desde tu mesa</div>
+          <span class="stand-mesa">Mesa 5</span>
         </div>
       </div>
-
-      <div class="v2-cat-body">
-        <aside class="v2-sidebar" id="categorias">
-          <div class="v2-side-group">
-            <button class="cat-card active" data-cat="todos">Todo</button>
-            <button class="cat-card" data-cat="tenis">Tenis</button>
-            <button class="cat-card" data-cat="ropa">Ropa</button>
-            <button class="cat-card" data-cat="deportes">Deportes</button>
-            <button class="cat-card" data-cat="accesorios">Accesorios</button>
-            <button class="cat-card" data-cat="mascotas">Mascotas</button>
-            <button class="cat-card" data-cat="usados">Usados</button>
-            <button class="cat-card" data-cat="ofertas">Ofertas</button>
-          </div>
-          <div class="v2-side-group">
-            <h4>Condición</h4>
-            <label><input type="checkbox" class="cond-filter" value="Nuevo" /> Nuevo</label>
-            <label><input type="checkbox" class="cond-filter" value="Seminuevo" /> Seminuevo</label>
-            <label><input type="checkbox" class="cond-filter" value="Usado" /> Usado</label>
-          </div>
-        </aside>
-
-        <div class="v2-results">
-          <div class="product-grid" id="productGrid"></div>
-          <div class="empty-state" id="emptyState" style="display:none;">
-            <p id="emptyMsg">No hay productos con estos filtros.</p>
-            <button class="btn-wa" type="button" onclick="clearFilters()">Quitar filtros</button>
-          </div>
+      <div>
+        <h2>QR incluidos e impresión lista</h2>
+        <p class="lede" style="margin-top:14px">Tus clientes escanean y ven tu menú o catálogo al momento. Los QR no tienen costo extra ni caducan.</p>
+        <div class="qr-list">
+          <div class="qr-item"><i class="fa-solid fa-check"></i><p><b>Todos los QR que necesites</b><span>Uno para tu mostrador, tus volantes o tus redes, sin pagar por cada uno.</span></p></div>
+          <div class="qr-item"><i class="fa-solid fa-utensils"></i><p><b>QR por mesa</b><span>El pedido llega con el número de mesa, así sabes a dónde llevarlo.</span></p></div>
+          <div class="qr-item"><i class="fa-solid fa-print"></i><p><b>Te lo entregamos impreso</b><span>Stickers, acrílicos para mesa y displays de mostrador con tu logo, listos para colocar.</span></p></div>
         </div>
       </div>
     </div>
   </section>
 
-  <!-- CONFIANZA -->
-  <section class="v2-trust">
-    <div class="container v2-trust-grid">
-      <div><i class="fa-solid fa-truck-fast"></i><strong>Envíos</strong><span>A todo México</span></div>
-      <div><i class="fa-brands fa-whatsapp"></i><strong>Atención rápida</strong><span>Directo por WhatsApp</span></div>
-      <div><i class="fa-solid fa-tag"></i><strong>Ofertas constantes</strong><span>Precios negociables</span></div>
-      <div><i class="fa-solid fa-shield-halved"></i><strong>Compra segura</strong><span>Revisamos cada producto</span></div>
+  <section class="wrap" id="planes">
+    <h2>Planes</h2>
+    <p class="lede" style="margin-top:14px">Elige según lo que tu negocio necesita hoy.</p>
+    <div class="plans">
+      <div class="plan">
+        <h3>Básico</h3>
+        <p class="for">Para estar en internet y recibir pedidos.</p>
+        <ul>
+          <li><i class="fa-solid fa-check"></i><span>Tienda o menú con tu logo y colores</span></li>
+          <li><i class="fa-solid fa-check"></i><span>Productos con fotos, precios, tallas y colores</span></li>
+          <li><i class="fa-solid fa-check"></i><span>Pedidos y preguntas por WhatsApp</span></li>
+          <li><i class="fa-solid fa-check"></i><span>QR para mostrador, volantes y redes</span></li>
+        </ul>
+        <a class="btn btn-line wa-link" data-msg="Hola, me interesa el plan Básico para mi negocio">Cotizar Básico</a>
+      </div>
+      <div class="plan feat">
+        <h3>Negocio</h3>
+        <p class="for">Para vender más y saber qué funciona.</p>
+        <ul>
+          <li><i class="fa-solid fa-check"></i><span>Todo lo del plan Básico</span></li>
+          <li><i class="fa-solid fa-check"></i><span>Panel de ventas: visitas, consultas, pedidos y productos que más interesan</span></li>
+          <li><i class="fa-solid fa-check"></i><span>Pago por transferencia, link de pago o al recibir; cobro anticipado opcional</span></li>
+          <li><i class="fa-solid fa-check"></i><span>QR por mesa</span></li>
+        </ul>
+        <a class="btn btn-line wa-link" data-msg="Hola, me interesa el plan Negocio para mi negocio">Cotizar Negocio</a>
+      </div>
+      <div class="plan">
+        <h3>Pro</h3>
+        <p class="for">Para llevar el control completo.</p>
+        <ul>
+          <li><i class="fa-solid fa-check"></i><span>Todo lo del plan Negocio</span></li>
+          <li class="soon"><i class="fa-regular fa-clock"></i><span>Inventario por producto y talla<small>Próximamente</small></span></li>
+          <li class="soon"><i class="fa-regular fa-clock"></i><span>Finanzas: margen, utilidad y corte de caja<small>Próximamente</small></span></li>
+          <li class="soon"><i class="fa-regular fa-clock"></i><span>Reportes en Excel<small>Próximamente</small></span></li>
+        </ul>
+        <a class="btn btn-line wa-link" data-msg="Hola, me interesa el plan Pro para mi negocio">Cotizar Pro</a>
+      </div>
+    </div>
+    <p class="extras-note">Adicionales: instalación con carga de tus productos y fotos, e impresión de QR (stickers, acrílicos de mesa y displays).</p>
+
+    <div class="who" aria-label="Giros">
+      <span>Restaurantes y fondas</span><span>Cafeterías</span><span>Boutiques</span><span>Zapaterías</span>
+      <span>Estéticas y belleza</span><span>Tiendas de mascotas</span><span>Ferreterías</span><span>Accesorios</span>
     </div>
   </section>
 
-  <!-- CTA WHATSAPP -->
-  <section class="section cta-section" id="contacto">
-    <div class="container cta-inner">
-      <h2 class="cta-title">¿Te interesa algo?</h2>
-      <p class="cta-sub">Escríbeme directo y te doy más info, fotos o acordamos envío.</p>
-      <a href="https://wa.me/525581074978?text=Hola,%20vi%20tu%20catálogo%20y%20quiero%20preguntar%20por%20un%20producto%20🔥" target="_blank" class="btn-primary btn-xl">Escribir por WhatsApp</a>
+  <section class="wrap" id="preguntas">
+    <h2>Preguntas</h2>
+    <div class="faq">
+      <details><summary>¿Mis clientes tienen que descargar una app?</summary><p>No. Abren tu link o escanean tu QR y la tienda se ve en el navegador de su celular. Si quieren, la pueden guardar en su pantalla de inicio como si fuera una app.</p></details>
+      <details><summary>¿Cómo me llegan los pedidos?</summary><p>A tu WhatsApp, con los productos, tallas o colores, cantidades, total, forma de entrega y forma de pago. Tú confirmas y cobras como siempre.</p></details>
+      <details><summary>¿Y si mi cliente solo quiere preguntar?</summary><p>Cada producto tiene un botón para preguntar por WhatsApp sin dar ningún dato. También puede mandarte su carrito como pregunta antes de pedir.</p></details>
+      <details><summary>¿Tengo que pedir nombre y teléfono a mis clientes?</summary><p>Tú decides: pueden ser obligatorios, opcionales o no pedirlos. Solo tú puedes ver esos datos.</p></details>
+      <details><summary>¿El QR cuesta aparte?</summary><p>No. Los QR van incluidos y no caducan. Solo cobramos la impresión si quieres que te entreguemos stickers, acrílicos o displays.</p></details>
+      <details><summary>¿Puedo ver cómo quedaría antes de contratar?</summary><p>Sí. Te armamos una muestra con tu nombre, tu logo y algunos de tus productos para que la veas en tu celular.</p></details>
     </div>
   </section>
 
-  <!-- CTA VENDER -->
-  <section class="seller-cta-section">
-    <div class="container">
-      <div class="seller-cta-inner">
-        <div class="seller-cta-left">
-          <span class="seller-cta-eyebrow">Únete a RAYAMI STORE</span>
-          <h2 class="seller-cta-title">¿Tienes productos para vender?</h2>
-          <p class="seller-cta-sub">Regístrate gratis y vende en nuestra plataforma. Nosotros nos encargamos de la entrega; tú solo subes tus productos.</p>
-          <div class="seller-cta-perks">
-            <div class="seller-perk">Registro gratis</div>
-            <div class="seller-perk">Comisión del 10%</div>
-            <div class="seller-perk">Nosotros entregamos</div>
-          </div>
-          <div class="seller-cta-actions">
-            <button class="btn-primary btn-xl" onclick="showSellerLogin()">Registrarme como vendedor</button>
-            <a href="https://wa.me/525581074978?text=Hola,%20quiero%20más%20info%20para%20vender%20en%20RAYAMI%20STORE" target="_blank" class="btn-wa">Más información</a>
-          </div>
-        </div>
+  <section class="close">
+    <div class="wrap close-in">
+      <div>
+        <h2>Mira tu tienda antes de decidir</h2>
+        <p>Mándanos el nombre de tu negocio y tu logo. Te enviamos una muestra para que la pruebes en tu celular.</p>
       </div>
+      <a class="btn btn-wa wa-link" data-msg="Hola, quiero ver la muestra de mi tienda. Mi negocio se llama: "><i class="fa-brands fa-whatsapp"></i> Pedir mi muestra</a>
     </div>
   </section>
+</main>
 
-  <!-- FOOTER -->
-  <footer class="footer">
-    <div class="container">
-      <div class="footer-grid">
-        <div class="footer-col">
-          <img src="https://i.ibb.co/LXPfzxZb/logo.jpg" alt="RAYAMI STORE" class="footer-logo-img" id="footerLogoImg" />
-          <span class="footer-logo">RAYAMI<span>STORE</span></span>
-          <p class="footer-tag">Productos nuevos y usados en México 🇲🇽</p>
-        </div>
-        <div class="footer-col">
-          <h4>Navegación</h4>
-          <a href="#catalogo">Catálogo</a>
-          <a href="#contacto">Contacto</a>
-          <button onclick="showSellerLogin()" class="footer-link-btn">Soy vendedor</button>
-        </div>
-        <div class="footer-col">
-          <h4>Ayuda</h4>
-          <a href="https://wa.me/525581074978" target="_blank">Preguntas frecuentes</a>
-          <a href="https://wa.me/525581074978" target="_blank">Envíos</a>
-          <a href="https://wa.me/525581074978" target="_blank">Cambios y devoluciones</a>
-        </div>
-        <div class="footer-col">
-          <h4>Contacto</h4>
-          <a href="https://wa.me/525581074978" target="_blank">55 8107 4978</a>
-          <a href="mailto:raulbenitez563@gmail.com">raulbenitez563@gmail.com</a>
-          <p class="footer-hours">Lun – Dom · 9am – 9pm</p>
-        </div>
-      </div>
-      <div class="footer-bottom">
-        <p>© 2026 RAYAMI STORE · Todos los derechos reservados</p>
-      </div>
-    </div>
-  </footer>
-
-  <!-- Botón flotante WhatsApp -->
-  <a href="https://wa.me/525581074978?text=Hola,%20vi%20tu%20catálogo%20y%20tengo%20una%20pregunta%20🔥" target="_blank" class="wa-float" aria-label="WhatsApp">
-    <i class="fa-brands fa-whatsapp"></i>
-  </a>
-
-  <!-- Botón flotante CARRITO -->
-  <button class="cart-fab" id="cartFab" onclick="openCart()" style="display:none;">
-    <i class="fa-solid fa-bag-shopping"></i> <span id="cartFabCount">0</span>
-  </button>
-
-  <!-- DRAWER CARRITO -->
-  <div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
-  <div class="cart-drawer" id="cartDrawer">
-    <div class="cart-header">
-      <h2 class="cart-title">Tu carrito</h2>
-      <button class="cart-close" onclick="closeCart()">✕</button>
-    </div>
-    <div class="cart-body">
-      <p class="cart-empty-msg" id="cartEmpty">Aún no has agregado productos.</p>
-      <div id="cartList"></div>
-    </div>
-    <div class="cart-footer">
-      <div class="cart-total-row" id="cartTotalRow" style="display:none;">
-        <span>Total estimado</span>
-        <span class="cart-total-amount" id="cartTotalAmount">$0</span>
-      </div>
-      <button class="cart-wa-btn" id="cartOrderBtn" onclick="openOrderModal()" style="display:none;">
-        Ver resumen del pedido
-      </button>
-      <button class="cart-clear-btn" id="cartClearBtn" onclick="clearCart()" style="display:none;">Vaciar carrito</button>
-    </div>
+<footer class="wrap">
+  <div class="foot-in">
+    <span>© 2026 RAYAMI Tiendas</span>
+    <span>WhatsApp: 55 8107 4978</span>
+    <a href="privacidad/">Aviso de privacidad</a>
   </div>
-
-</div><!-- /clientView -->
-
-
-<!-- ============================================================
-     MODAL LOGIN
-============================================================ -->
-<div class="modal-overlay" id="loginModal">
-  <div class="modal-box login-box">
-    <button class="modal-close" onclick="hideLogin()">✕</button>
-    <div class="login-logo">RAYAMI<span>ADMIN</span></div>
-    <p class="login-sub">Acceso solo para administrador</p>
-    <div class="form-group">
-      <label>Correo</label>
-      <input type="email" id="loginUser" name="username" autocomplete="username" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="tu@correo.com" onkeydown="if(event.key==='Enter')doLogin()" />
-    </div>
-    <div class="form-group">
-      <label>Contraseña</label>
-      <input type="password" id="loginPass" name="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()" />
-    </div>
-    <p class="login-error" id="loginError"></p>
-    <button class="btn-primary w100" onclick="doLogin()">Entrar al panel</button>
-  </div>
-</div>
-
-
-<!-- ============================================================
-     PANEL ADMIN
-============================================================ -->
-<div id="adminView" style="display:none;">
-
-  <div class="admin-navbar">
-    <span class="admin-logo">RAYAMI <span>ADMIN</span></span>
-    <div class="admin-nav-right">
-      <button class="btn-view-store" onclick="doLogout()">👁 Ver tienda</button>
-      <button class="btn-migrate" onclick="migrateAllPhotos()" id="btnMigrate">⚡ Migrar fotos a ImgBB</button>
-      <button class="btn-add-product" onclick="openProductModal()">+ Agregar producto</button>
-    </div>
-  </div>
-
-  <div class="admin-container">
-
-    <!-- Stats -->
-    <div class="admin-stats">
-      <div class="stat-card"><span class="stat-num" id="statTotal">0</span><span class="stat-label">Total productos</span></div>
-      <div class="stat-card"><span class="stat-num" id="statFeatured">0</span><span class="stat-label">Destacados</span></div>
-      <div class="stat-card"><span class="stat-num" id="statNuevo">0</span><span class="stat-label">Nuevos</span></div>
-      <div class="stat-card"><span class="stat-num" id="statUsado">0</span><span class="stat-label">Usados/Seminuevos</span></div>
-    </div>
-
-    <!-- Tabs admin -->
-    <div class="admin-tabs">
-      <button class="admin-tab active" id="adminTabProducts" onclick="switchAdminTab('products')">📦 Productos</button>
-      <button class="admin-tab" id="adminTabOrders" onclick="switchAdminTab('orders')">🛵 Pedidos</button>
-      <button class="admin-tab" id="adminTabSellers" onclick="switchAdminTab('sellers')">🏪 Vendedores</button>
-      <button class="admin-tab" id="adminTabSellerProducts" onclick="switchAdminTab('sellerProducts')">📋 Por aprobar</button>
-    </div>
-
-    <!-- Productos admin (existing) -->
-    <div id="adminPanelProducts">
-      <div class="ap-toolbar">
-        <label class="ap-search">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input type="search" id="adminSearch" placeholder="Buscar por nombre, marca, talla, color…" autocomplete="off" oninput="renderAdminTable()" />
-        </label>
-        <select id="apCat" class="ap-select" onchange="renderAdminTable()" aria-label="Categoría">
-          <option value="">Todas las categorías</option>
-          <option value="tenis">Tenis</option><option value="ropa">Ropa</option><option value="deportes">Deportes</option>
-          <option value="accesorios">Accesorios</option><option value="mascotas">Mascotas</option>
-          <option value="usados">Usados</option><option value="ofertas">Ofertas</option>
-        </select>
-        <select id="apCond" class="ap-select" onchange="renderAdminTable()" aria-label="Condición">
-          <option value="">Toda condición</option>
-          <option>Nuevo</option><option>Seminuevo</option><option>Usado</option>
-        </select>
-        <select id="apSeller" class="ap-select" onchange="renderAdminTable()" aria-label="Vendedor">
-          <option value="">Todos los vendedores</option>
-        </select>
-        <select id="apStatus" class="ap-select" onchange="renderAdminTable()" aria-label="Estado">
-          <option value="">Todos los estados</option>
-          <option value="disponible">Disponibles</option>
-          <option value="vendido">Vendidos</option>
-          <option value="oferta">En oferta</option>
-          <option value="destacado">Destacados</option>
-          <option value="sinfoto">Sin foto</option>
-        </select>
-        <select id="apSort" class="ap-select" onchange="renderAdminTable()" aria-label="Ordenar">
-          <option value="nuevo">Más recientes</option>
-          <option value="viejo">Más antiguos</option>
-          <option value="precio-asc">Precio: menor a mayor</option>
-          <option value="precio-desc">Precio: mayor a menor</option>
-          <option value="vistas">Más vistos</option>
-          <option value="nombre">Nombre A–Z</option>
-        </select>
-        <button type="button" class="ap-btn ap-btn-ghost" onclick="clearAdminFilters()"><i class="fa-solid fa-xmark"></i> Limpiar</button>
-        <button type="button" class="ap-btn ap-btn-excel" onclick="exportProductsXLSX()"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
-      </div>
-
-      <div class="ap-summary" id="apSummary"></div>
-
-      <div class="admin-table-wrap ap-table-wrap">
-        <table class="admin-table ap-table">
-          <thead>
-            <tr>
-              <th>Producto</th>
-              <th>Categoría</th>
-              <th>Condición</th>
-              <th>Vendedor</th>
-              <th class="ap-num">Precio</th>
-              <th>Estado</th>
-              <th class="ap-num">Vistas</th>
-              <th class="ap-actions-col">Acciones</th>
-            </tr>
-          </thead>
-          <tbody id="adminTableBody"></tbody>
-        </table>
-        <div class="admin-empty" id="adminEmpty" style="display:none;">
-          <p>No hay productos con estos filtros.</p>
-        </div>
-      </div>
-    </div><!-- /adminPanelProducts -->
-
-    <!-- PEDIDOS -->
-    <div id="adminPanelOrders" style="display:none;">
-      <div class="orders-header">
-        <h3 style="font-family:var(--font-disp);font-size:24px;font-weight:800;">🛵 Pedidos</h3>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button class="btn-primary" style="font-size:13px;padding:8px 16px;" onclick="switchOrdersView('tabla')">📋 Lista</button>
-          <button class="btn-primary" style="font-size:13px;padding:8px 16px;background:var(--surface);color:var(--accent);border:1px solid var(--accent);" onclick="switchOrdersView('ruta')">🗺 Ruta del día</button>
-          <button type="button" class="ap-btn ap-btn-excel" onclick="exportOrdersXLSX()"><i class="fa-solid fa-file-excel"></i> Descargar Excel</button>
-        </div>
-      </div>
-
-      <!-- Stats pedidos -->
-      <div class="admin-stats" style="margin-bottom:20px;" id="orderStats">
-        <div class="stat-card"><span class="stat-num" id="oStatTotal">0</span><span class="stat-label">Total pedidos</span></div>
-        <div class="stat-card"><span class="stat-num" id="oStatPendiente">0</span><span class="stat-label">Pendiente pago</span></div>
-        <div class="stat-card"><span class="stat-num" id="oStatPagado">0</span><span class="stat-label">Pagados</span></div>
-        <div class="stat-card"><span class="stat-num" id="oStatEntregado">0</span><span class="stat-label">Entregados</span></div>
-      </div>
-
-      <!-- Filtros -->
-      <div class="orders-filter" style="margin-bottom:16px;" id="ordersFilterBar">
-        <button class="order-filter-btn active" data-status="todos" onclick="filterOrders('todos')">Todos</button>
-        <button class="order-filter-btn" data-status="pendiente" onclick="filterOrders('pendiente')">⏳ Pendiente</button>
-        <button class="order-filter-btn" data-status="pagado" onclick="filterOrders('pagado')">✅ Pagado</button>
-        <button class="order-filter-btn" data-status="en_camino" onclick="filterOrders('en_camino')">🛵 En camino</button>
-        <button class="order-filter-btn" data-status="entregado" onclick="filterOrders('entregado')">📦 Entregado</button>
-        <button class="order-filter-btn" data-status="cancelado" onclick="filterOrders('cancelado')">❌ Cancelado</button>
-      </div>
-
-      <!-- VISTA LISTA -->
-      <div id="ordersViewTabla">
-        <div class="admin-table-wrap">
-          <table class="admin-table" id="ordersTable">
-            <thead>
-              <tr>
-                <th>#</th>
-                <th>Cliente</th>
-                <th>Productos</th>
-                <th>Total</th>
-                <th>Entrega</th>
-                <th>Zona</th>
-                <th>Fecha</th>
-                <th>Estado</th>
-                <th>Acciones</th>
-              </tr>
-            </thead>
-            <tbody id="ordersTableBody"></tbody>
-          </table>
-          <div class="admin-empty" id="ordersEmpty" style="display:none;">
-            <p>🛵 No hay pedidos aún. ¡Comparte tu tienda!</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- VISTA RUTA DEL DÍA -->
-      <div id="ordersViewRuta" style="display:none;">
-        <div class="ruta-header">
-          <h3 style="font-family:var(--font-disp);font-size:22px;font-weight:800;">🗺 Ruta del día</h3>
-          <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Solo pedidos pagados · Ordenados por tipo de entrega y zona</p>
-        </div>
-
-        <!-- PASO 1: Recolección con vendedores -->
-        <div class="ruta-section">
-          <div class="ruta-section-title">
-            <span class="ruta-step">PASO 1</span>
-            <span>📦 Recolección con vendedores</span>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>#</th><th>Vendedor</th><th>Producto(s)</th><th>WhatsApp</th><th>¿Listo?</th></tr></thead>
-              <tbody id="rutaRecoleccionBody"></tbody>
-            </table>
-            <div class="admin-empty" id="rutaRecoleccionEmpty" style="display:none;"><p>Sin recolecciones pendientes</p></div>
-          </div>
-        </div>
-
-        <!-- PASO 2: Entregas a domicilio -->
-        <div class="ruta-section">
-          <div class="ruta-section-title">
-            <span class="ruta-step">PASO 2</span>
-            <span>🏠 Entregas a domicilio</span>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>#</th><th>Cliente</th><th>Colonia</th><th>Dirección</th><th>Productos</th><th>Total</th><th>WhatsApp</th></tr></thead>
-              <tbody id="rutaDomicilioBody"></tbody>
-            </table>
-            <div class="admin-empty" id="rutaDomicilioEmpty" style="display:none;"><p>Sin entregas a domicilio</p></div>
-          </div>
-        </div>
-
-        <!-- PASO 3: Punto de encuentro -->
-        <div class="ruta-section">
-          <div class="ruta-section-title">
-            <span class="ruta-step">PASO 3</span>
-            <span>📍 Puntos de encuentro</span>
-          </div>
-          <div class="admin-table-wrap">
-            <table class="admin-table">
-              <thead><tr><th>#</th><th>Cliente</th><th>Colonia</th><th>Productos</th><th>Total</th><th>WhatsApp</th></tr></thead>
-              <tbody id="rutaPuntoBody"></tbody>
-            </table>
-            <div class="admin-empty" id="rutaPuntoEmpty" style="display:none;"><p>Sin puntos de encuentro</p></div>
-          </div>
-        </div>
-
-        <!-- Resumen del día -->
-        <div class="ruta-resumen" id="rutaResumen"></div>
-      </div>
-    </div>
-
-    <!-- VENDEDORES -->
-    <div id="adminPanelSellers" style="display:none;">
-      <h3 style="font-family:var(--font-disp);font-size:24px;font-weight:800;margin-bottom:16px;">🏪 Vendedores registrados</h3>
-      
-      <!-- Lista de vendedores -->
-      <div id="adminSellersList">
-        <div class="admin-table-wrap">
-          <table class="admin-table">
-            <thead><tr><th>Vendedor</th><th>WhatsApp</th><th>Correo</th><th>Productos</th><th>Vistas totales</th><th>Estado</th><th>Acciones</th></tr></thead>
-            <tbody id="adminSellersBody"></tbody>
-          </table>
-          <div class="admin-empty" id="adminSellersEmpty" style="display:none;"><p>😕 No hay vendedores registrados aún.</p></div>
-        </div>
-      </div>
-
-      <!-- Detalle de un vendedor -->
-      <div id="adminSellerDetail" style="display:none;">
-        <div class="seller-detail-header">
-          <button class="btn-back" onclick="backToSellersList()">← Volver</button>
-          <div>
-            <h3 id="sellerDetailName" style="font-family:var(--font-disp);font-size:28px;font-weight:800;"></h3>
-            <p id="sellerDetailInfo" style="color:var(--text-muted);font-size:13px;"></p>
-          </div>
-        </div>
-        <div class="admin-table-wrap" style="margin-top:16px;">
-          <table class="admin-table">
-            <thead><tr><th>Foto</th><th>Nombre</th><th>Precio</th><th>Estado pub.</th><th>👁 Vistas</th><th>Acciones</th></tr></thead>
-            <tbody id="sellerDetailBody"></tbody>
-          </table>
-          <div class="admin-empty" id="sellerDetailEmpty" style="display:none;"><p>📦 Este vendedor no tiene productos aún.</p></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- PRODUCTOS POR APROBAR -->
-    <div id="adminPanelSellerProducts" style="display:none;">
-      <h3 style="font-family:var(--font-disp);font-size:24px;font-weight:800;margin-bottom:16px;">📋 Productos por aprobar</h3>
-      <div class="admin-table-wrap">
-        <table class="admin-table">
-          <thead><tr><th>Foto</th><th>Nombre</th><th>Vendedor</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
-          <tbody id="adminSellerProductsBody"></tbody>
-        </table>
-        <div class="admin-empty" id="adminSellerProductsEmpty" style="display:none;"><p>✅ No hay productos pendientes de revisión.</p></div>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-
-<!-- ============================================================
-     MODAL PRODUCTO (agregar / editar)
-============================================================ -->
-<div class="modal-overlay" id="productModal">
-  <div class="modal-box product-box">
-    <button class="modal-close" onclick="closeProductModal()">✕</button>
-    <h2 class="modal-title" id="productModalTitle">Agregar producto</h2>
-
-    <div class="form-grid">
-      <div class="form-group full">
-        <label>Nombre del producto *</label>
-        <input type="text" id="pName" placeholder="Ej: Guantes Everlast 12oz" />
-      </div>
-      <div class="form-group">
-        <label>Precio MXN *</label>
-        <input type="number" id="pPrice" placeholder="350" min="0" />
-      </div>
-      <div class="form-group">
-        <label>Precio original (tachado)</label>
-        <input type="number" id="pOriginalPrice" placeholder="700 (opcional)" min="0" />
-      </div>
-      <div class="form-group">
-        <label>Categoría *</label>
-        <select id="pCategory">
-          <option value="deportes">🥊 Deportes</option>
-          <option value="tenis">👟 Tenis</option>
-          <option value="ropa">👕 Ropa</option>
-          <option value="mascotas">🐶 Mascotas</option>
-          <option value="usados">♻️ Usados</option>
-          <option value="ofertas">🔥 Ofertas</option>
-          <option value="accesorios">🎒 Accesorios</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Estado *</label>
-        <select id="pCondition">
-          <option value="Nuevo">Nuevo</option>
-          <option value="Seminuevo">Seminuevo</option>
-          <option value="Usado">Usado</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Emoji (sin foto)</label>
-        <input type="text" id="pEmoji" placeholder="🥊" maxlength="4" />
-      </div>
-      <div class="form-group">
-        <label>¿Destacado?</label>
-        <select id="pFeatured">
-          <option value="false">No</option>
-          <option value="true">Sí ⭐</option>
-        </select>
-      </div>
-
-      <!-- OFERTA -->
-      <div class="form-group">
-        <label>🔥 Precio de oferta <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
-        <input type="number" id="pSalePrice" placeholder="Precio rebajado" min="0" />
-        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Si lo llenas, el precio normal se tacha y este aparece como precio final</p>
-      </div>
-
-      <!-- DURACIÓN DE PROMO -->
-      <div class="form-group">
-        <label>⏳ Promo termina el <span style="color:var(--text-muted);font-weight:400;">(opcional)</span></label>
-        <input type="datetime-local" id="pPromoEnd" />
-        <p style="font-size:11px;color:var(--text-muted);margin-top:4px;">Deja vacío si la oferta no tiene fecha límite</p>
-      </div>
-
-      <!-- VENDIDO -->
-      <div class="form-group">
-        <label>¿Artículo vendido?</label>
-        <select id="pSold">
-          <option value="false">No — visible al público</option>
-          <option value="true">Sí — oculto al público 🔒</option>
-        </select>
-      </div>
-      <div class="form-group full">
-        <label>Descripción corta</label>
-        <input type="text" id="pDesc" placeholder="Ej: Cuero genuino, 12oz, poco uso" />
-      </div>
-
-      <!-- CAMPOS EXTRA según categoría -->
-      <div class="form-group full extra-fields" id="extraFields" style="display:none;">
-        <div class="extra-fields-grid">
-
-          <!-- Talla (tenis, ropa) -->
-          <div class="form-group" id="fieldTalla" style="display:none;">
-            <label>Talla</label>
-            <input type="text" id="pTalla" placeholder="Ej: 27, M, L, XL" />
-          </div>
-
-          <!-- Color -->
-          <div class="form-group" id="fieldColor" style="display:none;">
-            <label>Color</label>
-            <input type="text" id="pColor" placeholder="Ej: Negro, Blanco, Gris" />
-          </div>
-
-          <!-- Marca -->
-          <div class="form-group" id="fieldMarca" style="display:none;">
-            <label>Marca</label>
-            <input type="text" id="pMarca" placeholder="Ej: Nike, Adidas, Everlast" />
-          </div>
-
-          <!-- Peso / medida (deportes) -->
-          <div class="form-group" id="fieldPeso" style="display:none;">
-            <label>Peso / Medida</label>
-            <input type="text" id="pPeso" placeholder="Ej: 12 oz, 5 kg, talla única" />
-          </div>
-
-          <!-- Género -->
-          <div class="form-group" id="fieldGenero" style="display:none;">
-            <label>Género</label>
-            <select id="pGenero">
-              <option value="">Sin especificar</option>
-              <option value="Hombre">Hombre</option>
-              <option value="Mujer">Mujer</option>
-              <option value="Unisex">Unisex</option>
-              <option value="Niño">Niño/a</option>
-            </select>
-          </div>
-
-          <!-- Material -->
-          <div class="form-group" id="fieldMaterial" style="display:none;">
-            <label>Material</label>
-            <input type="text" id="pMaterial" placeholder="Ej: Cuero, Tela, Plástico" />
-          </div>
-
-          <!-- Raza / especie (mascotas) -->
-          <div class="form-group" id="fieldMascota" style="display:none;">
-            <label>Para mascota</label>
-            <input type="text" id="pMascota" placeholder="Ej: Perro, Gato, Talla M" />
-          </div>
-
-        </div>
-      </div>
-
-      <!-- FOTOS (hasta 5) -->
-      <div class="form-group full">
-        <label>Fotos del producto <span style="color:var(--text-muted);font-weight:400;">(máx. 5)</span></label>
-        <div class="photo-tabs">
-          <button type="button" class="photo-tab active" id="tabBtnUrl" onclick="switchPhotoTab('url')">🔗 Pegar URL</button>
-          <button type="button" class="photo-tab" id="tabBtnFile" onclick="switchPhotoTab('file')">📷 Subir desde dispositivo</button>
-        </div>
-
-        <!-- URL -->
-        <div id="photoTabUrl">
-          <div style="display:flex;gap:8px;">
-            <input type="url" id="pImageUrl" placeholder="https://i.imgur.com/ejemplo.jpg" style="flex:1;" />
-            <button type="button" class="btn-add-photo-url" onclick="addPhotoFromUrl()">+ Agregar</button>
-          </div>
-          <p class="photo-hint">Sube tu foto en <a href="https://imgur.com/upload" target="_blank">imgur.com</a> y pega el link · Puedes agregar hasta 5</p>
-        </div>
-
-        <!-- File -->
-        <div id="photoTabFile" style="display:none;">
-          <div class="file-drop" id="fileDrop" onclick="triggerFileInput()">
-            <span id="fileDropText">📁 Toca aquí o arrastra imágenes · Puedes seleccionar varias a la vez</span>
-          </div>
-          <input type="file" id="pImageFile" accept="image/*" multiple onchange="handleFileSelect(event)" style="display:none;" />
-        </div>
-
-        <!-- Galería de fotos agregadas -->
-        <div class="photos-gallery" id="photosGallery"></div>
-        <p class="photo-count-hint" id="photoCountHint" style="display:none;"></p>
-      </div>
-    </div>
-
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeProductModal()">Cancelar</button>
-      <button class="btn-primary" onclick="saveProduct()">💾 Guardar producto</button>
-    </div>
-  </div>
-</div>
-
-
-<!-- MODAL CONFIRMAR ELIMINAR -->
-<div class="modal-overlay" id="deleteModal">
-  <div class="modal-box delete-box">
-    <h2 class="modal-title">¿Eliminar producto?</h2>
-    <p class="delete-name" id="deleteProductName"></p>
-    <p style="color:var(--text-muted);font-size:13px;margin-bottom:24px;">Esta acción no se puede deshacer.</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeDeleteModal()">Cancelar</button>
-      <button class="btn-danger" onclick="confirmDelete()">🗑 Eliminar</button>
-    </div>
-  </div>
-</div>
-
-  <!-- MODAL CHECKOUT — Datos de entrega + Resumen -->
-  <div class="modal-overlay" id="orderModal">
-    <div class="modal-box order-box">
-      <button class="modal-close" onclick="closeOrderModal()">✕</button>
-
-      <!-- PASO 1: Datos de entrega -->
-      <div id="checkoutStep1">
-        <h2 class="modal-title">📦 Datos de entrega</h2>
-        <p style="color:var(--text-muted);font-size:13px;margin-bottom:20px;">Llena tus datos para coordinar la entrega</p>
-        <div class="form-grid">
-          <div class="form-group full">
-            <label>Nombre completo *</label>
-            <input type="text" id="coName" placeholder="Tu nombre" />
-          </div>
-          <div class="form-group full">
-            <label>WhatsApp *</label>
-            <input type="tel" id="coPhone" placeholder="55 1234 5678" />
-          </div>
-          <div class="form-group full">
-            <label>Colonia *</label>
-            <input type="text" id="coColonia" placeholder="Ej: Jardines de Morelos, Ecatepec" />
-          </div>
-          <div class="form-group full">
-            <label>Dirección (calle y número)</label>
-            <input type="text" id="coAddress" placeholder="Ej: Calle Rosal #42" />
-          </div>
-          <div class="form-group full">
-            <label>¿Cómo prefieres recibir tu pedido? *</label>
-            <div class="delivery-options">
-              <label class="delivery-opt" id="optDom">
-                <input type="radio" name="coDelivery" value="domicilio" onchange="selectDelivery('domicilio')" />
-                <div class="delivery-opt-inner">
-                  <span class="delivery-opt-icon">🏠</span>
-                  <span class="delivery-opt-title">A domicilio</span>
-                  <span class="delivery-opt-sub">Sábado o domingo</span>
-                </div>
-              </label>
-              <label class="delivery-opt" id="optPunto">
-                <input type="radio" name="coDelivery" value="punto" onchange="selectDelivery('punto')" />
-                <div class="delivery-opt-inner">
-                  <span class="delivery-opt-icon">📍</span>
-                  <span class="delivery-opt-title">Punto de encuentro</span>
-                  <span class="delivery-opt-sub">Entre semana</span>
-                </div>
-              </label>
-            </div>
-          </div>
-          <div class="form-group full">
-            <label>Notas adicionales</label>
-            <input type="text" id="coNotes" placeholder="Ej: Entre Calle X y Calle Y, color de casa, etc." />
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button class="btn-cancel" onclick="closeOrderModal()">Cancelar</button>
-          <button class="btn-primary" onclick="goToCheckoutStep2()">Ver resumen →</button>
-        </div>
-      </div>
-
-      <!-- PASO 2: Resumen + pago -->
-      <div id="checkoutStep2" style="display:none;">
-        <h2 class="modal-title">📋 Resumen del pedido</h2>
-        <p style="color:var(--text-muted);font-size:13px;margin-bottom:16px;">Revisa tu pedido y realiza tu pago para confirmarlo</p>
-
-        <!-- Datos de pago -->
-        <div class="payment-info-box">
-          <div class="payment-info-title">💳 Realiza tu pago aquí</div>
-          <div class="payment-info-row">
-            <span>Banco</span>
-            <strong>Banorte</strong>
-          </div>
-          <div class="payment-info-row">
-            <span>Número de cuenta</span>
-            <div style="display:flex;align-items:center;gap:8px;">
-              <strong id="accountNumber">072180012986149248</strong>
-              <button class="btn-copy-account" onclick="copyAccount()">📋</button>
-            </div>
-          </div>
-          <div class="payment-info-row">
-            <span>Titular</span>
-            <strong>RAYAMI STORE</strong>
-          </div>
-          <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">⚠️ Después de transferir, envía tu pedido por WhatsApp con el comprobante de pago</p>
-        </div>
-
-        <div class="order-card" id="orderCard">
-          <div class="order-card-header">
-            <span class="order-card-logo">RAYAMI<span>STORE</span></span>
-            <span class="order-card-date" id="orderDate"></span>
-          </div>
-          <div class="order-card-items" id="orderCardItems"></div>
-          <div class="order-card-divider"></div>
-          <div class="order-card-total">
-            <span>TOTAL ESTIMADO</span>
-            <span id="orderCardTotal"></span>
-          </div>
-          <div class="order-card-delivery" id="orderCardDelivery"></div>
-          <div class="order-card-footer">
-            <span>📱 55 8107 4978 · rayami-07.github.io/store</span>
-          </div>
-        </div>
-
-        <div class="order-text-wrap">
-          <textarea class="order-textarea" id="orderTextarea" readonly></textarea>
-        </div>
-
-        <div class="order-actions">
-          <button class="btn-copy-order" id="btnCopy" onclick="copyOrderText()">📋 Copiar</button>
-          <button class="btn-save-img" onclick="saveOrderImage()">📸 Imagen</button>
-        </div>
-        <button class="cart-wa-btn" style="margin-top:10px;width:100%;border:none;cursor:pointer;" onclick="sendOrderWA()">
-          💬 Enviar pedido por WhatsApp
-        </button>
-        <div class="modal-actions" style="margin-top:8px;">
-          <button class="btn-cancel" onclick="backToStep1()">← Editar datos</button>
-        </div>
-        <p class="order-hint">Después de enviar, confirma tu pago por WhatsApp para que procesemos tu pedido 💳</p>
-      </div>
-
-    </div>
-  </div>
-<!-- ============================================================
-     MODAL LOGIN / REGISTRO VENDEDOR
-============================================================ -->
-<div class="modal-overlay" id="sellerAuthModal">
-  <div class="modal-box login-box">
-    <button class="modal-close" onclick="hideSellerAuth()">✕</button>
-
-    <!-- Tabs -->
-    <div class="seller-auth-tabs">
-      <button class="seller-tab active" id="tabLogin" onclick="switchSellerTab('login')">Iniciar sesión</button>
-      <button class="seller-tab" id="tabRegister" onclick="switchSellerTab('register')">Registrarme</button>
-    </div>
-
-    <!-- LOGIN -->
-    <div id="sellerLoginForm">
-      <div class="login-logo" style="margin-top:16px;">RAYAMI<span>VENDEDOR</span></div>
-      <p class="login-sub">Entra a tu panel de vendedor</p>
-      <div class="form-group"><label>Correo</label><input type="email" id="slEmail" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="tucorreo@gmail.com" onkeydown="if(event.key==='Enter')doSellerLogin()" /></div>
-      <div class="form-group" style="margin-top:12px;"><label>Contraseña</label><input type="password" id="slPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSellerLogin()" /></div>
-      <p class="login-error" id="sellerLoginError"></p>
-      <button class="btn-primary w100" style="margin-top:8px;" onclick="doSellerLogin()">Entrar</button>
-    </div>
-
-    <!-- REGISTRO -->
-    <div id="sellerRegisterForm" style="display:none;">
-      <div class="login-logo" style="margin-top:16px;">RAYAMI<span>VENDEDOR</span></div>
-      <p class="login-sub">Crea tu cuenta de vendedor</p>
-      <div class="form-group"><label>Nombre completo *</label><input type="text" id="srName" placeholder="Tu nombre" /></div>
-      <div class="form-group" style="margin-top:12px;"><label>WhatsApp *</label><input type="tel" id="srPhone" placeholder="55 1234 5678" /></div>
-      <div class="form-group" style="margin-top:12px;"><label>Correo *</label><input type="email" id="srEmail" inputmode="email" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="tucorreo@gmail.com" /></div>
-      <div class="form-group" style="margin-top:12px;"><label>Contraseña *</label><input type="password" id="srPass" placeholder="Mínimo 6 caracteres" /></div>
-      <div class="form-group" style="margin-top:12px;"><label>¿Qué tipo de productos vendes?</label><input type="text" id="srDesc" placeholder="Ej: Ropa, tenis, electrónicos..." /></div>
-      <p class="login-error" id="sellerRegisterError"></p>
-      <p style="font-size:12px;color:var(--text-muted);margin:10px 0;">Tu registro será revisado por el administrador antes de activarse.</p>
-      <button class="btn-primary w100" onclick="doSellerRegister()">Enviar solicitud</button>
-    </div>
-
-  </div>
-</div>
-
-<!-- ============================================================
-     PANEL VENDEDOR
-============================================================ -->
-<div id="sellerView" style="display:none;">
-  <div class="admin-navbar">
-    <span class="admin-logo">RAYAMI <span>VENDEDOR</span></span>
-    <div class="admin-nav-right">
-      <span class="seller-status-badge" id="sellerStatusBadge"></span>
-      <button class="btn-add-product" onclick="openSellerProductModal()">+ Subir producto</button>
-      <button class="btn-view-store" onclick="doSellerLogout()">Salir</button>
-    </div>
-  </div>
-
-  <div class="admin-container">
-    <div class="seller-welcome" id="sellerWelcome"></div>
-
-    <!-- Pendiente de aprobación -->
-    <div class="seller-pending-msg" id="sellerPendingMsg" style="display:none;">
-      <span class="pending-icon">⏳</span>
-      <h3>Tu cuenta está en revisión</h3>
-      <p>El administrador revisará tu solicitud pronto. Te avisaremos cuando esté activa.</p>
-    </div>
-
-    <!-- Panel activo -->
-    <div id="sellerActivePanel" style="display:none;">
-      <div class="admin-stats">
-        <div class="stat-card"><span class="stat-num" id="sStatTotal">0</span><span class="stat-label">Mis productos</span></div>
-        <div class="stat-card"><span class="stat-num" id="sStatApproved">0</span><span class="stat-label">Publicados</span></div>
-        <div class="stat-card"><span class="stat-num" id="sStatPending">0</span><span class="stat-label">En revisión</span></div>
-        <div class="stat-card"><span class="stat-num" id="sStatSold">0</span><span class="stat-label">Vendidos</span></div>
-      </div>
-
-      <div class="admin-table-wrap" style="margin-top:20px;">
-        <table class="admin-table">
-          <thead><tr><th>Foto</th><th>Nombre</th><th>Precio</th><th>Estado</th><th>Publicación</th><th>👁 Vistas</th><th>Acciones</th></tr></thead>
-          <tbody id="sellerTableBody"></tbody>
-        </table>
-        <div class="admin-empty" id="sellerEmpty" style="display:none;">
-          <p>📦 Aún no has subido productos. ¡Sube el primero!</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL PRODUCTO VENDEDOR -->
-<div class="modal-overlay" id="sellerProductModal">
-  <div class="modal-box product-box">
-    <button class="modal-close" onclick="closeSellerProductModal()">✕</button>
-    <h2 class="modal-title" id="sellerProductModalTitle">Subir producto</h2>
-    <div class="form-grid">
-      <div class="form-group full"><label>Nombre *</label><input type="text" id="spName" placeholder="Nombre del producto" /></div>
-      <div class="form-group"><label>Precio MXN *</label><input type="number" id="spPrice" placeholder="350" min="0" /></div>
-      <div class="form-group"><label>Categoría *</label>
-        <select id="spCategory">
-          <option value="deportes">🥊 Deportes</option>
-          <option value="tenis">👟 Tenis</option>
-          <option value="ropa">👕 Ropa</option>
-          <option value="mascotas">🐶 Mascotas</option>
-          <option value="usados">♻️ Usados</option>
-          <option value="ofertas">🔥 Ofertas</option>
-          <option value="accesorios">🎒 Accesorios</option>
-        </select>
-      </div>
-      <div class="form-group"><label>Estado *</label>
-        <select id="spCondition">
-          <option value="Nuevo">Nuevo</option>
-          <option value="Seminuevo">Seminuevo</option>
-          <option value="Usado">Usado</option>
-        </select>
-      </div>
-      <div class="form-group full"><label>Descripción</label><input type="text" id="spDesc" placeholder="Talla, color, detalles..." /></div>
-
-      <!-- FOTOS vendedor — igual que admin -->
-      <div class="form-group full">
-        <label>Fotos <span style="color:var(--text-muted);font-weight:400;">(máx. 5)</span></label>
-        <div class="photo-tabs">
-          <button type="button" class="photo-tab active" id="spTabBtnUrl" onclick="switchSellerPhotoTab('url')">🔗 Pegar URL</button>
-          <button type="button" class="photo-tab" id="spTabBtnFile" onclick="switchSellerPhotoTab('file')">📷 Subir foto</button>
-        </div>
-        <div id="spPhotoTabUrl">
-          <div style="display:flex;gap:8px;">
-            <input type="url" id="spImageUrl" placeholder="https://i.imgur.com/..." style="flex:1;" />
-            <button type="button" class="btn-add-photo-url" onclick="addSellerPhotoFromUrl()">+ Agregar</button>
-          </div>
-        </div>
-        <div id="spPhotoTabFile" style="display:none;">
-          <div class="file-drop" onclick="document.getElementById('spImageFile').click()">
-            <span id="spFileDropText">📁 Toca aquí o arrastra imágenes · Puedes seleccionar varias</span>
-          </div>
-          <input type="file" id="spImageFile" accept="image/*" multiple onchange="handleSellerFileSelect(event)" style="display:none;" />
-        </div>
-        <div class="photos-gallery" id="spPhotosGallery"></div>
-        <p class="photo-count-hint" id="spPhotoCountHint" style="display:none;"></p>
-      </div>
-    </div>
-    <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">⚠️ Tu producto será revisado por el administrador antes de publicarse.</p>
-    <div class="modal-actions">
-      <button class="btn-cancel" onclick="closeSellerProductModal()">Cancelar</button>
-      <button class="btn-cancel" onclick="saveSellerDraft()" style="border-color:var(--accent);color:var(--accent);">📝 Guardar borrador</button>
-      <button class="btn-primary" onclick="submitSellerProduct()">📤 Enviar a revisión</button>
-    </div>
-  </div>
-</div>
-
-<!-- ============================================================
-     ADMIN — SECCIÓN VENDEDORES
-============================================================ -->
-
-<!-- ============================================================
-     SEGUIMIENTO DE PEDIDO
-============================================================ -->
-<div id="trackingView" style="display:none;">
-  <nav class="navbar">
-    <div class="nav-inner">
-      <a href="javascript:void(0)" class="nav-logo" onclick="closeTracking()">
-        <img src="" alt="RAYAMI STORE" class="nav-logo-img" id="trackNavLogo" />
-        <span class="nav-logo-text">RAYAMI<span>STORE</span></span>
-      </a>
-      <button class="btn-cancel" onclick="closeTracking()" style="margin-left:auto;">← Volver a la tienda</button>
-    </div>
-  </nav>
-  <div style="max-width:500px;margin:100px auto 40px;padding:0 20px;">
-    <div class="tracking-box">
-      <div class="tracking-icon" id="trackingIcon">📦</div>
-      <h2 class="tracking-title" id="trackingTitle">Buscando tu pedido...</h2>
-      <div class="tracking-code" id="trackingCode"></div>
-      <div class="tracking-steps" id="trackingSteps"></div>
-      <div class="tracking-info" id="trackingInfo"></div>
-      <a href="https://wa.me/525581074978" target="_blank" class="btn-wa" style="display:block;text-align:center;margin-top:20px;">
-        💬 Contactar a RAYAMI
-      </a>
-    </div>
-  </div>
-</div>
-
-<div class="toast" id="toast"></div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script>
-// Bridge: permite que onclick en HTML llame funciones del módulo ES
-const _bridge = {};
-const _q = (fn, ...args) => { if(window[fn]) window[fn](...args); else setTimeout(()=>_q(fn,...args),100); };
-window._q = _q;
-// Exponer todas las funciones usadas en onclick del HTML
-['showLogin','hideLogin','doLogin','doLogout',
- 'openProductModal','openEditModal','closeProductModal',
- 'openDeleteModal','closeDeleteModal','confirmDelete','saveProduct',
- 'switchPhotoTab','triggerFileInput','handleFileSelect','addPhotoFromUrl',
- 'renderAdminTable','switchAdminTab','migrateAllPhotos',
- 'openCart','closeCart','openOrderModal','closeOrderModal',
- 'goToCheckoutStep2','backToStep1','selectDelivery','sendOrderWA',
- 'copyOrderText','saveOrderImage','clearCart',
- 'showSellerLogin','hideSellerAuth','switchSellerTab','doSellerLogin',
- 'doSellerRegister','doSellerLogout','openSellerProductModal',
- 'closeSellerProductModal','saveSellerDraft','submitSellerProduct',
- 'switchSellerPhotoTab','addSellerPhotoFromUrl','handleSellerFileSelect',
- 'editSellerProduct','sendSellerProductToReview','deleteSellerProduct',
- 'approveSeller','rejectSeller','approveSellerProduct','rejectSellerProduct',
- 'showSellerDetail','backToSellersList','filterOrders','updateOrderStatus','deleteOrder',
- 'carouselNext','carouselPrev','carouselGo','heroGoTo',
- 'copyProductLink','shareProduct','toggleCart','changeQty','removeFromCart',
- 'removePhotoAt','removeSellerPhotoAt','copyAccount',
- 'cancelOrder','switchOrdersView','closeTracking'
-].forEach(fn => {
-  window[fn] = window[fn] || function(...args) { _q(fn, ...args); };
-});
-</script>
-<script type="module" src="script.js?v=27"></script>
-<script>
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => navigator.serviceWorker.register("sw.js"));
-  }
-</script>
-<script>
-  // Mostrar / ocultar filtros (diseño v2)
-  document.getElementById("v2FilterToggle")?.addEventListener("click", (e) => {
-    const cv = document.getElementById("clientView");
-    const off = cv.classList.toggle("v2-no-filters");
-    e.currentTarget.querySelector("span").textContent = off ? "Mostrar filtros" : "Ocultar filtros";
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script type="module">
+  import { GIROS, productosDeEjemplo, disenoDePlantilla } from "./tienda/muestras.js";
+
+  const WA = "525581074978";
+  document.querySelectorAll(".wa-link").forEach((a) => {
+    a.href = `https://api.whatsapp.com/send?phone=${WA}&text=${encodeURIComponent(a.dataset.msg || "")}`;
+    a.target = "_blank"; a.rel = "noopener";
   });
+
+  // Ejemplos de negocio para el celular en vivo
+  const EJEMPLOS = {
+    comida:  { name: "Tacos Don Beto",   plantilla: "sabor", aviso: "Pedidos para llevar y a domicilio", pagos: { metodos: ["transferencia", "link"], anticipado: true, banco: "BBVA", clabe: "012180000000000000", titular: "Tacos Don Beto" } },
+    ropa:    { name: "Moda Ana",         plantilla: "street", aviso: "Envíos a todo México" },
+    calzado: { name: "Zapatería Lupita", plantilla: "energia", aviso: "Cambios de talla sin costo" },
+    belleza: { name: "Studio Brillo",    plantilla: "floral", aviso: "Productos originales" },
+  };
+  const frame = document.getElementById("demo");
+  let current = "comida", ready = false;
+  function configFor(giro) {
+    const g = GIROS[giro], e = EJEMPLOS[giro];
+    return {
+      name: e.name, giro, tagline: g.tagline, whatsapp: WA, aviso: e.aviso, logo: "",
+      ...disenoDePlantilla(e.plantilla),   // cada ejemplo con una plantilla de diseño distinta
+      categorias: g.categorias, status: "activa",
+      products: productosDeEjemplo(giro),
+      pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
+      pagos: e.pagos || { metodos: ["entrega", "transferencia"], anticipado: false },
+    };
+  }
+  function show(giro) {
+    current = giro;
+    document.querySelectorAll("[data-giro]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.giro === giro)));
+    if (ready) frame.contentWindow.postMessage({ type: "tienda-preview", config: configFor(giro) }, location.origin);
+  }
+  window.addEventListener("message", (e) => {
+    if (e.origin === location.origin && e.data?.type === "tienda-ready") { ready = true; show(current); }
+  });
+  frame.addEventListener("load", () => { ready = true; show(current); });
+  frame.src = `tienda/?preview=1&muestra=1&v=${Date.now()}`;
+  document.querySelectorAll("[data-giro]").forEach((b) => b.addEventListener("click", () => show(b.dataset.giro)));
+
+  // QR real en el porta-QR de ejemplo
+  try {
+    const qr = qrcode(0, "M");
+    qr.addData(new URL("tienda/?mesa=5", location.href).href.replace("?mesa=5", "?t=tu-negocio&mesa=5"));
+    qr.make();
+    document.getElementById("qrBox").innerHTML = qr.createSvgTag({ cellSize: 4, margin: 0, scalable: true });
+  } catch {}
 </script>
 </body>
 </html>

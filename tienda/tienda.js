@@ -77,7 +77,7 @@ function render(config) {
   $("heroWa").href = waLink(cfg.whatsapp, hello);
   $("waFab").href = waLink(cfg.whatsapp, hello);
   $("ftrContact").innerHTML = cfg.whatsapp ? `WhatsApp: <b>${esc(cfg.whatsapp)}</b>${cfg.horario ? " · " + esc(cfg.horario) : ""}` : "";
-  $("ftrMade").innerHTML = `Tienda creada con <a href="${new URL("../servicios/", location.href).href}" target="_blank" rel="noopener">${esc(PLATAFORMA.nombre)}</a>`
+  $("ftrMade").innerHTML = `Tienda creada con <a href="${new URL("../", location.href).href}" target="_blank" rel="noopener">${esc(PLATAFORMA.nombre)}</a>`
     + (storeId && cfg.status !== "demo" ? ` · <a href="mi-tienda.html?t=${storeId}" rel="nofollow">Soy el dueño</a>` : "");
 
   const isDemo = cfg.status === "demo";

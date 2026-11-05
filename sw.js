@@ -6,10 +6,10 @@
    sigue abriendo aunque el celular esté sin señal.
    Solo guarda archivos de este mismo sitio (no Firebase, no ImgBB).
 ============================================================ */
-const CACHE = "rayami-v7";
+const CACHE = "rayami-v8";
 const BASE = [
-  "./",
-  "./index.html",
+  "./ropa/",
+  "./ropa/index.html",
   "./styles.css",
   "./tienda-v2.css",
   "./script.js",
@@ -53,8 +53,9 @@ self.addEventListener("fetch", (e) => {
           // En otras secciones (crm, creador, tienda, quiero-mi-tienda…) se veía rota
           // porque sus estilos se buscaban en la carpeta equivocada.
           const base = new URL("./", self.registration.scope).pathname;
-          if (req.mode === "navigate" && (url.pathname === base || url.pathname === base + "index.html")) {
-            return caches.match("./index.html");
+          // La tienda de ropa vive en /ropa/
+          if (req.mode === "navigate" && (url.pathname === base + "ropa/" || url.pathname === base + "ropa/index.html")) {
+            return caches.match("./ropa/index.html");
           }
           if (req.mode === "navigate") return offlinePage();
           return Response.error();

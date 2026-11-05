@@ -3,7 +3,7 @@
   "short_name": "RAYAMI",
   "description": "Tenis, ropa, deportes y más. Productos nuevos y usados al mejor precio.",
   "lang": "es-MX",
-  "start_url": "./",
+  "start_url": "./ropa/",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
