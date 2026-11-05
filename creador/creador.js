@@ -551,13 +551,33 @@ async function loadDemos() {
   const list = Object.entries(demos).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
   $("demoCount").textContent = list.length ? `(${list.length})` : "";
   if (!$("resumenView").hidden) loadResumen();
-  $("demoList").innerHTML = list.length ? list.map(([id, s]) => {
-    const n = Array.isArray(s.products) ? s.products.length : Object.keys(s.products || {}).length;
-    const fecha = s.updatedAt ? new Date(s.updatedAt).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "";
-    return `<div class="demo-item">
-      <div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div>
-      <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span>${
-        s.opcion?.grupo ? `<a class="op-badge" href="${compararLink(s.opcion.grupo)}" target="_blank" rel="noopener" title="Comparar las opciones">Opción ${s.opcion.n} de ${s.opcion.total} · ${esc(PLANTILLAS[s.tema?.plantilla]?.label || "")} <i class="fa-solid fa-table-columns"></i></a><a class="op-wa" href="https://api.whatsapp.com/send?${String(s.whatsapp || "").replace(/\D/g, "").length >= 10 && waNumber(s.whatsapp) !== "52" + RAUL_WA ? `phone=${waNumber(s.whatsapp)}&` : ""}text=${encodeURIComponent(opMsg(s.opcion.grupo, s.name))}" target="_blank" rel="noopener" title="Mandar las ${s.opcion.total} opciones al cliente"><i class="fa-brands fa-whatsapp"></i> Mandar las ${s.opcion.total}</a>` : ""}</div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${listState(s, admins[id] || {})}${
+  // Las "3 opciones" de un mismo cliente se muestran como UNA tarjeta (se abre para ver cada una)
+  const grupos = {};
+  for (const [id, x] of list) if (x.opcion?.grupo && statusOf(x) === "demo") (grupos[x.opcion.grupo] ||= []).push([id, x]);
+  for (const g of Object.keys(grupos)) { if (grupos[g].length < 2) delete grupos[g]; else grupos[g].sort((m, n) => m[1].opcion.n - n[1].opcion.n); }
+  const vistos = new Set();
+  const html = [];
+  for (const [id, x] of list) {
+    const g = x.opcion?.grupo;
+    if (grupos[g]) { if (!vistos.has(g)) { vistos.add(g); html.push(groupHTML(g, grupos[g])); } continue; }
+    html.push(itemHTML(id, x));
+  }
+  $("demoCount").textContent = html.length ? `(${html.length})` : "";   // tiendas, no demos sueltas
+  $("demoList").innerHTML = html.length ? html.join("") : `<div class="empty-demos">Todavía no tienes demos. Crea la primera en la pestaña <b>Editar</b>.</div>`;
+}
+const openGroups = new Set();
+const nProds = (s) => (Array.isArray(s.products) ? s.products.length : Object.keys(s.products || {}).length);
+const fcorta = (t) => (t ? new Date(t).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "");
+const logoBox = (s) => `<div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div>`;
+const tplName = (s) => PLANTILLAS[s.tema?.plantilla]?.label || "Diseño propio";
+function opWaLink(grupo, s) {
+  const tel = String(s.whatsapp || "").replace(/\D/g, "").length >= 10 && waNumber(s.whatsapp) !== "52" + RAUL_WA ? `phone=${waNumber(s.whatsapp)}&` : "";
+  return `https://api.whatsapp.com/send?${tel}text=${encodeURIComponent(opMsg(grupo, s.name))}`;
+}
+function itemHTML(id, s) {
+  return `<div class="demo-item">
+      ${logoBox(s)}
+      <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span></div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${nProds(s)} productos · ${fcorta(s.updatedAt)}${listState(s, admins[id] || {})}${
         Object.values(owners[id] || {}).length ? ` · <i class="fa-solid fa-user"></i> ${Object.values(owners[id]).map((o) => esc(o.email)).join(", ")}` : ""}</div></div>
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
@@ -568,8 +588,69 @@ async function loadDemos() {
         <button class="btn btn-ghost danger" data-remove="${id}"><i class="fa-solid fa-trash"></i></button>
       </div>
     </div>`;
-  }).join("") : `<div class="empty-demos">Todavía no tienes demos. Crea la primera en la pestaña <b>Editar</b>.</div>`;
 }
+function groupHTML(grupo, members) {
+  const [, s] = members[0], open = openGroups.has(grupo);
+  const fecha = Math.max(...members.map(([, x]) => x.updatedAt || 0));
+  return `<div class="demo-item demo-group${open ? " open" : ""}">
+      ${logoBox(s)}
+      <div><div class="demo-name">${esc(s.name)}<span class="status demo">Demo</span><span class="op-badge">${members.length} opciones de diseño</span></div>
+        <div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${nProds(s)} productos · ${fcorta(fecha)}</div>
+        <div class="op-chips">${members.map(([, x]) => `<span class="op-chip"><span class="op-dot" style="background:${esc(x.color || "#111")}"></span>${x.opcion.n} · ${esc(tplName(x))}</span>`).join("")}</div></div>
+      <div class="demo-actions">
+        <a class="btn btn-light" href="${compararLink(grupo)}" target="_blank" rel="noopener"><i class="fa-solid fa-table-columns"></i> Comparar</a>
+        <a class="btn btn-light" href="${opWaLink(grupo, s)}" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Mandar las ${members.length}</a>
+        <button class="btn btn-light" data-gtoggle="${esc(grupo)}" aria-expanded="${open}"><i class="fa-solid fa-chevron-${open ? "up" : "down"}"></i> ${open ? "Ocultar" : "Ver las " + members.length}</button>
+        <button class="btn btn-dark" data-pick="${esc(grupo)}"><i class="fa-solid fa-bolt"></i> Elegir y activar</button>
+      </div>
+      ${open ? `<div class="group-kids">${members.map(([id, x]) => `<div class="kid">
+          <span class="op-dot" style="background:${esc(x.color || "#111")}"></span>
+          <b>Opción ${x.opcion.n}</b><span class="muted">${esc(tplName(x))}</span>
+          <span class="kid-acts">
+            <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
+            <button class="btn btn-light" data-edit="${id}" title="Lo que cambies (menos el diseño) se copia a las demás"><i class="fa-solid fa-pen"></i> Editar</button>
+            <button class="btn btn-ghost danger" data-remove="${id}" aria-label="Borrar la opción ${x.opcion.n}"><i class="fa-solid fa-trash"></i></button>
+          </span></div>`).join("")}
+        <p class="hint">Al editar cualquiera, los productos, precios y datos se copian a las demás; cada una conserva su diseño.</p></div>` : ""}
+    </div>`;
+}
+
+/* Elegir la opción que le gustó al cliente: se queda esa, se borran las otras y se abre "Activar" */
+let pickGrupo = "";
+function openPick(grupo) {
+  pickGrupo = grupo;
+  const members = Object.entries(demos).filter(([, x]) => x.opcion?.grupo === grupo).sort((a, b) => a[1].opcion.n - b[1].opcion.n);
+  $("pickBody").innerHTML = `<p class="muted" style="margin:0">Se queda la que elijas. <b>Las otras se borran</b> y después activas la tienda.</p>
+    <div class="pick-opts">${members.map(([id, x], i) => `<label class="pick-opt">
+        <input type="radio" name="pickOp" value="${esc(id)}"${i === 0 ? " checked" : ""} />
+        <span class="tpl">${PLANTILLAS[x.tema?.plantilla] ? miniTpl(x.tema.plantilla) : `<span class="tpl-mini" style="background:${esc(x.color || "#111")}"></span>`}</span>
+        <b>Opción ${x.opcion.n}</b><small>${esc(tplName(x))}</small>
+        <a href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener">Ver <i class="fa-solid fa-arrow-up-right-from-square"></i></a>
+      </label>`).join("")}</div>
+    <button type="button" class="btn btn-dark" id="pickGo"><i class="fa-solid fa-check"></i> Quedarme con esta y activar</button>`;
+  $("pickModal").hidden = false;
+}
+$("pickClose").addEventListener("click", () => { $("pickModal").hidden = true; });
+$("pickModal").addEventListener("click", async (e) => {
+  if (e.target === $("pickModal")) { $("pickModal").hidden = true; return; }
+  const go = e.target.closest("#pickGo"); if (!go) return;
+  const keep = document.querySelector('input[name="pickOp"]:checked')?.value; if (!keep) return;
+  if (go.dataset.confirm !== "1") { go.dataset.confirm = "1"; go.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> ¿Seguro? Se borran las otras. Toca otra vez`; return; }
+  go.disabled = true;
+  try {
+    const borrar = Object.keys(demos).filter((k) => k !== keep && demos[k].opcion?.grupo === pickGrupo);
+    const changes = { [`stores/${keep}/opcion`]: null };
+    for (const k of borrar) { changes[`stores/${k}`] = null; changes[`storeAdmin/${k}`] = null; }
+    await update(ref(db), changes);
+    const quedan = { ...demos }; borrar.forEach((k) => delete quedan[k]);
+    for (const k of borrar) if (!Object.values(quedan).some((x) => JSON.stringify(x).includes(`tiendas%2F${k}%2F`))) deleteStorePhotos(k);
+    $("pickModal").hidden = true;
+    toast("Listo, se quedó la opción elegida");
+    await loadDemos();
+    openOwner(keep);   // sigue con Activar: vigencia y correo del dueño
+  } catch (err) { console.error(err); toast(permErr(err)); go.disabled = false; }
+});
+
 // Lo que importa de cada estado, en una línea de la lista
 function listState(s, a) {
   const st = statusOf(s);
@@ -586,6 +667,10 @@ async function copyText(text, msg = "Link copiado") {
 $("demoList").addEventListener("click", async (e) => {
   const cp = e.target.closest("[data-copy]");
   if (cp) { copyText(cp.dataset.copy); return; }
+  const gt = e.target.closest("[data-gtoggle]");
+  if (gt) { const g = gt.dataset.gtoggle; openGroups.has(g) ? openGroups.delete(g) : openGroups.add(g); loadDemos(); return; }
+  const pk = e.target.closest("[data-pick]");
+  if (pk) { openPick(pk.dataset.pick); return; }
   const ed = e.target.closest("[data-edit]"), rm = e.target.closest("[data-remove]"), ow = e.target.closest("[data-owner]");
   if (ow) openOwner(ow.dataset.owner);
   if (ed) {

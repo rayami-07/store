@@ -9,7 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="creador.css?v=102" />
+  <link rel="stylesheet" href="creador.css?v=103" />
 </head>
 <body>
 
@@ -288,9 +288,20 @@
     </div>
   </div>
 
+  <!-- ELEGIR LA OPCIÓN QUE LE GUSTÓ AL CLIENTE -->
+  <div class="modal-wrap" id="pickModal" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="pickTitle">
+      <div class="modal-head">
+        <div><h3 id="pickTitle">¿Cuál eligió el cliente?</h3></div>
+        <button type="button" class="icon-x" id="pickClose" aria-label="Cerrar"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="modal-body" id="pickBody"></div>
+    </div>
+  </div>
+
   <div class="toast" id="toast"></div>
 </div>
 
-<script type="module" src="creador.js?v=102"></script>
+<script type="module" src="creador.js?v=103"></script>
 </body>
 </html>
