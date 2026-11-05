@@ -333,9 +333,11 @@ export const PORTADAS = {
 };
 // Animaciones al hacer scroll: los productos y secciones aparecen al bajar
 export const ANIMACIONES = { ninguna: { label: "Ninguna" }, suave: { label: "Suaves" }, dinamica: { label: "Dinámicas" } };
+// Tira de productos que avanza sola: cuáles pasan
+export const MOVIMIENTO = { no: { label: "No" }, ofertas: { label: "Ofertas", titulo: "Ofertas" }, destacados: { label: "Destacados", titulo: "Destacados" }, todos: { label: "Todos", titulo: "Nuestros productos" } };
 export const TEMA_BASE = { fondo: "#ffffff", tarjetas: "#f5f5f4", texto: "#111111", forma: "recta", botones: "pastilla", portada: "dividida",
   textura: "ninguna", intensidad: "suave", texturaEn: "fondo",
-  animacion: "ninguna", avisoMov: false, ofertas: false, chipsFijas: false };
+  animacion: "ninguna", avisoMov: false, ofertas: false, chipsFijas: false, mov: "no" };
 
 /* Texturas (tramas): dibujos SVG que se repiten. Toman el color del texto o de la marca,
    así combinan solas con cualquier diseño. tile = tamaño del cuadrito que se repite. */
@@ -519,6 +521,7 @@ export function temaDe(cfg = {}) {
   if (!INTENSIDADES[t.intensidad]) t.intensidad = TEMA_BASE.intensidad;
   if (!TEXTURA_EN[t.texturaEn]) t.texturaEn = TEMA_BASE.texturaEn;
   if (!ANIMACIONES[t.animacion]) t.animacion = TEMA_BASE.animacion;
+  if (!MOVIMIENTO[t.mov]) t.mov = TEMA_BASE.mov;
   for (const k of ["avisoMov", "ofertas", "chipsFijas"]) t[k] = t[k] === true;
   return t;
 }

@@ -7,7 +7,7 @@ import { getDatabase, ref, set, get, remove, update } from "https://www.gstatic.
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { GIROS, ESTILOS, COLORES, fotoEjemplo, productosDeEjemplo,
   PLANTILLAS, FORMAS, BOTONES, PORTADAS, TEMA_BASE, plantillasPara, plantillaDelGiro, disenoDePlantilla, temaDe, contraste, inkFor,
-  TEXTURAS, INTENSIDADES, TEXTURA_EN, texturaCSS, ANIMACIONES, tresOpciones } from "../tienda/muestras.js";
+  TEXTURAS, INTENSIDADES, TEXTURA_EN, texturaCSS, ANIMACIONES, MOVIMIENTO, tresOpciones } from "../tienda/muestras.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL, listAll, deleteObject }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { aggregate, money, pct, ago } from "../tienda/stats.js";
@@ -182,7 +182,7 @@ document.addEventListener("click", (e) => { if (e.target.closest("[data-pickgiro
 
 /* ── Diseño: plantillas + ajustes ──
    state.color y state.estilo (como antes) + state.tema = { plantilla, fondo, tarjetas, texto, forma, botones, portada } */
-const TEMA_KEYS = ["fondo", "tarjetas", "texto", "forma", "botones", "portada", "textura", "intensidad", "texturaEn", "animacion", "avisoMov", "ofertas", "chipsFijas"];
+const TEMA_KEYS = ["fondo", "tarjetas", "texto", "forma", "botones", "portada", "textura", "intensidad", "texturaEn", "animacion", "avisoMov", "ofertas", "chipsFijas", "mov"];
 const norm = (c) => String(c || "").toLowerCase();
 function tplModificada() {
   const k = state.tema?.plantilla; if (!PLANTILLAS[k]) return false;
@@ -263,10 +263,16 @@ function renderContraste() {
 
 /* Forma, botones y portada */
 const SEGS = [["optForma", "forma", FORMAS], ["optBotones", "botones", BOTONES], ["optPortada", "portada", PORTADAS],
-  ["optIntensidad", "intensidad", INTENSIDADES], ["optTexEn", "texturaEn", TEXTURA_EN], ["optAnim", "animacion", ANIMACIONES]];
+  ["optIntensidad", "intensidad", INTENSIDADES], ["optTexEn", "texturaEn", TEXTURA_EN], ["optAnim", "animacion", ANIMACIONES], ["optMov", "mov", MOVIMIENTO]];
 /* Interruptores: carrusel de ofertas, aviso en movimiento, categorías fijas */
 const SWITCHES = [["swOfertas", "ofertas"], ["swAvisoMov", "avisoMov"], ["swChips", "chipsFijas"]];
 for (const [id, k] of SWITCHES) $(id).addEventListener("change", (e) => { state.tema[k] = e.target.checked; changed(); });
+// Aviso si eligió "Destacados" y no ha marcado ninguno con la estrella
+function renderMovHint() {
+  const m = state.tema?.mov, n = state.products.filter((p) => p.destacado).length;
+  $("movHint").textContent = m === "destacados" ? (n ? `${n} producto${n !== 1 ? "s" : ""} marcado${n !== 1 ? "s" : ""} con ⭐.` : "Marca con la ⭐ los productos que quieres que pasen (en la lista de productos).")
+    : m === "ofertas" ? "Pasan los productos que tienen precio de oferta." : m === "todos" ? "Pasan todos los productos disponibles." : "";
+}
 function renderSegs() {
   for (const [id, k, opts] of SEGS)
     $(id).innerHTML = Object.entries(opts).map(([v, o]) => `<button type="button" data-v="${v}" class="${state.tema[k] === v ? "active" : ""}">${o.label}</button>`).join("");
@@ -274,7 +280,7 @@ function renderSegs() {
 for (const [id, k] of SEGS)
   $(id).addEventListener("click", (e) => {
     const b = e.target.closest("[data-v]"); if (!b) return;
-    state.tema[k] = b.dataset.v; renderSegs(); renderTexturas(); changed();
+    state.tema[k] = b.dataset.v; renderSegs(); renderTexturas(); renderMovHint(); changed();
   });
 
 /* Texturas: cada botón enseña la trama con los colores actuales de la tienda */
@@ -296,7 +302,7 @@ $("optTextura").addEventListener("click", (e) => {
 
 function renderDiseno() {
   state.tema = { plantilla: "", ...temaDe(state), plantilla: state.tema?.plantilla || "" };
-  renderPlantillas(); renderSwatches(); renderEstilos(); renderSegs(); renderTexturas(); renderContraste();
+  renderPlantillas(); renderSwatches(); renderEstilos(); renderSegs(); renderTexturas(); renderContraste(); renderMovHint();
   $("tFondo").value = state.tema.fondo; $("tTarjetas").value = state.tema.tarjetas; $("tTexto").value = state.tema.texto;
   for (const [id, k] of SWITCHES) $(id).checked = !!state.tema[k];
   const g = GIROS[state.giro] || GIROS.otro; $("dhGiro").textContent = `${g.emoji} ${g.label}`;
@@ -355,7 +361,10 @@ function renderProds() {
           <select data-f="category" aria-label="Categoría">${allCats.map((c) => `<option${c === p.category ? " selected" : ""}>${esc(c)}</option>`).join("")}</select>
         </div>
       </div>
-      <button type="button" class="prod-del" data-del="${i}" aria-label="Quitar producto"><i class="fa-solid fa-trash"></i></button>
+      <div class="prod-side">
+        <button type="button" class="prod-star${p.destacado ? " on" : ""}" data-star="${i}" aria-pressed="${!!p.destacado}" title="${p.destacado ? "Quitar de destacados" : "Destacar (pasa en la tira en movimiento)"}"><i class="fa-${p.destacado ? "solid" : "regular"} fa-star"></i></button>
+        <button type="button" class="prod-del" data-del="${i}" aria-label="Quitar producto"><i class="fa-solid fa-trash"></i></button>
+      </div>
       <button type="button" class="prod-toggle" data-more="${esc(p.id)}">${openRows.has(p.id) ? "▾" : "▸"} Descripción y opciones${
         (p.variantes || []).length ? ` · <b>${(p.variantes || []).map((g) => esc(g.nombre)).join(", ")}</b>` : ""}</button>
       ${openRows.has(p.id) ? `<div class="prod-more">
@@ -396,6 +405,8 @@ $("prods").addEventListener("change", async (e) => {
 $("prods").addEventListener("click", (e) => {
   const more = e.target.closest("[data-more]");
   if (more) { const id = more.dataset.more; openRows.has(id) ? openRows.delete(id) : openRows.add(id); renderProds(); return; }
+  const star = e.target.closest("[data-star]");
+  if (star) { const p = state.products[+star.dataset.star]; p.destacado = !p.destacado; if (!p.destacado) delete p.destacado; samplesUntouched = false; renderProds(); renderMovHint(); pushPreview(); return; }
   const d = e.target.closest("[data-del]"); if (!d) return;
   state.products.splice(+d.dataset.del, 1); samplesUntouched = false; renderProds(); pushPreview();
 });

@@ -280,6 +280,7 @@ function render() {
       </div>
       <div class="item-actions">
         <button class="mini" data-edit="${esc(p.id)}"><i class="fa-solid fa-pen"></i> Editar</button>
+        <button class="mini${p.destacado ? " on" : ""}" data-star="${esc(p.id)}" title="Pasa en la tira de productos en movimiento"><i class="fa-${p.destacado ? "solid" : "regular"} fa-star"></i> Destacado</button>
         <button class="mini${p.agotado ? " on" : ""}" data-off="${esc(p.id)}"><i class="fa-solid fa-ban"></i> ${p.agotado ? "Agotado" : "Marcar agotado"}</button>
         <button class="mini danger" data-del="${esc(p.id)}" aria-label="Borrar ${esc(p.name)}"><i class="fa-solid fa-trash"></i></button>
       </div>
@@ -290,6 +291,14 @@ $("search").addEventListener("input", (e) => { query = e.target.value; render();
 
 $("list").addEventListener("click", async (e) => {
   const ed = e.target.closest("[data-edit]"), off = e.target.closest("[data-off]"), del = e.target.closest("[data-del]");
+  const star = e.target.closest("[data-star]");
+  if (star) {
+    star.disabled = true;
+    const p = products().find((x) => x.id === star.dataset.star);
+    await saveProducts(products().map((x) => (x.id === p.id ? { ...x, destacado: !x.destacado } : x)),
+      p.destacado ? `"${p.name}" ya no es destacado` : `"${p.name}" ahora es destacado`);
+    return;
+  }
   if (ed) openSheet(ed.dataset.edit);
   if (off) {
     off.disabled = true;

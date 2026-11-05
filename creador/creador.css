@@ -355,3 +355,9 @@ legend { font-weight: 700; padding: 0 6px; }
 .link-line .btn { flex: none; height: 36px; padding: 0 12px; }
 .op-new { display: grid; gap: 10px; }
 .op-actual { font-size: 13px; text-align: center; }
+
+.seg-4 { grid-template-columns: repeat(4, 1fr); }
+.prod-side { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+.prod-star { border: 0; background: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 8px; }
+.prod-star:hover { background: #fefce8; color: #a16207; }
+.prod-star.on { color: #ca8a04; }

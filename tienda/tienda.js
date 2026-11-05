@@ -99,6 +99,7 @@ function render(config) {
   $("cartBtn").hidden = isVitrina();
   if (isVitrina()) openCart(false);
   renderOfertas(tema);
+  renderMov(tema);
   renderGrid();
   renderCart();
   setupEfectos();
@@ -148,6 +149,35 @@ function renderOfertas(tema) {
       <div class="of-info"><b>${esc(p.name)}</b><div class="card-price"><span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s></div></div>
     </article>`).join("");
 }
+
+/* ── Productos en movimiento: tira que avanza sola ──
+   Fuente: ofertas, destacados (⭐) o todos. Se duplica la lista para que el
+   movimiento sea continuo; se pausa al tocarla o pasar el mouse. */
+function renderMov(tema) {
+  const src = tema.mov || "no";
+  const disp = cfg.products.filter((p) => !p.agotado);
+  const list = src === "ofertas" ? disp.filter((p) => p.salePrice > 0 && p.salePrice < p.price)
+    : src === "destacados" ? disp.filter((p) => p.destacado)
+    : src === "todos" ? disp : [];
+  $("mov").hidden = !list.length;
+  if (!list.length) { $("movTrack").innerHTML = ""; return; }
+  $("movTitle").textContent = ({ ofertas: "Ofertas", destacados: "Destacados", todos: "Nuestros productos" })[src];
+  const card = (p, dup) => {
+    const sale = p.salePrice > 0 && p.salePrice < p.price;
+    return `<article class="of-card mov-card" data-open="${esc(p.id)}"${dup ? ' aria-hidden="true" tabindex="-1"' : ""}>
+      ${sale ? `<span class="of-pct">-${Math.round((1 - p.salePrice / p.price) * 100)}%</span>` : ""}
+      <img src="${esc(photoOf(p))}" alt="${dup ? "" : esc(p.name)}" loading="lazy" />
+      <div class="of-info"><b>${esc(p.name)}</b><div class="card-price">${sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : `<span>${money(p.price)}</span>`}</div></div>
+    </article>`;
+  };
+  // Con pocos productos se repiten para llenar la tira
+  let base = list; while (base.length < 6) base = base.concat(list);
+  $("movTrack").innerHTML = base.map((p) => card(p, false)).join("") + base.map((p) => card(p, true)).join("");
+  $("movTrack").style.setProperty("--mov-dur", `${Math.max(20, base.length * 4)}s`);
+}
+// Pausa al tocar (en celular no hay "hover")
+$("movView")?.addEventListener("touchstart", () => $("movView").classList.add("paused"), { passive: true });
+$("movView")?.addEventListener("touchend", () => setTimeout(() => $("movView").classList.remove("paused"), 1500), { passive: true });
 
 /* ── Efectos al hacer scroll ──
    - .reveal: aparece suave cuando entra a la pantalla (IntersectionObserver)

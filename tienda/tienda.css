@@ -297,3 +297,17 @@ body { background-image: var(--tex-fondo, none); background-size: var(--tex-fond
 
 /* Categorías fijas al bajar */
 [data-chips-fijas="1"] .chips { position: sticky; top: 64px; z-index: 15; background: var(--hdr-bg); backdrop-filter: blur(10px); padding: 10px 0; margin-bottom: 12px; }
+
+/* Productos en movimiento */
+.mov { padding-top: 32px; overflow: hidden; }
+.mov-view { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent); }
+.mov-track { display: flex; gap: 14px; width: max-content; padding: 0 16px 10px; animation: movir var(--mov-dur, 30s) linear infinite; }
+.mov-view:hover .mov-track, .mov-view.paused .mov-track { animation-play-state: paused; }
+.mov-card { width: 190px; flex: none; }
+@media (min-width: 901px) { .mov-card { width: 230px; } }
+@keyframes movir { to { transform: translateX(calc(-50% - 7px)); } }
+@media (prefers-reduced-motion: reduce) {
+  .mov-view { overflow-x: auto; }
+  .mov-track { animation: none; }
+  .mov-track [aria-hidden="true"] { display: none; }
+}
