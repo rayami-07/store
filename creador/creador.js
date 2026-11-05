@@ -578,7 +578,10 @@ $("demoList").addEventListener("click", async (e) => {
       for (const uid of Object.keys(owners[id] || {})) { links[`storeOwners/${id}/${uid}`] = null; links[`userStores/${uid}/${id}`] = null; }
       links[`storeAdmin/${id}`] = null;
       if (Object.keys(links).length) await update(ref(db), links);
-      await remove(ref(db, `stores/${id}`)); deleteStorePhotos(id); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
+      await remove(ref(db, `stores/${id}`));
+      // Si otra demo (por ejemplo una de sus "opciones") usa estas fotos, no se borran
+      const enUso = Object.entries(demos).some(([k, x]) => k !== id && JSON.stringify(x).includes(`tiendas%2F${id}%2F`));
+      if (!enUso) deleteStorePhotos(id); toast("Demo borrada"); if (editingId === id) editingId = ""; loadDemos(); }
     catch (err) { toast("No se pudo borrar"); }
   }
 });
@@ -593,9 +596,25 @@ function compararLink(grupo) {
   const ids = Object.entries(demos).filter(([, s]) => s.opcion?.grupo === grupo).sort((a, b) => a[1].opcion.n - b[1].opcion.n).map(([id]) => id);
   return `${TIENDA_URL}opciones.html?t=${ids.join(",")}`;
 }
+/* "Partir de": negocio nuevo (productos de ejemplo) o una demo que ya tienes.
+   Con una demo, la Opción 1 es esa misma demo (con su diseño actual, sin cambiarla)
+   y se crean 2 copias con diseños distintos: mismos productos, logo, WhatsApp y pagos. */
+const opBase = () => demos[$("opBase").value] ? $("opBase").value : "";
+function opGiroSel() { const b = opBase(); return b ? demos[b].giro || "otro" : $("opGiro").value; }
+function opPlantillas() {
+  const b = opBase(), giro = opGiroSel();
+  if (!b) return tresOpciones(giro);
+  const cur = demos[b].tema?.plantilla;
+  const resto = [...tresOpciones(giro), ...plantillasPara(giro).sugeridas, ...plantillasPara(giro).otras].filter((k, i, a) => k !== cur && a.indexOf(k) === i);
+  return ["__actual", resto[0], resto[1]];
+}
 function renderOpTpls() {
-  const g = $("opGiro").value, { sugeridas, otras } = plantillasPara(g);
-  $("opTpls").innerHTML = opTpls.map((k, i) => `<div class="op-tpl">
+  const g = opGiroSel(), { sugeridas, otras } = plantillasPara(g), b = opBase();
+  $("opTpls").innerHTML = opTpls.map((k, i) => k === "__actual" ? `<div class="op-tpl">
+      <div class="op-n">Opción 1</div>
+      <div class="tpl active" style="cursor:default">${PLANTILLAS[demos[b].tema?.plantilla] ? miniTpl(demos[b].tema.plantilla) : `<span class="tpl-mini" style="background:${esc(demos[b].color || "#111")}"></span>`}</div>
+      <b class="op-actual">Su demo actual</b>
+    </div>` : `<div class="op-tpl">
       <div class="op-n">Opción ${i + 1}</div>
       <div class="tpl active" style="cursor:default">${miniTpl(k)}</div>
       <select data-op="${i}" aria-label="Plantilla de la opción ${i + 1}">
@@ -604,41 +623,68 @@ function renderOpTpls() {
       </select>
     </div>`).join("");
 }
+function renderOpBase() {
+  const b = opBase();
+  $("opNewFields").hidden = !!b;
+  $("opColorWrap").hidden = !b;
+  $("opBaseHint").textContent = b
+    ? `La Opción 1 es "${demos[b].name}" tal como está. Se crean 2 copias con otros diseños, con sus mismos productos, logo y WhatsApp.`
+    : "Se crean 3 demos nuevas con productos de ejemplo del giro.";
+  opTpls = opPlantillas(); renderOpTpls();
+}
 $("opOpen").addEventListener("click", () => {
+  $("opForm").hidden = false; $("opResult").hidden = true; $("opForm").reset();
   $("opGiro").innerHTML = Object.entries(GIROS).map(([k, g]) => `<option value="${k}">${g.emoji} ${g.label}</option>`).join("");
-  $("opGiro").value = "comida"; opTpls = tresOpciones("comida");
-  $("opForm").hidden = false; $("opResult").hidden = true; $("opForm").reset(); $("opGiro").value = "comida";
-  renderOpTpls(); $("opModal").hidden = false; $("opName").focus();
+  $("opGiro").value = "comida";
+  // Solo demos que aún no tienen opciones
+  const base = Object.entries(demos).filter(([, s]) => statusOf(s) === "demo" && !s.opcion?.grupo)
+    .sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
+  $("opBase").innerHTML = `<option value="">Negocio nuevo (productos de ejemplo)</option>`
+    + (base.length ? `<optgroup label="Una demo que ya tengo">${base.map(([id, s]) => `<option value="${id}">${esc(s.name)} · ${esc((GIROS[s.giro] || GIROS.otro).label)}</option>`).join("")}</optgroup>` : "");
+  renderOpBase(); $("opModal").hidden = false; $("opBase").focus();
 });
 $("opClose").addEventListener("click", () => { $("opModal").hidden = true; });
-$("opGiro").addEventListener("change", () => { opTpls = tresOpciones($("opGiro").value); renderOpTpls(); });
+$("opBase").addEventListener("change", renderOpBase);
+$("opGiro").addEventListener("change", () => { opTpls = opPlantillas(); renderOpTpls(); });
 $("opTpls").addEventListener("change", (e) => { const s = e.target.closest("[data-op]"); if (!s) return; opTpls[+s.dataset.op] = s.value; renderOpTpls(); });
 $("opForm").addEventListener("submit", async (e) => {
   e.preventDefault();
-  const name = $("opName").value.trim(), giro = $("opGiro").value, g = GIROS[giro];
-  const wa = String($("opWa").value).replace(/\D/g, "").length >= 10 ? $("opWa").value.trim() : RAUL_WA;
-  if (!name) return;
+  const baseId = opBase(), base = baseId ? demos[baseId] : null;
+  const name = base ? base.name : $("opName").value.trim();
+  const giro = opGiroSel(), g = GIROS[giro] || GIROS.otro;
+  const wa = base ? base.whatsapp : String($("opWa").value).replace(/\D/g, "").length >= 10 ? $("opWa").value.trim() : RAUL_WA;
+  if (!name) { toast("Escribe el nombre del negocio"); $("opName").focus(); return; }
   $("opCreate").disabled = true;
-  const grupo = `${slugify(name)}-${Math.random().toString(36).slice(2, 6)}`, now = Date.now(), ids = [];
-  const products = productosDeEjemplo(giro);   // mismos productos (con fotos reales) en las 3
+  const grupo = baseId || `${slugify(name)}-${Math.random().toString(36).slice(2, 6)}`, now = Date.now(), ids = [];
+  const products = base ? (Array.isArray(base.products) ? base.products : Object.values(base.products || {})) : productosDeEjemplo(giro);
+  const keepColor = base && $("opColor").checked && base.color;
   try {
     for (const [i, k] of opTpls.entries()) {
+      const opcion = { grupo, n: i + 1, total: opTpls.length };
+      if (k === "__actual") {   // la demo original solo queda marcada como Opción 1
+        await update(ref(db, `stores/${baseId}`), { opcion });
+        demos[baseId] = { ...base, opcion };
+        ids.push(baseId); continue;
+      }
       const id = `${grupo}-op${i + 1}`;
-      await set(ref(db, `stores/${id}`), {
-        plan: "pedidos", name, giro, tagline: "", whatsapp: wa, horario: "", aviso: "",
-        logo: "", categorias: g.categorias, ...disenoDePlantilla(k),
-        pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
-        pagos: { metodos: ["entrega", "transferencia"], anticipado: !!g.pagoAnticipado, banco: "", clabe: "", titular: "", link: "" },
-        products, status: "demo", createdAt: now, updatedAt: now,
-        opcion: { grupo, n: i + 1, total: opTpls.length },
-      });
+      const diseno = disenoDePlantilla(k);
+      if (keepColor) diseno.color = base.color;
+      const nuevo = base
+        ? { ...base, ...diseno, products, status: "demo", createdAt: now, updatedAt: now, opcion }
+        : { plan: "pedidos", name, giro, tagline: "", whatsapp: wa, horario: "", aviso: "",
+            logo: "", categorias: g.categorias, ...diseno,
+            pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
+            pagos: { metodos: ["entrega", "transferencia"], anticipado: !!g.pagoAnticipado, banco: "", clabe: "", titular: "", link: "" },
+            products, status: "demo", createdAt: now, updatedAt: now, opcion };
+      await set(ref(db, `stores/${id}`), nuevo);
       ids.push(id);
     }
     const link = `${TIENDA_URL}opciones.html?t=${ids.join(",")}`;
     $("opLink").value = link; $("opView").href = link;
     const msg = `Hola, le preparé 3 opciones de cómo se vería la tienda en línea de ${name}. Puede verlas y comparar aquí:\n${link}\n\n¿Cuál le gusta más?`;
     $("opSend").href = `https://wa.me/${waNumber(wa === RAUL_WA ? "" : wa)}?text=${encodeURIComponent(msg)}`;
-    $("opLinks").innerHTML = ids.map((id, i) => `<a href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener">Opción ${i + 1}: ${esc(PLANTILLAS[opTpls[i]].label)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`).join("");
+    const label = (k) => (k === "__actual" ? "Su demo actual" : PLANTILLAS[k].label);
+    $("opLinks").innerHTML = ids.map((id, i) => `<a href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener">Opción ${i + 1}: ${esc(label(opTpls[i]))} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`).join("");
     $("opForm").hidden = true; $("opResult").hidden = false;
     toast("✅ 3 opciones creadas"); loadDemos();
   } catch (err) {
