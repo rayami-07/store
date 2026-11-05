@@ -342,6 +342,7 @@ for (const [id, k] of [["fBanco", "banco"], ["fClabe", "clabe"], ["fTitular", "t
   $(id).addEventListener("input", (e) => { state.pagos[k] = e.target.value.trim(); pagosTouched = true; pushPreview(); });
 
 /* Productos */
+let newCatRow = -1;   // fila donde se está escribiendo una categoría nueva
 function renderProds() {
   const cats = GIROS[state.giro].categorias;
   const allCats = [...new Set([...cats, ...state.products.map((p) => p.category).filter(Boolean)])];
@@ -358,7 +359,9 @@ function renderProds() {
         <div class="prod-prices">
           <input value="${p.price || ""}" data-f="price" inputmode="decimal" placeholder="Precio" aria-label="Precio" />
           <input value="${p.salePrice || ""}" data-f="salePrice" inputmode="decimal" placeholder="Oferta" aria-label="Precio de oferta" />
-          <select data-f="category" aria-label="Categoría">${allCats.map((c) => `<option${c === p.category ? " selected" : ""}>${esc(c)}</option>`).join("")}</select>
+          ${newCatRow === i
+            ? `<input data-newcat="${i}" maxlength="30" placeholder="Ej. Tacos, Camisas" aria-label="Nombre de la categoría nueva" />`
+            : `<select data-f="category" aria-label="Categoría">${allCats.map((c) => `<option${c === p.category ? " selected" : ""}>${esc(c)}</option>`).join("")}<option value="__new">+ Nueva…</option></select>`}
         </div>
       </div>
       <div class="prod-side">
@@ -394,7 +397,11 @@ $("prods").addEventListener("input", (e) => {
   samplesUntouched = false; pushPreview();
 });
 $("prods").addEventListener("change", async (e) => {
-  if (e.target.dataset.f === "category") { state.products[+e.target.closest(".prod").dataset.i].category = e.target.value; samplesUntouched = false; pushPreview(); return; }
+  if (e.target.dataset.f === "category") {
+    const i = +e.target.closest(".prod").dataset.i;
+    if (e.target.value === "__new") { newCatRow = i; renderProds(); $("prods").querySelector(`[data-newcat="${i}"]`)?.focus(); return; }
+    state.products[i].category = e.target.value; samplesUntouched = false; pushPreview(); return;
+  }
   if (e.target.dataset.photo === undefined) return;
   const f = e.target.files[0]; if (!f) return;
   try {
@@ -460,7 +467,8 @@ function configOut() {
     plan: state.plan || "pedidos",
     name: state.name.trim(), giro: state.giro, tagline: state.tagline.trim(),
     whatsapp: state.whatsapp.trim(), horario: state.horario.trim(), aviso: state.aviso.trim(),
-    logo: state.logo, color: state.color, estilo: state.estilo, categorias: g.categorias,
+    logo: state.logo, color: state.color, estilo: state.estilo,
+    categorias: [...new Set([...g.categorias, ...state.products.map((p) => p.category).filter(Boolean)])],
     tema: { ...temaDe(state), plantilla: state.tema?.plantilla || "" },
     pedidos: { datos: state.pedidos?.datos || "opcional", entregas: state.pedidos?.entregas || [] },
     pagos: { ...state.pagos },
@@ -1262,3 +1270,21 @@ $("omBody").addEventListener("click", async (e) => {
     }
   } catch (err) { console.error(err); toast(permErr(err)); busy(false); }
 });
+
+/* Categoría nueva escrita en la fila del producto: Enter o salir del campo la guarda; Esc cancela */
+function saveNewCat(input, keep = true) {
+  const i = +input.dataset.newcat, v = input.value.trim().replace(/\s+/g, " ");
+  newCatRow = -1;
+  if (keep && v) {
+    const nombre = v[0].toUpperCase() + v.slice(1);
+    state.products[i].category = nombre; samplesUntouched = false; pushPreview();
+    toast(`Categoría "${nombre}" agregada`);
+  }
+  renderProds();
+}
+$("prods").addEventListener("keydown", (e) => {
+  if (!e.target.dataset.newcat) return;
+  if (e.key === "Enter") { e.preventDefault(); saveNewCat(e.target); }
+  if (e.key === "Escape") saveNewCat(e.target, false);
+});
+$("prods").addEventListener("focusout", (e) => { if (e.target.dataset?.newcat !== undefined && newCatRow !== -1) saveNewCat(e.target); });
