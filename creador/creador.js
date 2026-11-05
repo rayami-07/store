@@ -493,10 +493,22 @@ $("storeForm").addEventListener("submit", async (e) => {
     const up = await photosToStorage(id, out);
     // Lo subido queda en el formulario como link, para no volver a subirlo
     if (up.ok && up.n) { state.logo = out.logo; out.products.forEach((p) => { const s = state.products.find((x) => x.id === p.id); if (s) s.photo = p.photo; }); }
-    await set(ref(db, `stores/${id}`), { ...out, status: prev?.status || "demo", createdAt: prev?.createdAt || now, updatedAt: now });
+    await set(ref(db, `stores/${id}`), { ...out, status: prev?.status || "demo", createdAt: prev?.createdAt || now, updatedAt: now,
+      ...(prev?.opcion ? { opcion: prev.opcion } : {}) });
+    // Si es una de las "3 opciones", el contenido (productos, nombre, logo, WhatsApp,
+    // pagos…) se copia a las otras; solo el diseño queda distinto en cada una.
+    let otras = 0;
+    if (prev?.opcion?.grupo) {
+      const { color, estilo, tema, ...contenido } = out;
+      const hermanas = Object.entries(demos).filter(([k, x]) => k !== id && x.opcion?.grupo === prev.opcion.grupo);
+      for (const [k] of hermanas) await update(ref(db, `stores/${k}`), { ...contenido, updatedAt: now });
+      otras = hermanas.length;
+      demos[id] = { ...out, opcion: prev.opcion };
+    }
     editingId = id; editingStamp = now;
-    showResult(id, out);
-    toast(up.n && !up.ok ? "✅ Demo guardada (fotos dentro de la base: Storage no está activo)" : "✅ Demo guardada");
+    showResult(id, out, prev?.opcion);
+    toast(up.n && !up.ok ? "✅ Demo guardada (fotos dentro de la base: Storage no está activo)"
+      : otras ? `✅ Guardada en las ${otras + 1} opciones (cada una conserva su diseño)` : "✅ Demo guardada");
     loadDemos();
   } catch (err) {
     toast(err.code === "PERMISSION_DENIED" ? "Falta actualizar las reglas de Firebase" : "No se pudo guardar: " + err.message);
@@ -504,11 +516,17 @@ $("storeForm").addEventListener("submit", async (e) => {
   } finally { $("saveBtn").disabled = false; $("saveBtn").innerHTML = saveLabel; }
 });
 
-function showResult(id, out) {
-  const link = `${TIENDA_URL}?t=${id}`;
+// Mensaje para mandar las 3 opciones juntas (link de comparación)
+function opMsg(grupo, name) {
+  return `Hola, le preparé 3 opciones de cómo se vería la tienda en línea de ${name}. Puede verlas y comparar aquí:\n${compararLink(grupo)}\n\n¿Cuál le gusta más?`;
+}
+function showResult(id, out, opcion) {
+  // Si es parte de 3 opciones, se manda el link que compara las 3
+  const link = opcion?.grupo ? compararLink(opcion.grupo) : `${TIENDA_URL}?t=${id}`;
   $("resLink").value = link;
   $("openLink").href = link;
-  const msg = `Hola, le preparé una muestra de cómo se vería la tienda en línea de ${out.name}. Puede verla aquí:\n${link}\n\nSus clientes ven sus productos y le mandan el pedido directo por WhatsApp.`;
+  const msg = opcion?.grupo ? opMsg(opcion.grupo, out.name)
+    : `Hola, le preparé una muestra de cómo se vería la tienda en línea de ${out.name}. Puede verla aquí:\n${link}\n\nSus clientes ven sus productos y le mandan el pedido directo por WhatsApp.`;
   $("sendWa").href = `https://wa.me/${waNumber(out.whatsapp)}?text=${encodeURIComponent(msg)}`;
   $("result").hidden = false;
   $("editingNote").hidden = false;
@@ -539,7 +557,7 @@ async function loadDemos() {
     return `<div class="demo-item">
       <div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div>
       <div><div class="demo-name">${esc(s.name)}<span class="status ${statusOf(s)}">${STATUS[statusOf(s)]}</span>${
-        s.opcion?.grupo ? `<a class="op-badge" href="${compararLink(s.opcion.grupo)}" target="_blank" rel="noopener" title="Comparar las opciones">Opción ${s.opcion.n} de ${s.opcion.total} · ${esc(PLANTILLAS[s.tema?.plantilla]?.label || "")} <i class="fa-solid fa-table-columns"></i></a>` : ""}</div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${listState(s, admins[id] || {})}${
+        s.opcion?.grupo ? `<a class="op-badge" href="${compararLink(s.opcion.grupo)}" target="_blank" rel="noopener" title="Comparar las opciones">Opción ${s.opcion.n} de ${s.opcion.total} · ${esc(PLANTILLAS[s.tema?.plantilla]?.label || "")} <i class="fa-solid fa-table-columns"></i></a><a class="op-wa" href="https://api.whatsapp.com/send?${String(s.whatsapp || "").replace(/\D/g, "").length >= 10 && waNumber(s.whatsapp) !== "52" + RAUL_WA ? `phone=${waNumber(s.whatsapp)}&` : ""}text=${encodeURIComponent(opMsg(s.opcion.grupo, s.name))}" target="_blank" rel="noopener" title="Mandar las ${s.opcion.total} opciones al cliente"><i class="fa-brands fa-whatsapp"></i> Mandar las ${s.opcion.total}</a>` : ""}</div><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)} · ${n} productos · ${fecha}${listState(s, admins[id] || {})}${
         Object.values(owners[id] || {}).length ? ` · <i class="fa-solid fa-user"></i> ${Object.values(owners[id]).map((o) => esc(o.email)).join(", ")}` : ""}</div></div>
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
