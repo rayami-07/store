@@ -348,3 +348,8 @@ legend { font-weight: 700; padding: 0 6px; }
 .op-links a { color: var(--ink); font-size: 14px; }
 .op-badge { display: inline-flex; align-items: center; gap: 6px; margin-left: 8px; font-size: 12px; font-weight: 500; padding: 2px 10px; border-radius: 100px; background: #fff3ea; color: #c2410c; text-decoration: none; }
 @media (max-width: 600px) { .op-tpls { grid-template-columns: 1fr; } }
+.link-line { display: flex; gap: 10px; align-items: center; justify-content: space-between; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.link-line > div { min-width: 0; display: grid; gap: 1px; }
+.link-line small { color: var(--muted); font-size: 12px; }
+.link-line code { font-size: 12px; color: var(--ink); overflow-wrap: anywhere; background: var(--bg); border-radius: 6px; padding: 2px 6px; margin-top: 3px; }
+.link-line .btn { flex: none; height: 36px; padding: 0 12px; }

@@ -533,6 +533,7 @@ async function loadDemos() {
       <div class="demo-actions">
         <a class="btn btn-light" href="${TIENDA_URL}?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-arrow-up-right-from-square"></i> Ver</a>
         <a class="btn btn-light" href="${TIENDA_URL}panel.html?t=${id}" target="_blank" rel="noopener"><i class="fa-solid fa-chart-column"></i> Panel</a>
+        <button class="btn btn-light" data-copy="${TIENDA_URL}?t=${id}" title="Copiar el link de la tienda"><i class="fa-regular fa-copy"></i> Link</button>
         <button class="btn btn-light" data-edit="${id}"><i class="fa-solid fa-pen"></i> Editar</button>
         <button class="btn btn-light" data-owner="${id}"><i class="fa-solid fa-${({ demo: "bolt", activa: "key", pausada: "play" })[statusOf(s)]}"></i> ${({ demo: "Activar", activa: "Vigencia y dueños", pausada: "Reactivar" })[statusOf(s)]}</button>
         <button class="btn btn-ghost danger" data-remove="${id}"><i class="fa-solid fa-trash"></i></button>
@@ -548,7 +549,14 @@ function listState(s, a) {
   return "";
 }
 let pendingDelete = "";
+// Copiar cualquier link o mensaje (botones con data-copy)
+async function copyText(text, msg = "Link copiado") {
+  try { await navigator.clipboard.writeText(text); toast(msg); }
+  catch { prompt("Copia el texto:", text); }
+}
 $("demoList").addEventListener("click", async (e) => {
+  const cp = e.target.closest("[data-copy]");
+  if (cp) { copyText(cp.dataset.copy); return; }
   const ed = e.target.closest("[data-edit]"), rm = e.target.closest("[data-remove]"), ow = e.target.closest("[data-owner]");
   if (ow) openOwner(ow.dataset.owner);
   if (ed) {
@@ -723,6 +731,8 @@ document.querySelectorAll("[data-rdays]").forEach((b) => b.addEventListener("cli
    La cuenta se crea con una "app secundaria" para no cerrar tu sesión de admin.
 ============================================================ */
 const MI_TIENDA_URL = new URL("../tienda/mi-tienda.html", location.href).href;
+// Entrada única para todos los dueños: escriben su correo y llegan a SU tienda
+const ENTRAR_URL = new URL("../entrar/", location.href).href;
 const MOTIVOS = ["Falta de pago", "Lo pidió el cliente", "Cambios en la tienda", "Otro"];
 let omId = "", omAdmin = {}, omPausing = false, omWelcome = "", appAlta = null;
 
@@ -802,6 +812,20 @@ function renderOM() {
       ? [["Activa desde", fdate(a.activadaEl)], ["Vigente hasta", `${fdate(a.vigencia)} <span class="vig ${vigInfo(a.vigencia).cls}">${vigInfo(a.vigencia).t}</span>`], ["Qué ve el cliente", "Su tienda completa, sin barra de demo"], ["Dueño", "Edita sus productos y datos"]]
       : [["Pausada desde", fdate(a.pausadaEl)], ["Motivo", esc(a.motivoPausa || "—")], ["Vigencia anterior", fdate(a.vigencia)], ["Qué ve el cliente", "\"Esta tienda no está disponible\""], ["Dueño", "Entra, pero no puede guardar cambios"]];
   html += `<dl class="facts">${facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
+
+  /* Links para mandarle al cliente cuando los pierda */
+  const ownersN = Object.keys(owners[omId] || {}).length;
+  const tiendaLink = `${TIENDA_URL}?t=${omId}`;
+  html += `<section class="om-sec"><h4>Links</h4>
+    <div class="link-line"><div><b>Tienda</b><small>Para sus clientes: redes, estados, QR</small><code>${esc(tiendaLink)}</code></div>
+      <button type="button" class="btn btn-light" data-copy="${esc(tiendaLink)}"><i class="fa-regular fa-copy"></i> Copiar</button></div>
+    ${st !== "demo" ? `<div class="link-line"><div><b>Entrada del dueño</b><small>La misma para todos tus clientes: entran con su correo</small><code>${esc(ENTRAR_URL)}</code></div>
+      <button type="button" class="btn btn-light" data-copy="${esc(ENTRAR_URL)}"><i class="fa-regular fa-copy"></i> Copiar</button></div>` : ""}
+    ${ownersN ? `<div class="res-actions">
+      <button type="button" class="btn btn-light" data-copy-msg="1"><i class="fa-regular fa-copy"></i> Copiar mensaje con sus links</button>
+      <a class="btn btn-wa" target="_blank" rel="noopener" href="https://api.whatsapp.com/send?phone=${waNumber(s.whatsapp)}&text=${encodeURIComponent(reminder())}"><i class="fa-brands fa-whatsapp"></i> Mandárselo</a>
+    </div>` : ""}
+  </section>`;
 
   /* Acciones según el estado */
   if (st === "demo") {
@@ -919,13 +943,25 @@ function welcome(email, pass, mailed) {
   const s = demos[omId];
   const head = `Hola, bienvenido a RAYAMI Store. Tu tienda en línea de ${s.name} ya está lista.\n\n`
     + `Tu tienda (compártela con tus clientes):\n${TIENDA_URL}?t=${omId}\n\n`
-    + `Para agregar productos, cambiar precios y ver tus ventas entra aquí:\n${MI_TIENDA_URL}?t=${omId}\n\n`;
+    + `Para agregar productos, cambiar precios y ver tus ventas entra aquí con tu correo:\n${ENTRAR_URL}\n\n`;
   if (mailed) return head + `Te enviamos un correo a ${email} para que crees tu contraseña. Si no lo ves, revisa "Spam" o "Promociones".\n\nDespués entra con tu correo y esa contraseña.`;
   return head + `Correo: ${email}\n`
     + (pass ? `Contraseña temporal: ${pass}\n\nTe recomiendo cambiarla en la pestaña "Cuenta".` : `Contraseña: la misma que ya usas.`);
 }
 
+// Recordatorio de links (sin contraseña) para cuando el dueño pierde su acceso
+function reminder() {
+  const s = demos[omId];
+  const emails = Object.values(owners[omId] || {}).map((o) => o.email).join(" o ");
+  return `Hola, te comparto los links de ${s.name}:\n\n`
+    + `Tu tienda (para tus clientes):\n${TIENDA_URL}?t=${omId}\n\n`
+    + `Para administrarla entra aquí con tu correo${emails ? ` (${emails})` : ""}:\n${ENTRAR_URL}\n\n`
+    + `Si no recuerdas tu contraseña, toca "Olvidé mi contraseña" y te llega un correo para crear una nueva.`;
+}
 $("omBody").addEventListener("click", async (e) => {
+  const cp = e.target.closest("[data-copy]");
+  if (cp) { copyText(cp.dataset.copy); return; }
+  if (e.target.closest("[data-copy-msg]")) { copyText(reminder(), "Mensaje copiado"); return; }
   const rs = e.target.closest("[data-resend]");
   if (rs) {
     rs.disabled = true;
