@@ -141,7 +141,7 @@ function resizeImage(file, max, type = "image/jpeg", quality = 0.78) {
 }
 
 function renderLogo() {
-  $("logoBox").innerHTML = state.logo ? `<img src="${state.logo}" alt="Logo" />` : `<i class="fa-regular fa-image"></i>`;
+  $("logoBox").innerHTML = state.logo ? `<img src="${esc(state.logo)}" alt="Logo" />` : `<i class="fa-regular fa-image"></i>`;
   $("logoRemove").hidden = !state.logo;
 }
 $("fLogo").addEventListener("change", async (e) => {
@@ -576,7 +576,7 @@ async function loadDemos() {
 const openGroups = new Set();
 const nProds = (s) => (Array.isArray(s.products) ? s.products.length : Object.keys(s.products || {}).length);
 const fcorta = (t) => (t ? new Date(t).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "");
-const logoBox = (s) => `<div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div>`;
+const logoBox = (s) => `<div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${esc(s.logo)}" alt="" />` : esc((s.name || "?")[0])}</div>`;
 const tplName = (s) => PLANTILLAS[s.tema?.plantilla]?.label || "Diseño propio";
 function opWaLink(grupo, s) {
   const tel = String(s.whatsapp || "").replace(/\D/g, "").length >= 10 && waNumber(s.whatsapp) !== "52" + RAUL_WA ? `phone=${waNumber(s.whatsapp)}&` : "";
@@ -880,7 +880,7 @@ async function loadResumen() {
     const fresh = t.lastTs && Date.now() - t.lastTs < 86400000;
     const st = statusOf(s);
     return `<tr>
-      <td><div class="rstore"><div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${s.logo}" alt="" />` : esc((s.name || "?")[0])}</div><div><b>${esc(s.name)}</b><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)}</div></div></div></td>
+      <td><div class="rstore"><div class="demo-logo" style="background:${esc(s.color || "#111")}">${s.logo ? `<img src="${esc(s.logo)}" alt="" />` : esc((s.name || "?")[0])}</div><div><b>${esc(s.name)}</b><div class="demo-meta">${esc((GIROS[s.giro] || GIROS.otro).label)}</div></div></div></td>
       <td><span class="status ${st}">${STATUS[st]}</span></td>
       <td class="num">${t.visit}</td><td class="num">${t.ask}</td><td class="num">${t.order}</td>
       <td class="num">${money(t.sales)}</td><td class="num">${t.visit ? pct(t.conversion) : "—"}</td>

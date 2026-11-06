@@ -1,3 +1,14 @@
+
+
+/* SEGURIDAD: los textos que escriben compradores y vendedores (nombre, dirección,
+   productos…) se limpian al llegar de Firebase, para que nadie pueda "meter código"
+   en las páginas (XSS). Se quitan < > y las comillas se cambian por comillas tipográficas. */
+function limpio(v) {
+  if (typeof v === "string") return v.replace(/[<>]/g, "").replace(/"/g, "”").replace(/'/g, "’").replace(/`/g, "´");
+  if (Array.isArray(v)) return v.map(limpio);
+  if (v && typeof v === "object") { const o = {}; for (const k in v) o[k] = limpio(v[k]); return o; }
+  return v;
+}
 /* ============================================
    RAYAMI STORE + ADMIN — script.js
    Firebase Realtime Database + Multi-foto
@@ -68,7 +79,7 @@ let allSellers      = [];    // todos los vendedores (solo admin)
 ============================================================ */
 function initFirebase() {
   onValue(ref(db, "products"), (snapshot) => {
-    const data = snapshot.val();
+    const data = limpio(snapshot.val());
     allProducts = data
       ? Object.entries(data).map(([fbKey, p]) => ({ ...p, fbKey }))
           .sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0))
@@ -84,7 +95,7 @@ function initFirebase() {
 let adminListenersStarted = false;
 function startAdminSellersListener() {
   onValue(ref(db, "sellers"), snap => {
-    const data = snap.val() || {};
+    const data = limpio(snap.val() || {});
     allSellers = Object.entries(data).map(([k, v]) => ({ ...v, fbKey: k }));
     // Limpieza: borrar contraseñas viejas guardadas en texto plano
     allSellers.filter(v => v.password).forEach(v =>
@@ -228,7 +239,7 @@ async function fbDeleteSellerProduct(fbKey) {
 }
 function listenSellerProducts(sellerFbKey, callback) {
   onValue(ref(db, "sellerProducts"), snap => {
-    const data = snap.val() || {};
+    const data = limpio(snap.val() || {});
     const list = Object.entries(data)
       .map(([k,v]) => ({...v, fbKey: k}))
       .filter(p => p.sellerKey === sellerFbKey);
@@ -237,7 +248,7 @@ function listenSellerProducts(sellerFbKey, callback) {
 }
 function listenAllSellerProducts(callback) {
   onValue(ref(db, "sellerProducts"), snap => {
-    const data = snap.val() || {};
+    const data = limpio(snap.val() || {});
     callback(Object.entries(data).map(([k,v]) => ({...v, fbKey: k})));
   });
 }
@@ -692,7 +703,7 @@ function showAdmin() {
 
   // Listener en tiempo real para productos de vendedores
   onValue(ref(db, "sellerProducts"), snap => {
-    const data = snap.val() || {};
+    const data = limpio(snap.val() || {});
     allSellerProductsList = Object.entries(data).map(([k, v]) => ({ ...v, fbKey: k }));
     // Badge en tab
     const pending = allSellerProductsList.filter(p => !p.approved && !p.rejected);
@@ -1534,8 +1545,9 @@ window.sendOrderWA = async function() {
   const sum = cart.reduce((s,i) => s+i.price*i.qty, 0);
 
   // Generar código de seguimiento único
-  const trackCode = "RAY-" + Date.now().toString(36).toUpperCase().slice(-6) +
-                    Math.random().toString(36).toUpperCase().slice(2,4);
+  // 8 letras/números al azar (antes casi todo salía de la hora y se podía adivinar)
+  const abc = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const trackCode = "RAY-" + [...crypto.getRandomValues(new Uint32Array(8))].map((n) => abc[n % abc.length]).join("");
 
   const orderRef = await push(ref(db,"orders"), {
     ...checkoutData,
@@ -1620,7 +1632,7 @@ window.sendCartWA = window.openOrderModal;
 ============================================================ */
 function initOrders() {
   onValue(ref(db,"orders"), snap => {
-    const data = snap.val() || {};
+    const data = limpio(snap.val() || {});
     allOrders = Object.entries(data)
       .map(([k,v]) => ({...v,fbKey:k}))
       .sort((a,b) => (b.createdAt||0)-(a.createdAt||0));
@@ -1942,7 +1954,7 @@ async function showTrackingView(code) {
   let entry = null;
   try {
     const snap = await get(query(ref(db, "orders"), orderByChild("trackCode"), equalTo(code), limitToFirst(1)));
-    entry = Object.entries(snap.val() || {})[0] || null;
+    entry = Object.entries(limpio(snap.val() || {}))[0] || null;
   } catch (e) { console.warn("tracking:", e.message); }
 
   const iconEl  = document.getElementById("trackingIcon");
@@ -2091,14 +2103,14 @@ window.switchSellerTab = function(tab) {
 // Busca el perfil de vendedor ligado a la cuenta de Firebase
 async function findSellerByUid(uid) {
   const snap = await get(query(ref(db, "sellers"), orderByChild("uid"), equalTo(uid)));
-  const [k, v] = Object.entries(snap.val() || {})[0] || [];
+  const [k, v] = Object.entries(limpio(snap.val() || {}))[0] || [];
   return k ? { ...v, fbKey: k } : null;
 }
 // Vendedores registrados antes de usar Firebase Auth (sin "uid").
 // Solo se pueden reclamar con un correo verificado.
 async function claimLegacySeller(user) {
   const snap = await get(query(ref(db, "sellers"), orderByChild("email"), equalTo(user.email.toLowerCase())));
-  const [k, v] = Object.entries(snap.val() || {}).find(([, x]) => !x.uid) || [];
+  const [k, v] = Object.entries(limpio(snap.val() || {})).find(([, x]) => !x.uid) || [];
   if (!k) return null;
   await update(ref(db, `sellers/${k}`), { uid: user.uid, password: null });
   return { ...v, uid: user.uid, fbKey: k };
