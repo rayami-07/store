@@ -227,7 +227,7 @@
       <div class="svc"><i class="fa-solid fa-store"></i><div><h3>Para crecer</h3><p>Dominio propio, cobro con tarjeta, varios usuarios (dueño y cajero) y sucursales.</p></div><span class="tag soon">Próximamente</span></div>
     </div>
     <p class="extras-note">Adicionales: instalación con carga de tus productos y fotos, e impresión de QR (stickers, acrílicos de mesa y displays).</p>
-    <p style="margin-top:14px"><a class="btn btn-wa wa-link" data-msg="Hola, quiero cotizar una tienda en línea para mi negocio"><i class="fa-brands fa-whatsapp"></i> Cotizar para mi negocio</a></p>
+    <p style="margin-top:14px"><a class="btn btn-wa wa-link" data-conv="1" data-msg="Hola, quiero cotizar una tienda en línea para mi negocio"><i class="fa-brands fa-whatsapp"></i> Cotizar para mi negocio</a></p>
     <div class="who" aria-label="Giros">
       <span>Restaurantes y fondas</span><span>Cafeterías</span><span>Boutiques</span><span>Zapaterías</span>
       <span>Estéticas y belleza</span><span>Tiendas de mascotas</span><span>Ferreterías</span><span>Accesorios</span>
@@ -295,6 +295,8 @@
   document.querySelectorAll(".wa-link").forEach((a) => {
     a.href = `https://api.whatsapp.com/send?phone=${WA}&text=${encodeURIComponent(a.dataset.msg || "")}`;
     a.target = "_blank"; a.rel = "noopener";
+    // Cotizar: abre WhatsApp y esta pestaña pasa a /gracias/ (página que Google Ads mide como cotización)
+    if (a.dataset.conv) a.addEventListener("click", () => setTimeout(() => { location.href = "gracias/"; }, 700));
   });
 
   // Ejemplos de negocio para el celular en vivo
