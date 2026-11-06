@@ -155,6 +155,16 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 <style>
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .chip .del{margin-left:6px;font-weight:700;opacity:.6}
+.cotitem{display:grid;grid-template-columns:1fr 1fr auto;gap:6px 8px;padding:10px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.cotitem .c{grid-column:1/-1}
+.cotitem .imp{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)}
+.cotitem .imp b{color:var(--ink);font-variant-numeric:tabular-nums}
+.cotitem label{font-size:12px;color:var(--muted);font-weight:600}
+.cotitems{display:flex;flex-direction:column;gap:8px}
+.kv.tot div:last-child span{font-weight:800;color:var(--ink);font-size:17px}
+.kv.tot span:last-child{font-variant-numeric:tabular-nums}
+.pill.ok{background:var(--accent-soft);color:var(--good)}
+.pill.env{background:var(--warn-soft);color:var(--warn)}
 .ctxbar{margin:0 16px 8px;padding:10px 12px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-size:14px;display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap}
 .ctxbar button{background:none;border:1px solid currentColor;color:inherit;border-radius:8px;padding:5px 10px;font-weight:600;cursor:pointer}
 .linkbtn{background:none;border:0;color:var(--accent);font-weight:600;cursor:pointer;padding:4px 0;text-align:left}
@@ -373,6 +383,38 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
 <section class="sheet" id="sheetDet" aria-modal="true" role="dialog" aria-labelledby="detTitle">
   <div class="head"><h3 id="detTitle">Prospecto</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
   <div class="body" id="detBody"></div>
+</section>
+
+<!-- Hoja: cotización -->
+<section class="sheet" id="sheetCot" aria-modal="true" role="dialog" aria-labelledby="cotTitle">
+  <div class="head"><h3 id="cotTitle">Cotización</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+  <form class="body" id="formCot" autocomplete="off">
+    <p class="sub" id="cotPara"></p>
+    <datalist id="cotServicios"></datalist>
+    <div class="cotitems" id="cotItems"></div>
+    <div class="row"><button class="btn" type="button" id="cotAdd">+ Agregar concepto</button></div>
+    <div class="grid2">
+      <div class="field"><label for="cotDesc">Descuento (%)</label><input id="cotDesc" type="number" inputmode="decimal" min="0" max="100" step="1" placeholder="0"></div>
+      <div class="field"><label for="cotVig">Vigencia (días)</label><input id="cotVig" type="number" inputmode="numeric" min="1" max="365" value="15"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="cotIva"> <span>Agregar IVA (16%)</span></label>
+    <div class="field"><label for="cotNotas">Condiciones o notas</label><textarea id="cotNotas" placeholder="Ej. Incluye mano de obra. 50% de anticipo y 50% al entregar."></textarea></div>
+    <div class="kv tot" id="cotTot"></div>
+    <p class="err" id="cotErr"></p>
+    <div class="row"><button class="btn primary" type="submit" id="cotGuardar">Guardar cotización</button></div>
+    <div id="cotAcciones" hidden style="display:flex;flex-direction:column;gap:8px">
+      <div class="row">
+        <a class="btn wa" id="cotWa" href="#" target="_blank" rel="noopener">Mandar por WhatsApp</a>
+        <button class="btn" type="button" id="cotPdf">Ver / PDF</button>
+        <button class="btn" type="button" id="cotCopy">Copiar texto</button>
+      </div>
+      <div class="row">
+        <button class="btn" type="button" id="cotOk">La aceptó</button>
+        <button class="btn danger" type="button" id="cotNo">La rechazó</button>
+        <button class="btn danger" type="button" id="cotDel">Borrar</button>
+      </div>
+    </div>
+  </form>
 </section>
 
 <!-- Hoja: conversación -->
@@ -600,6 +642,12 @@ function iniciar(){
     chats = Object.entries(v).map(([id,d])=>({id, ...d})).sort((a,b)=>(b.actualizado||0)-(a.actualizado||0));
     renderChats();
   }, ()=>{}));
+  unsubs.push(onValue(ref(fdb, `${CTX.base}/cotizaciones`), snap=>{
+    const v = snap.val() || {};
+    cotizaciones = Object.entries(v).map(([id,d])=>({id, ...d})).sort((a,b)=>(b.creado||"").localeCompare(a.creado||""));
+    if(abiertoId && $("#sheetDet").classList.contains("open")) verDetalle(abiertoId);
+  }, ()=>{}));
+  get(ref(fdb, `${rutaConfig()}/precios`)).then(s=>{ CTX.precios = s.val() || {}; }).catch(()=>{ CTX.precios = {}; });
   unsubs.push(onValue(ref(fdb, ".info/connected"), s=>{
     s.val() ? setSync("on","En línea") : setSync("off","Sin conexión (se sube al reconectar)");
   }));
@@ -614,7 +662,7 @@ function iniciar(){
     }).catch(()=>{});
   }
 }
-function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; solicitudes=[]; chats=[]; if(unsubChat){ unsubChat(); unsubChat=null; } }
+function detener(){ unsubs.forEach(u=>u()); unsubs=[]; prospectos=[]; solicitudes=[]; chats=[]; cotizaciones=[]; if(unsubChat){ unsubChat(); unsubChat=null; } }
 
 // Cambia etiquetas, catálogos y secciones según el modo activo
 function aplicarModo(){
@@ -691,7 +739,7 @@ onAuthStateChanged(auth, async u=>{
     const tv = t.val();
     if(!tv) return bloquear("No encontramos tu negocio. Escríbenos para revisarlo.");
     if(tv.estado !== "activo") return bloquear(`El CRM de ${tv.nombre} está pausado. Escríbenos para reactivarlo.`);
-    CTX = { modo:"general", base:`tenantData/${tid}`, nombre:tv.nombre, tid, propio:true, rol:(m.val()||{}).rol||"seller", cats: tv.config?.categorias || [] };
+    CTX = { modo:"general", base:`tenantData/${tid}`, nombre:tv.nombre, tid, propio:true, rol:(m.val()||{}).rol||"seller", cats: tv.config?.categorias || [], wa: tv.duenoWa||"", correo: tv.duenoEmail||"" };
     mostrarApp(); iniciar();
   }catch(e){
     bloquear("No se pudo cargar tu negocio. Revisa tu conexión e intenta de nuevo.");
@@ -1069,6 +1117,7 @@ function verDetalle(id){
       ${p.demo?`<a class="btn" href="${esc(p.demo)}" target="_blank" rel="noopener">Ver demo</a>`:""}
       ${chats.some(c=>c.prospectoId===p.id)?`<button class="btn" type="button" id="dChat">Ver chat</button>`:""}
       <button class="btn" type="button" id="dEdit">Editar</button>
+      <button class="btn" type="button" id="dCot">Cotizar</button>
     </div>
     ${e!==DESCARTADO && sig ? `<div class="row"><button class="btn primary" type="button" id="dNext">Pasar a: ${esc(sig.n)}</button></div>`:""}
     <div class="field"><span class="lbl">Próximo seguimiento</span>
@@ -1090,6 +1139,10 @@ function verDetalle(id){
       <div><span>Objeción</span><span>${esc(p.objecion||"—")}</span></div>
     </div>
     ${ent.length?`<details><summary>Entrevista</summary><div class="inside">${ent.map(q=>`<div><div class="lbl">${esc(q.q)}</div><div>${esc(p.entrevista[q.k])}</div></div>`).join("")}</div></details>`:""}
+    ${(()=>{ const C = cotizaciones.filter(c=>c.prospectoId===p.id);
+      return C.length ? `<h2>Cotizaciones</h2><div class="list">${C.map(c=>`<button type="button" class="card" data-cot="${esc(c.id)}" style="--stage:var(--accent)">
+        <span class="name">${esc(c.folio)} · ${esc(moneda(c.total))}</span><span class="pill ${c.estado==="aceptada"?"ok":c.estado==="enviada"?"env":c.estado==="rechazada"?"off":""}">${esc(ESTADO_COT[c.estado]||"Borrador")}</span>
+        <span class="meta"><span>${esc(fmtFecha((c.creado||"").slice(0,10)))}</span><span>${(c.items||[]).length} concepto${(c.items||[]).length===1?"":"s"}</span></span></button>`).join("")}</div>` : ""; })()}
     <div class="field"><label for="dNota">Agregar nota</label><textarea id="dNota" placeholder="Ej. Le mandé precio, quedó de contestar el lunes"></textarea>
       <div class="row"><button class="btn" type="button" id="dAddNota">Guardar nota</button></div></div>
     <h2>Historial</h2>
@@ -1108,6 +1161,8 @@ function verDetalle(id){
   };
   const log = t => [{f:new Date().toISOString(), t, sys:true}, ...(p.notas||[])].slice(0,200);
   B.querySelector("#dEdit").onclick = ()=>abrirForm(p);
+  B.querySelector("#dCot").onclick = ()=>abrirCot(p, null);
+  B.querySelectorAll("[data-cot]").forEach(b=>b.onclick=()=>abrirCot(p, cotizaciones.find(c=>c.id===b.dataset.cot)));
   B.querySelector("#dChat")?.addEventListener("click", ()=>{ const c=chats.find(x=>x.prospectoId===p.id); if(c) abrirChat(c.id); });
   B.querySelector("#dNext")?.addEventListener("click", ()=>upd({etapa:e+1, etapaPrevia:e+1, ...(e+1===GANADA?{proximo:""}:{}), notas:log(`Etapa: ${etapaNombre(e)} → ${etapaNombre(e+1)}`)}, "Etapa actualizada"));
   B.querySelectorAll("[data-pos]").forEach(b=>b.onclick=()=>upd({proximo:masDias(+b.dataset.pos)}, "Seguimiento: "+fmtFecha(masDias(+b.dataset.pos))));
@@ -1170,7 +1225,7 @@ function renderNegocios(){
     </div>`).join("") : `<div class="empty">Aún no das de alta ningún negocio.</div>`;
   $("#listNeg").querySelectorAll("[data-neg-abrir]").forEach(b=>b.onclick=()=>{
     const n = negocios.find(x=>x.id===b.dataset.negAbrir);
-    CTX = { modo:"general", base:`tenantData/${n.id}`, nombre:n.nombre, tid:n.id, propio:false, rol:"admin", cats:n.config?.categorias||[] };
+    CTX = { modo:"general", base:`tenantData/${n.id}`, nombre:n.nombre, tid:n.id, propio:false, rol:"admin", cats:n.config?.categorias||[], wa:n.duenoWa||"", correo:n.duenoEmail||"" };
     iniciar(); irTab("hoy");
   });
   $("#listNeg").querySelectorAll("[data-neg-canales]").forEach(b=>b.onclick=()=>{
@@ -1390,6 +1445,202 @@ $("#formCanal").addEventListener("submit", async ev=>{
     });
     toast("Canal conectado"); abrirCanales(canalCtx);
   }catch(e){ $("#cErr").textContent = "No se pudo guardar. Publica las reglas nuevas en Firebase."; }
+});
+
+/* ============================================================
+   COTIZADOR
+   <base>/cotizaciones/<id> { folio, prospectoId, para, items[{c,q,p}], descPct, iva, subtotal,
+                              descuento, ivaMonto, total, vigenciaDias, notas, estado, creado, actualizado }
+   <config>/precios/<servicio> último precio usado, para llenarlo solo la próxima vez
+============================================================ */
+let cotizaciones = [], cotP = null, cotActual = null;
+const ESTADO_COT = { borrador:"Borrador", enviada:"Enviada", aceptada:"Aceptada", rechazada:"Rechazada" };
+const rutaConfig = () => CTX.modo==="rayami" ? "crm/config" : `tenants/${CTX.tid}/config`;
+const r2 = n => Math.round((+n||0)*100)/100;
+const moneda = n => (+n||0).toLocaleString("es-MX",{style:"currency",currency:"MXN"});
+const serviciosCot = () => CTX.modo==="rayami" ? (M.paquetes||[]).filter(x=>x!=="—") : (CTX.cats||[]);
+const keyPrecio = s => String(s).toLowerCase().replace(/[.#$\[\]\/]/g,"_").trim().slice(0,60);
+const emisor = () => CTX.modo==="rayami"
+  ? { nombre:"RAYAMI Store", tel:"55 8107 4978", correo:"rayamistore@gmail.com", zona:"Cuautitlán Izcalli" }
+  : { nombre:CTX.nombre, tel:CTX.wa ? String(CTX.wa).replace(/(\d{2})(\d{4})(\d{4})/,"$1 $2 $3") : "", correo:CTX.correo||"", zona:"" };
+
+function filaCot(it={c:"",q:1,p:""}){
+  const d = document.createElement("div"); d.className = "cotitem";
+  d.innerHTML = `
+    <div class="c field"><label>Concepto</label><input class="ic" list="cotServicios" maxlength="80" placeholder="Ej. Frenos delanteros" value="${esc(it.c)}"></div>
+    <div class="field"><label>Cantidad</label><input class="iq" type="number" inputmode="decimal" min="0" step="any" value="${esc(it.q)}"></div>
+    <div class="field"><label>Precio unitario ($)</label><input class="ip" type="number" inputmode="decimal" min="0" step="any" placeholder="0" value="${esc(it.p)}"></div>
+    <div class="field" style="justify-content:flex-end"><button type="button" class="btn danger" aria-label="Quitar concepto" data-quitar>×</button></div>
+    <div class="imp"><span>Importe</span><b>$0.00</b></div>`;
+  const ic = d.querySelector(".ic"), ip = d.querySelector(".ip");
+  ic.addEventListener("change", ()=>{ const pr = CTX.precios?.[keyPrecio(ic.value)]; if(pr && !ip.value){ ip.value = pr; calcCot(); } });
+  d.querySelectorAll("input").forEach(x=>x.addEventListener("input", calcCot));
+  d.querySelector("[data-quitar]").onclick = ()=>{ d.remove(); if(!$("#cotItems").children.length) $("#cotItems").appendChild(filaCot()); calcCot(); };
+  return d;
+}
+function leerCot(){
+  const items = [...$("#cotItems").children].map(d=>({ c:d.querySelector(".ic").value.trim().slice(0,80), q:r2(d.querySelector(".iq").value), p:r2(d.querySelector(".ip").value) })).filter(it=>it.c || it.p);
+  const descPct = Math.min(100, Math.max(0, +$("#cotDesc").value || 0));
+  const iva = $("#cotIva").checked;
+  const subtotal = r2(items.reduce((a,it)=>a+it.q*it.p,0));
+  const descuento = r2(subtotal*descPct/100);
+  const ivaMonto = iva ? r2((subtotal-descuento)*0.16) : 0;
+  const total = r2(subtotal-descuento+ivaMonto);
+  return { items, descPct, iva, subtotal, descuento, ivaMonto, total, vigenciaDias: Math.max(1, Math.min(365, +$("#cotVig").value || 15)), notas: $("#cotNotas").value.trim().slice(0,1000) };
+}
+function calcCot(){
+  [...$("#cotItems").children].forEach(d=>{ d.querySelector(".imp b").textContent = moneda(r2((+d.querySelector(".iq").value||0)*(+d.querySelector(".ip").value||0))); });
+  const t = leerCot();
+  $("#cotTot").innerHTML = `<div><span>Subtotal</span><span>${moneda(t.subtotal)}</span></div>` +
+    (t.descuento ? `<div><span>Descuento (${t.descPct}%)</span><span>−${moneda(t.descuento)}</span></div>` : "") +
+    (t.iva ? `<div><span>IVA 16%</span><span>${moneda(t.ivaMonto)}</span></div>` : "") +
+    `<div><span>Total</span><span>${moneda(t.total)}</span></div>`;
+}
+["cotDesc","cotIva","cotVig"].forEach(id=>$("#"+id).addEventListener("input", calcCot));
+// Al cerrar la cotización, regresar a la ficha del prospecto
+document.querySelector("#sheetCot [data-close]").addEventListener("click", ()=>{ if(cotP) setTimeout(()=>verDetalle(cotP.id), 50); });
+$("#cotAdd").addEventListener("click", ()=>{ const f = filaCot(); $("#cotItems").appendChild(f); f.querySelector(".ic").focus(); });
+
+function abrirCot(p, c){
+  cotP = p; cotActual = c || null;
+  $("#cotServicios").innerHTML = serviciosCot().map(s=>`<option value="${esc(s)}">`).join("");
+  $("#cotTitle").textContent = c ? `Cotización ${c.folio}` : "Nueva cotización";
+  $("#cotPara").textContent = "Para: " + [p.negocio, p.contacto].filter(Boolean).join(" · ");
+  $("#cotItems").innerHTML = "";
+  const items = c ? (c.items||[]) : [{ c: p.giro || "", q:1, p: CTX.precios?.[keyPrecio(p.giro||"")] || "" }];
+  (items.length ? items : [{c:"",q:1,p:""}]).forEach(it=>$("#cotItems").appendChild(filaCot(it)));
+  $("#cotDesc").value = c?.descPct || ""; $("#cotIva").checked = !!c?.iva;
+  $("#cotVig").value = c?.vigenciaDias || 15; $("#cotNotas").value = c?.notas || "";
+  $("#cotErr").textContent = "";
+  $("#cotGuardar").textContent = c ? "Guardar cambios" : "Guardar cotización";
+  pintarAccionesCot();
+  calcCot();
+  abrir($("#sheetCot"));
+}
+function pintarAccionesCot(){
+  $("#cotAcciones").hidden = !cotActual;
+  if(!cotActual) return;
+  $("#cotWa").href = waLink(cotP.whatsapp, textoCot(cotActual)) || ("https://wa.me/?text=" + encodeURIComponent(textoCot(cotActual)));
+  $("#cotOk").disabled = cotActual.estado==="aceptada";
+  $("#cotNo").disabled = cotActual.estado==="rechazada";
+}
+function textoCot(c){
+  const em = emisor();
+  const L = [`*Cotización ${c.folio}* — ${em.nombre}`, `Para: ${[c.para?.nombre, c.para?.contacto].filter(Boolean).join(" · ")}`,
+    `Fecha: ${fmtFecha((c.creado||"").slice(0,10))} · Vigencia: ${c.vigenciaDias} días`, ""];
+  (c.items||[]).forEach(it=>L.push(`• ${it.q} × ${it.c} — ${moneda(r2(it.q*it.p))}`));
+  L.push("", `Subtotal: ${moneda(c.subtotal)}`);
+  if(c.descuento) L.push(`Descuento (${c.descPct}%): −${moneda(c.descuento)}`);
+  if(c.iva) L.push(`IVA 16%: ${moneda(c.ivaMonto)}`);
+  L.push(`*Total: ${moneda(c.total)}*`);
+  if(c.notas) L.push("", c.notas);
+  if(em.tel) L.push("", `${em.nombre} · ${em.tel}`);
+  return L.join("\n");
+}
+function siguienteFolio(){
+  const n = cotizaciones.reduce((m,c)=>Math.max(m, parseInt(String(c.folio||"").replace(/\D/g,""),10)||0), 0) + 1;
+  return "COT-" + String(n).padStart(4,"0");
+}
+async function actualizarProspectoCot(cambios, nota){
+  const cur = prospectos.find(x=>x.id===cotP.id); if(!cur) return;
+  const {id:_, ...rest} = cur;
+  await guardar(cotP.id, { ...rest, ...cambios, notas: [{f:new Date().toISOString(), t:nota, sys:true}, ...(cur.notas||[])].slice(0,200) });
+}
+
+$("#formCot").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const t = leerCot();
+  $("#cotErr").textContent = "";
+  if(!t.items.length || t.items.some(it=>!it.c)){ $("#cotErr").textContent = "Cada concepto necesita nombre."; return; }
+  if(t.total <= 0){ $("#cotErr").textContent = "Pon al menos un precio."; return; }
+  const ahora = new Date().toISOString();
+  const nuevo = !cotActual;
+  const id = cotActual?.id || ("c" + Date.now().toString(36) + Math.random().toString(36).slice(2,5));
+  const data = {
+    ...(cotActual ? (({id,...r})=>r)(cotActual) : { folio: siguienteFolio(), estado:"borrador", creado: ahora }),
+    prospectoId: cotP.id, para: { nombre: cotP.negocio||"", contacto: cotP.contacto||"", whatsapp: cotP.whatsapp||"" },
+    ...t, actualizado: ahora
+  };
+  $("#cotGuardar").disabled = true;
+  try{
+    await set(ref(fdb, `${CTX.base}/cotizaciones/${id}`), limpio(data));
+    cotActual = { id, ...data };
+    // Recordar precios por servicio para la próxima cotización
+    const precios = {}; t.items.forEach(it=>{ if(it.c && it.p) precios[keyPrecio(it.c)] = it.p; });
+    if(Object.keys(precios).length){ CTX.precios = { ...(CTX.precios||{}), ...precios }; update(ref(fdb, `${rutaConfig()}/precios`), precios).catch(()=>{}); }
+    // En el CRM de ventas: el monto del prospecto es el de la cotización y pasa a "Cotizado"
+    const cambios = {};
+    if(CTX.modo==="general"){ cambios.pagaria = t.total; if(esActivo(cotP) && (cotP.etapa??1) < 3){ cambios.etapa = 3; cambios.etapaPrevia = 3; } }
+    await actualizarProspectoCot(cambios, `${nuevo?"Cotización":"Cotización actualizada"} ${data.folio} por ${moneda(t.total)}`);
+    $("#cotTitle").textContent = `Cotización ${data.folio}`; $("#cotGuardar").textContent = "Guardar cambios";
+    pintarAccionesCot();
+    toast(nuevo ? `Cotización ${data.folio} guardada` : "Cambios guardados");
+  }catch(e){ $("#cotErr").textContent = "No se pudo guardar. Revisa tu conexión."; }
+  finally{ $("#cotGuardar").disabled = false; }
+});
+
+async function estadoCot(estado){
+  if(!cotActual) return;
+  try{
+    await update(ref(fdb, `${CTX.base}/cotizaciones/${cotActual.id}`), { estado, actualizado: new Date().toISOString() });
+    cotActual.estado = estado;
+    const cambios = {};
+    if(estado==="aceptada" && CTX.modo==="general"){ cambios.etapa = GANADA; cambios.etapaPrevia = GANADA; cambios.pagaria = cotActual.total; cambios.proximo = ""; }
+    if(estado!=="enviada") await actualizarProspectoCot(cambios, `Cotización ${cotActual.folio} ${estado==="aceptada"?"aceptada ✔":"rechazada"}`);
+    pintarAccionesCot();
+    toast(estado==="aceptada" ? (CTX.modo==="general" ? "¡Aceptada! El prospecto pasó a Cliente" : "Marcada como aceptada") : estado==="rechazada" ? "Marcada como rechazada" : "Marcada como enviada");
+  }catch(e){ toast("No se pudo actualizar"); }
+}
+$("#cotWa").addEventListener("click", ()=>{ if(cotActual && cotActual.estado==="borrador") estadoCot("enviada"); });
+$("#cotOk").addEventListener("click", ()=>estadoCot("aceptada"));
+$("#cotNo").addEventListener("click", ()=>estadoCot("rechazada"));
+$("#cotCopy").addEventListener("click", async ()=>{
+  if(!cotActual) return;
+  try{ await navigator.clipboard.writeText(textoCot(cotActual)); toast("Cotización copiada"); }catch(e){ toast("No se pudo copiar"); }
+});
+$("#cotDel").addEventListener("click", async ev=>{
+  const b = ev.currentTarget;
+  if(b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="¿Borrar? Toca otra vez"; setTimeout(()=>{ b.dataset.ok=""; b.textContent="Borrar"; }, 4000); return; }
+  try{ await remove(ref(fdb, `${CTX.base}/cotizaciones/${cotActual.id}`)); toast("Cotización borrada"); b.dataset.ok=""; b.textContent="Borrar"; verDetalle(cotP.id); }
+  catch(e){ toast("No se pudo borrar"); }
+});
+
+// Documento imprimible: en el celular "Imprimir → Guardar como PDF"
+$("#cotPdf").addEventListener("click", ()=>{
+  if(!cotActual) return;
+  const c = cotActual, em = emisor();
+  const vence = new Date(new Date(c.creado).getTime() + c.vigenciaDias*864e5);
+  const filas = (c.items||[]).map(it=>`<tr><td>${esc(it.c)}</td><td class="n">${esc(it.q)}</td><td class="n">${esc(moneda(it.p))}</td><td class="n">${esc(moneda(r2(it.q*it.p)))}</td></tr>`).join("");
+  const html = `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(c.folio)} · ${esc(em.nombre)}</title>
+<style>
+  *{box-sizing:border-box} body{font-family:"Segoe UI",system-ui,sans-serif;color:#18201E;margin:0;padding:32px;max-width:820px;margin:auto;font-size:14px}
+  header{display:flex;justify-content:space-between;gap:20px;border-bottom:3px solid #0E6B57;padding-bottom:16px;flex-wrap:wrap}
+  h1{margin:0;font-size:26px} .muted{color:#5E6966} .folio{text-align:right} .folio b{font-size:20px;color:#0E6B57}
+  .para{margin:20px 0;padding:12px 14px;background:#F3F4F1;border-radius:8px}
+  table{width:100%;border-collapse:collapse;margin-top:8px} th{text-align:left;font-size:12px;color:#5E6966;border-bottom:1px solid #DDE2DE;padding:8px 6px}
+  td{padding:9px 6px;border-bottom:1px solid #EEF0EE} .n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tot{margin-left:auto;margin-top:12px;width:280px} .tot div{display:flex;justify-content:space-between;padding:5px 6px}
+  .tot .t{border-top:2px solid #18201E;font-weight:800;font-size:18px;margin-top:4px;padding-top:8px}
+  .notas{margin-top:22px;white-space:pre-wrap} footer{margin-top:36px;font-size:12px;color:#5E6966;text-align:center}
+  .bar{position:sticky;top:0;background:#fff;padding:8px 0 14px;text-align:right} .bar button{font:inherit;font-weight:700;padding:10px 18px;border-radius:99px;border:0;background:#0E6B57;color:#fff;cursor:pointer}
+  @media print{.bar{display:none} body{padding:0}}
+</style></head><body>
+<div class="bar"><button onclick="window.print()">Imprimir / Guardar PDF</button></div>
+<header><div><h1>${esc(em.nombre)}</h1><div class="muted">${[em.tel?("WhatsApp "+esc(em.tel)):"", esc(em.correo), esc(em.zona)].filter(Boolean).join(" · ")}</div></div>
+<div class="folio"><div class="muted">Cotización</div><b>${esc(c.folio)}</b><div class="muted">Fecha: ${esc(fmtFecha((c.creado||"").slice(0,10)))} ${esc((c.creado||"").slice(0,4))}</div><div class="muted">Vigente hasta: ${esc(fmtFecha(ymd(vence)))} ${vence.getFullYear()}</div></div></header>
+<div class="para"><span class="muted">Para:</span> <b>${esc(c.para?.nombre||"")}</b>${c.para?.contacto?" · "+esc(c.para.contacto):""}${c.para?.whatsapp?" · "+esc(c.para.whatsapp):""}</div>
+<table><thead><tr><th>Concepto</th><th class="n">Cant.</th><th class="n">Precio</th><th class="n">Importe</th></tr></thead><tbody>${filas}</tbody></table>
+<div class="tot"><div><span>Subtotal</span><span class="n">${esc(moneda(c.subtotal))}</span></div>
+${c.descuento?`<div><span>Descuento (${esc(c.descPct)}%)</span><span class="n">−${esc(moneda(c.descuento))}</span></div>`:""}
+${c.iva?`<div><span>IVA 16%</span><span class="n">${esc(moneda(c.ivaMonto))}</span></div>`:""}
+<div class="t"><span>Total</span><span class="n">${esc(moneda(c.total))}</span></div></div>
+${c.notas?`<div class="notas"><b>Condiciones</b><br>${esc(c.notas)}</div>`:""}
+<footer>Precios en pesos mexicanos.${c.iva?"":" No incluye IVA."}</footer>
+</body></html>`;
+  const url = URL.createObjectURL(new Blob([html], {type:"text/html;charset=utf-8"}));
+  const w = window.open(url, "_blank");
+  if(!w){ const a = document.createElement("a"); a.href = url; a.download = `${c.folio}.html`; document.body.appendChild(a); a.click(); a.remove(); }
+  setTimeout(()=>URL.revokeObjectURL(url), 60000);
 });
 </script>
 </body>
