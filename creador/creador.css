@@ -389,3 +389,16 @@ legend { font-weight: 700; padding: 0 6px; }
 .short-row input { flex: 1 1 140px; width: auto; height: 38px; }
 .short-row .btn { height: 38px; }
 .short-box .err { color: var(--danger); margin: 0; font-size: 13px; min-height: 0; }
+
+/* Mis tiendas separadas por estado */
+.dfilters { display: flex; gap: 6px; flex-wrap: wrap; margin: 0 0 14px; }
+.dfil { border: 1px solid var(--line); background: #fff; border-radius: 100px; padding: 7px 14px; font-weight: 600; cursor: pointer; font-size: 14px; }
+.dfil span { color: var(--muted); font-weight: 500; margin-left: 2px; }
+.dfil.active { background: var(--ink); color: #fff; border-color: var(--ink); }
+.dfil.active span { color: rgba(255,255,255,.7); }
+.dfil:disabled { opacity: .45; cursor: default; }
+.dsec { display: grid; gap: 10px; margin-bottom: 22px; }
+.dsec-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.dsec-head h3 { margin: 0; font-size: 17px; }
+.dsec-head h3 i { color: var(--muted); margin-right: 2px; }
+.dsec-head h3 span { font-weight: 500; color: var(--muted); font-size: 15px; }

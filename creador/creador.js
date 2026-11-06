@@ -563,16 +563,34 @@ async function loadDemos() {
   const grupos = {};
   for (const [id, x] of list) if (x.opcion?.grupo && statusOf(x) === "demo") (grupos[x.opcion.grupo] ||= []).push([id, x]);
   for (const g of Object.keys(grupos)) { if (grupos[g].length < 2) delete grupos[g]; else grupos[g].sort((m, n) => m[1].opcion.n - n[1].opcion.n); }
+  // Separadas por estado: clientes activos (los que vencen pronto primero), pausadas y demos
   const vistos = new Set();
-  const html = [];
+  const secc = { activa: [], pausada: [], demo: [] };
   for (const [id, x] of list) {
-    const g = x.opcion?.grupo;
-    if (grupos[g]) { if (!vistos.has(g)) { vistos.add(g); html.push(groupHTML(g, grupos[g])); } continue; }
-    html.push(itemHTML(id, x));
+    const g = x.opcion?.grupo, st = statusOf(x);
+    if (grupos[g]) { if (!vistos.has(g)) { vistos.add(g); secc.demo.push({ html: groupHTML(g, grupos[g]), t: x.updatedAt || 0 }); } continue; }
+    const vig = admins[id]?.vigencia || "9999-12-31";
+    secc[st].push({ html: itemHTML(id, x), t: x.updatedAt || 0, vig });
   }
-  $("demoCount").textContent = html.length ? `(${html.length})` : "";   // tiendas, no demos sueltas
-  $("demoList").innerHTML = html.length ? html.join("") : `<div class="empty-demos">Todavía no tienes demos. Crea la primera en la pestaña <b>Editar</b>.</div>`;
+  secc.activa.sort((a, b) => a.vig.localeCompare(b.vig));
+  const total = secc.activa.length + secc.pausada.length + secc.demo.length;
+  $("demoCount").textContent = total ? `(${total})` : "";
+  const SEC = [
+    ["activa", "Clientes activos", "fa-circle-check", "Ordenados por fecha de vencimiento: arriba los que hay que cobrar primero."],
+    ["pausada", "Pausadas", "fa-circle-pause", "Sus clientes ven \"no disponible\"."],
+    ["demo", "Demos", "fa-flask", "Muestras para prospectos; todavía no pagan."],
+  ];
+  const filtro = demoFilter;
+  $("demoFilters").innerHTML = [["todas", "Todas", total], ...SEC.map(([k, l]) => [k, l, secc[k].length])]
+    .map(([k, l, n]) => `<button type="button" class="dfil${filtro === k ? " active" : ""}" data-dfil="${k}"${n || k === "todas" ? "" : " disabled"}>${l} <span>${n}</span></button>`).join("");
+  const html = SEC.filter(([k]) => secc[k].length && (filtro === "todas" || filtro === k))
+    .map(([k, l, ic, hint]) => `<section class="dsec">
+        <div class="dsec-head"><h3><i class="fa-solid ${ic}"></i> ${l} <span>${secc[k].length}</span></h3><small class="muted">${hint}</small></div>
+        ${secc[k].map((x) => x.html).join("")}
+      </section>`).join("");
+  $("demoList").innerHTML = total ? html : `<div class="empty-demos">Todavía no tienes demos. Crea la primera en la pestaña <b>Editar</b>.</div>`;
 }
+let demoFilter = "todas";
 const openGroups = new Set();
 const nProds = (s) => (Array.isArray(s.products) ? s.products.length : Object.keys(s.products || {}).length);
 const fcorta = (t) => (t ? new Date(t).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) : "");
@@ -681,6 +699,8 @@ async function copyText(text, msg = "Link copiado") {
 $("demoList").addEventListener("click", async (e) => {
   const cp = e.target.closest("[data-copy]");
   if (cp) { copyText(cp.dataset.copy); return; }
+  const df = e.target.closest("[data-dfil]");
+  if (df) { demoFilter = df.dataset.dfil; loadDemos(); return; }
   const gt = e.target.closest("[data-gtoggle]");
   if (gt) { const g = gt.dataset.gtoggle; openGroups.has(g) ? openGroups.delete(g) : openGroups.add(g); loadDemos(); return; }
   const pk = e.target.closest("[data-pick]");
@@ -1288,3 +1308,5 @@ $("prods").addEventListener("keydown", (e) => {
   if (e.key === "Escape") saveNewCat(e.target, false);
 });
 $("prods").addEventListener("focusout", (e) => { if (e.target.dataset?.newcat !== undefined && newCatRow !== -1) saveNewCat(e.target); });
+
+$("demoFilters").addEventListener("click", (e) => { const b = e.target.closest("[data-dfil]"); if (b && !b.disabled) { demoFilter = b.dataset.dfil; loadDemos(); } });
