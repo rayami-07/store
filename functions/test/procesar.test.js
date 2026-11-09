@@ -1,6 +1,6 @@
 // Pruebas con mensajes simulados de Meta: node test/procesar.test.js
 const assert = require("assert");
-const { extraerEntrantes, guardarEntrante, armarEnvio } = require("../procesar");
+const { extraerEntrantes, guardarEntrante, armarEnvio, normalizaWa } = require("../procesar");
 
 function memDb(data) {
   const at = (p) => p.split("/").reduce((o, k) => (o == null ? undefined : o[k]), data);
@@ -81,7 +81,11 @@ const ig = { object: "instagram", entry: [{ id: "IG7", messaging: [{ sender: { i
   // 7) Peticiones de envío
   const w = armarEnvio("whatsapp", "PN123", { token: "T" }, "5215599998888", "Hola");
   assert.equal(w.url, "https://graph.facebook.com/v23.0/PN123/messages");
-  assert.equal(w.body.to, "5215599998888");
+  assert.equal(w.body.to, "525599998888", "México: se quita el 1 que WhatsApp agrega, si no Meta rechaza el envío");
+  assert.equal(normalizaWa("5215599998888"), "525599998888");
+  assert.equal(normalizaWa("525599998888"), "525599998888", "si ya viene sin el 1, se deja igual");
+  assert.equal(normalizaWa("5491122223333"), "541122223333", "Argentina: mismo caso con el 9");
+  assert.equal(normalizaWa("14155551234"), "14155551234", "otros países no se tocan");
   const m = armarEnvio("instagram", "IG7", { token: "T", pageId: "PAGE9" }, "IGSID3", "Hola");
   assert.equal(m.url, "https://graph.facebook.com/v23.0/PAGE9/messages");
   assert.equal(m.body.messaging_type, "RESPONSE");
