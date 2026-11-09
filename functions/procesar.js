@@ -134,13 +134,26 @@ async function guardarEntrante(db, m) {
 }
 
 /** Petición HTTP para contestar por cada canal (API de Meta). */
+/**
+ * México entrega el número del cliente como 521XXXXXXXXXX (WhatsApp agrega un 1
+ * después del 52), pero para contestarle hay que usar 52XXXXXXXXXX. Si no se
+ * quita, Meta responde "Recipient phone number not in allowed list".
+ * Argentina tiene el mismo caso con el 9 (549 -> 54).
+ */
+function normalizaWa(num) {
+  const n = String(num || "").replace(/\D/g, "");
+  if (/^521\d{10}$/.test(n)) return "52" + n.slice(3);
+  if (/^549\d{10}$/.test(n)) return "54" + n.slice(3);
+  return n;
+}
+
 function armarEnvio(canal, cuenta, cfg, para, texto, version = "v23.0") {
   const g = `https://graph.facebook.com/${version}`;
   if (canal === "whatsapp") {
     return {
       url: `${g}/${cuenta}/messages`,
       headers: { Authorization: `Bearer ${cfg.token}`, "Content-Type": "application/json" },
-      body: { messaging_product: "whatsapp", recipient_type: "individual", to: para, type: "text", text: { preview_url: true, body: texto } },
+      body: { messaging_product: "whatsapp", recipient_type: "individual", to: normalizaWa(para), type: "text", text: { preview_url: true, body: texto } },
     };
   }
   // Messenger (incluye chats de Marketplace de la Página) e Instagram usan la Página y su token
@@ -152,4 +165,4 @@ function armarEnvio(canal, cuenta, cfg, para, texto, version = "v23.0") {
   };
 }
 
-module.exports = { extraerEntrantes, guardarEntrante, armarEnvio, llave, VENTANA_MS, NOMBRE_CANAL };
+module.exports = { extraerEntrantes, guardarEntrante, armarEnvio, normalizaWa, llave, VENTANA_MS, NOMBRE_CANAL };
