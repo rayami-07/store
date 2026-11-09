@@ -33,6 +33,8 @@ const measure = (t, extra) => { if (!isPreview && !isTrial) track(storeId, t, ex
 
 const finalPrice = (p) => (p.salePrice > 0 && p.salePrice < p.price ? p.salePrice : p.price);
 const photoOf = (p) => p.photo || fotoEjemplo(p.emoji || (GIROS[cfg.giro] || GIROS.otro).emoji, cfg.color, temaDe(cfg).tarjetas);
+// En catálogo, ofertas y carrito se usa la miniatura (si existe): carga más rápido y gasta menos datos
+const miniOf = (p) => p.photoMini || photoOf(p);
 const pedidosCfg = () => ({ datos: "opcional", entregas: ["recoger", "domicilio"], ...(cfg.pedidos || {}) });
 const pagosCfg = () => {
   const pc = { metodos: ["entrega", "transferencia"], anticipado: false, banco: "", clabe: "", titular: "", link: "", ...(cfg.pagos || {}) };
@@ -128,7 +130,7 @@ function renderGrid() {
         ? `<button class="add${inCart ? " in" : ""}" data-open="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Elegir opciones"}</button>`
         : `<button class="add${inCart ? " in" : ""}" data-add="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Agregar"}</button>`;
     return `<article class="card reveal${off ? " sold-out" : ""}" style="--d:${(i % 4) * 70}ms">
-      <div class="card-img" data-open="${esc(p.id)}"><img src="${esc(photoOf(p))}" alt="${esc(p.name)}" loading="lazy" />${off ? `<span class="tag-off">Agotado</span>` : sale ? `<span class="tag-sale">Oferta</span>` : ""}</div>
+      <div class="card-img" data-open="${esc(p.id)}"><img src="${esc(miniOf(p))}" alt="${esc(p.name)}" loading="lazy" decoding="async" />${off ? `<span class="tag-off">Agotado</span>` : sale ? `<span class="tag-sale">Oferta</span>` : ""}</div>
       <div class="card-name" data-open="${esc(p.id)}">${esc(p.name)}</div>
       ${p.category ? `<div class="card-cat">${esc(p.category)}</div>` : ""}
       <div class="card-price">${sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : money(p.price)}</div>
@@ -145,7 +147,7 @@ function renderOfertas(tema) {
   $("ofStrip").innerHTML = list.map((p, i) => `
     <article class="of-card reveal" data-open="${esc(p.id)}" style="--d:${Math.min(i, 5) * 70}ms">
       <span class="of-pct">-${Math.round((1 - p.salePrice / p.price) * 100)}%</span>
-      <img src="${esc(photoOf(p))}" alt="${esc(p.name)}" loading="lazy" />
+      <img src="${esc(miniOf(p))}" alt="${esc(p.name)}" loading="lazy" decoding="async" />
       <div class="of-info"><b>${esc(p.name)}</b><div class="card-price"><span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s></div></div>
     </article>`).join("");
 }
@@ -166,7 +168,7 @@ function renderMov(tema) {
     const sale = p.salePrice > 0 && p.salePrice < p.price;
     return `<article class="of-card mov-card" data-open="${esc(p.id)}"${dup ? ' aria-hidden="true" tabindex="-1"' : ""}>
       ${sale ? `<span class="of-pct">-${Math.round((1 - p.salePrice / p.price) * 100)}%</span>` : ""}
-      <img src="${esc(photoOf(p))}" alt="${dup ? "" : esc(p.name)}" loading="lazy" />
+      <img src="${esc(miniOf(p))}" alt="${dup ? "" : esc(p.name)}" loading="lazy" decoding="async" />
       <div class="of-info"><b>${esc(p.name)}</b><div class="card-price">${sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : `<span>${money(p.price)}</span>`}</div></div>
     </article>`;
   };
@@ -279,7 +281,7 @@ function renderCart() {
     : cart.map((i) => {
         const p = prodById(i.id);
         return `<div class="line">
-          <img src="${esc(photoOf(p))}" alt="" />
+          <img src="${esc(miniOf(p))}" alt="" loading="lazy" decoding="async" />
           <div><b>${esc(p.name)}</b>${i.v ? `<small class="var">${esc(i.v)}</small>` : ""}<small>${money(finalPrice(p))} c/u</small></div>
           <div class="qty"><button data-dec="${esc(i.key || i.id + "|")}" aria-label="Menos">−</button><span>${i.qty}</span><button data-inc="${esc(i.key || i.id + "|")}" aria-label="Más">+</button></div>
         </div>`;

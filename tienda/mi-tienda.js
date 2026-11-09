@@ -13,6 +13,7 @@ import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, sendP
   updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getStorage, ref as sRef, uploadString, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 import { ESTILOS, GIROS, fotoEjemplo } from "./muestras.js";
+import { comprimirFoto, FOTO_GRANDE, FOTO_MINI, FOTO_BASE, FOTO_LOGO } from "./fotos.js";
 
 const app = initializeApp({
   apiKey: "AIzaSyDDVxmRmKb9yIZSV0ZxkPKvQPOK-oAGMWU",
@@ -44,7 +45,7 @@ let user = null, isAdmin = false;
 let storeId = (new URLSearchParams(location.search).get("t") || "").trim().toLowerCase();
 let store = null;       // la tienda tal como está en Firebase
 let editing = null;     // id del producto en edición o "new"
-let draftPhoto = "", draftCombo = false, draftLogo = null;
+let draftPhoto = "", draftFile = null, draftCombo = false, draftLogo = null;
 let query = "";
 
 function toast(msg) {
@@ -215,36 +216,37 @@ document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () 
   scrollTo(0, 0);
 }));
 
-/* ── Fotos: a Storage (duenos/<uid>/<tienda>/) o, si no está activo, dentro de la base ── */
+/* ── Fotos: a Storage (duenos/<uid>/<tienda>/) o, si no está activo, dentro de la base ──
+   Las fotos se comprimen en el celular antes de subir (ver fotos.js).
+   Cada producto guarda 2 versiones: "photo" (grande, para la ficha) y
+   "photoMini" (chica, para el catálogo). Así la tienda carga rápido y gasta menos datos. */
 const isData = (s) => typeof s === "string" && s.startsWith("data:image/");
+const extDe = (dataUrl) => (dataUrl.match(/^data:image\/(png|webp|jpeg)/)?.[1] || "jpg").replace("jpeg", "jpg");
+async function subir(name, dataUrl) {
+  const r = sRef(storage, `duenos/${user.uid}/${storeId}/${name}-${Date.now().toString(36)}.${extDe(dataUrl)}`);
+  await uploadString(r, dataUrl, "data_url", { cacheControl: "public,max-age=31536000" });
+  return await getDownloadURL(r);
+}
 async function storePhoto(name, dataUrl) {
   if (!isData(dataUrl)) return dataUrl;
-  try {
-    const ext = dataUrl.startsWith("data:image/png") ? "png" : "jpg";
-    const r = sRef(storage, `duenos/${user.uid}/${storeId}/${name}-${Date.now().toString(36)}.${ext}`);
-    await uploadString(r, dataUrl, "data_url", { cacheControl: "public,max-age=31536000" });
-    return await getDownloadURL(r);
-  } catch (err) {
+  try { return await subir(name, dataUrl); }
+  catch (err) {
     console.warn("Storage no disponible, la foto se guarda en la base:", err.code || err.message);
     return dataUrl;
   }
 }
-function resizeImage(file, max = 700, type = "image/jpeg", quality = 0.78) {
-  return new Promise((ok, fail) => {
-    const img = new Image();
-    img.onload = () => {
-      const k = Math.min(1, max / Math.max(img.width, img.height));
-      const c = document.createElement("canvas");
-      c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
-      const ctx = c.getContext("2d");
-      if (type === "image/jpeg") { ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, c.width, c.height); }
-      ctx.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(img.src);
-      ok(c.toDataURL(type, quality));
-    };
-    img.onerror = () => fail(new Error("No se pudo leer la foto"));
-    img.src = URL.createObjectURL(file);
-  });
+/** Foto de producto: grande + miniatura en Storage. Si Storage no está activo,
+    una sola foto mediana dentro de la base (para no inflar las descargas). */
+async function storeProductPhoto(name, grande, file) {
+  if (!isData(grande)) return { photo: grande };
+  try {
+    const mini = await comprimirFoto(file, FOTO_MINI);
+    const [photo, photoMini] = await Promise.all([subir(name, grande), subir(name + "-mini", mini)]);
+    return { photo, photoMini };
+  } catch (err) {
+    console.warn("Storage no disponible, la foto se guarda en la base:", err.code || err.message);
+    return { photo: await comprimirFoto(file, FOTO_BASE), photoMini: null };
+  }
 }
 
 /* ── Guardar en Firebase ── */
@@ -323,7 +325,7 @@ function openSheet(id, combo = false) {
   editing = id;
   const p = id === "new" ? null : products().find((x) => x.id === id);
   draftCombo = p ? p.category === "Combos" || !!p.combo : combo;
-  draftPhoto = p?.photo || "";
+  draftPhoto = p?.photo || ""; draftFile = null;
   $("sheetTitle").textContent = p ? "Editar producto" : draftCombo ? "Agregar combo" : "Agregar producto";
   $("fName").value = p?.name || "";
   $("fName").placeholder = draftCombo ? "Ej. Combo 2 tacos + refresco" : "Ej. Tenis blancos";
@@ -351,8 +353,10 @@ function closeSheet() { $("sheet").hidden = true; document.body.style.overflow =
 
 $("fPhoto").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
-  try { draftPhoto = await resizeImage(f); $("fPhotoPrev").src = draftPhoto; }
+  $("fPhotoPrev").style.opacity = ".5";
+  try { draftPhoto = await comprimirFoto(f, FOTO_GRANDE); draftFile = f; $("fPhotoPrev").src = draftPhoto; }
   catch (err) { toast(err.message); }
+  finally { $("fPhotoPrev").style.opacity = ""; }
   e.target.value = "";
 });
 $("fCat").addEventListener("change", () => { $("newCatWrap").hidden = $("fCat").value !== "__new"; if (!$("newCatWrap").hidden) $("fNewCat").focus(); });
@@ -375,12 +379,15 @@ $("pForm").addEventListener("submit", async (e) => {
   const id = prev?.id || "p" + Date.now().toString(36);
   const btn = $("fSave"); btn.disabled = true; btn.textContent = isData(draftPhoto) ? "Subiendo foto…" : "Guardando…";
   try {
-    const photo = await storePhoto(`p-${id}`, draftPhoto);
+    const fotos = draftFile && isData(draftPhoto)
+      ? await storeProductPhoto(`p-${id}`, draftPhoto, draftFile)
+      : { photo: draftPhoto, photoMini: draftPhoto === prev?.photo ? prev?.photoMini : null };
     const item = {
       ...(prev || { id, emoji: draftCombo ? "🎁" : giro().emoji }),
-      name, price, salePrice, category, desc: $("fDesc").value.trim(), photo, variantes,
+      name, price, salePrice, category, desc: $("fDesc").value.trim(), variantes, ...fotos,
       ...(draftCombo ? { combo: true } : {}),
     };
+    if (!item.photoMini) delete item.photoMini; // sin miniatura: la tienda usa la foto normal
     const next = prev ? products().map((x) => (x.id === prev.id ? item : x)) : [item, ...products()];
     if (await saveProducts(next, prev ? "Producto actualizado" : "Producto agregado")) closeSheet();
   } finally { btn.disabled = false; btn.textContent = "Guardar"; }
@@ -422,7 +429,7 @@ function fillBiz() {
 $("bPagos").addEventListener("change", payVisibility);
 $("bLogo").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
-  try { draftLogo = await resizeImage(f, 320, "image/png"); renderLogo(); }
+  try { draftLogo = await comprimirFoto(f, FOTO_LOGO); renderLogo(); }
   catch (err) { toast(err.message); }
   e.target.value = "";
 });
