@@ -473,6 +473,28 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
   </form>
 </section>
 
+<!-- Hoja: equipo de un negocio (solo admin) -->
+<section class="sheet" id="sheetEquipo" aria-modal="true" role="dialog" aria-labelledby="eqTitle">
+  <div class="head"><h3 id="eqTitle">Equipo</h3><button class="x" type="button" data-close aria-label="Cerrar">×</button></div>
+  <form class="body" id="formEquipo" autocomplete="off">
+    <p class="sub">Quién puede entrar al CRM de este negocio. El dueño ve y edita todo; el vendedor trabaja con los prospectos pero no cambia la configuración.</p>
+    <div class="list" id="listEquipo"></div>
+    <h2>Agregar vendedor</h2>
+    <div class="field"><label for="e-email">Correo del vendedor *</label><input id="e-email" type="email" autocapitalize="off" required placeholder="vendedor@gmail.com"></div>
+    <div class="grid2">
+      <div class="field"><label for="e-pass">Contraseña temporal *</label><input id="e-pass" minlength="8" required></div>
+      <div class="field"><label for="e-wa">WhatsApp (opcional)</label><input id="e-wa" type="tel" inputmode="tel" placeholder="55 1234 5678"></div>
+    </div>
+    <p class="err" id="eErr"></p>
+    <div class="row"><button class="btn primary" type="submit" id="btnAddVend">Agregar vendedor</button></div>
+    <div id="eListo" hidden style="display:flex;flex-direction:column;gap:10px">
+      <p class="ok">Listo. Mándale este mensaje al vendedor:</p>
+      <div class="msgbox" id="eMsg"></div>
+      <div class="row"><button class="btn" type="button" id="btnCopyEMsg">Copiar mensaje</button><a class="btn wa" id="lnkWaEMsg" target="_blank" rel="noopener" href="#">Mandar por WhatsApp</a></div>
+    </div>
+  </form>
+</section>
+
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script type="module">
@@ -1219,6 +1241,7 @@ function renderNegocios(){
       <span class="row" style="grid-column:1/-1;margin-top:6px">
         <button class="btn primary" type="button" data-neg-abrir="${esc(n.id)}">Abrir su CRM</button>
         <button class="btn" type="button" data-neg-msg="${esc(n.id)}">Mensaje de acceso</button>
+        <button class="btn" type="button" data-neg-equipo="${esc(n.id)}">Equipo</button>
         <button class="btn" type="button" data-neg-canales="${esc(n.id)}">Canales</button>
         <button class="btn ${n.estado==="activo"?"danger":""}" type="button" data-neg-estado="${esc(n.id)}">${n.estado==="activo"?"Pausar":"Activar"}</button>
       </span>
@@ -1231,6 +1254,9 @@ function renderNegocios(){
   $("#listNeg").querySelectorAll("[data-neg-canales]").forEach(b=>b.onclick=()=>{
     const n = negocios.find(x=>x.id===b.dataset.negCanales);
     abrirCanales({ base:`tenantData/${n.id}`, tid:n.id, nombre:n.nombre });
+  });
+  $("#listNeg").querySelectorAll("[data-neg-equipo]").forEach(b=>b.onclick=()=>{
+    abrirEquipo(negocios.find(x=>x.id===b.dataset.negEquipo));
   });
   $("#listNeg").querySelectorAll("[data-neg-msg]").forEach(b=>b.onclick=()=>{
     const n = negocios.find(x=>x.id===b.dataset.negMsg);
@@ -1318,6 +1344,85 @@ $("#formNeg").addEventListener("submit", async ev=>{
       "No se pudo crear. Revisa tu conexión e intenta de nuevo.";
   }finally{
     $("#btnCrearNeg").disabled = false; $("#btnCrearNeg").textContent = "Crear negocio y cuenta";
+  }
+});
+
+/* ============================================================
+   EQUIPO (solo admin): agregar vendedores a un negocio
+   Usa tenantMembers/<tid>/<uid> { rol:"seller", email } y userTenants/<uid>/<tid>.
+   Las reglas ya dejan escribir ahí solo al admin; no hace falta publicar nada nuevo.
+============================================================ */
+let equipoNeg = null;
+async function pintarEquipo(){
+  const el = $("#listEquipo");
+  el.innerHTML = `<div class="empty">Cargando…</div>`;
+  try{
+    const snap = await get(ref(fdb, `tenantMembers/${equipoNeg.id}`));
+    const m = Object.entries(snap.val()||{});
+    m.sort((a,b)=>(a[1].rol==="owner"?0:1)-(b[1].rol==="owner"?0:1));
+    el.innerHTML = m.length ? m.map(([uid,d])=>`
+      <div class="card" style="--stage:${d.rol==="owner"?"var(--accent)":"var(--muted)"};cursor:default">
+        <span class="name">${esc(d.email||uid)}</span>
+        <span class="pill">${d.rol==="owner"?"Dueño":"Vendedor"}</span>
+        ${d.rol==="owner"?"":`<span class="row" style="grid-column:1/-1;margin-top:6px"><button class="btn danger" type="button" data-quitar="${esc(uid)}">Quitar acceso</button></span>`}
+      </div>`).join("") : `<div class="empty">Sin usuarios todavía.</div>`;
+    el.querySelectorAll("[data-quitar]").forEach(b=>b.onclick=async()=>{
+      if(b.dataset.ok!=="1"){ b.dataset.ok="1"; b.textContent="¿Quitar? Toca otra vez"; return; }
+      try{
+        await update(ref(fdb), { [`tenantMembers/${equipoNeg.id}/${b.dataset.quitar}`]: null, [`userTenants/${b.dataset.quitar}/${equipoNeg.id}`]: null });
+        toast("Acceso quitado"); pintarEquipo();
+      }catch(e){ toast("No se pudo quitar"); }
+    });
+  }catch(e){ el.innerHTML = `<div class="empty">No se pudo leer el equipo.</div>`; }
+}
+function abrirEquipo(n){
+  if(!n) return;
+  equipoNeg = n;
+  $("#formEquipo").reset();
+  $("#e-pass").value = passTemporal();
+  $("#eErr").textContent = ""; $("#eListo").hidden = true;
+  $("#btnAddVend").disabled = false;
+  $("#eqTitle").textContent = "Equipo de " + n.nombre;
+  abrir($("#sheetEquipo"));
+  pintarEquipo();
+}
+$("#btnCopyEMsg").addEventListener("click", async ()=>{
+  try{ await navigator.clipboard.writeText($("#eMsg").textContent); toast("Mensaje copiado"); }catch(e){ toast("No se pudo copiar"); }
+});
+$("#formEquipo").addEventListener("submit", async ev=>{
+  ev.preventDefault();
+  const n = equipoNeg; if(!n) return;
+  const email = $("#e-email").value.trim().toLowerCase(), pass = $("#e-pass").value;
+  $("#eErr").textContent = ""; $("#eListo").hidden = true;
+  if(!/^\S+@\S+\.\S+$/.test(email)){ $("#eErr").textContent = "Revisa el correo del vendedor."; return; }
+  if(pass.length<8){ $("#eErr").textContent = "La contraseña temporal debe tener al menos 8 caracteres."; return; }
+  $("#btnAddVend").disabled = true; $("#btnAddVend").textContent = "Agregando…";
+  try{
+    appAlta = appAlta || initializeApp(FB_CONFIG, "alta-negocios");
+    const authAlta = getAuth(appAlta);
+    const cred = await createUserWithEmailAndPassword(authAlta, email, pass);
+    const uid = cred.user.uid;
+    await signOut(authAlta);
+    await update(ref(fdb), {
+      [`tenantMembers/${n.id}/${uid}`]: { rol:"seller", email },
+      [`userTenants/${uid}/${n.id}`]: true
+    });
+    const msg = `Hola, ya tienes acceso al CRM de ${n.nombre}.\n\nEntra aquí: ${CRM_URL}\nCorreo: ${email}\nContraseña temporal: ${pass}\n\nAl entrar, cámbiala en Más → Cambiar contraseña.\n\nTip: en Chrome toca ⋮ → "Agregar a pantalla principal" para tenerlo como app.\n— RAYAMI Store`;
+    $("#eMsg").textContent = msg;
+    $("#lnkWaEMsg").href = waLink($("#e-wa").value, msg) || ("https://wa.me/?text="+encodeURIComponent(msg));
+    $("#eListo").hidden = false;
+    $("#e-email").value = ""; $("#e-wa").value = ""; $("#e-pass").value = passTemporal();
+    toast("Vendedor agregado"); pintarEquipo();
+  }catch(e){
+    const c = e?.code||"";
+    $("#eErr").textContent =
+      c==="auth/email-already-in-use" ? "Ese correo ya tiene cuenta en RAYAMI. Usa otro correo para el vendedor." :
+      c==="auth/invalid-email" ? "El correo no es válido." :
+      c==="auth/weak-password" ? "La contraseña es muy débil." :
+      String(c||e?.message||"").toUpperCase().includes("PERMISSION") ? "Firebase no dejó guardar. Revisa las reglas." :
+      "No se pudo agregar. Revisa tu conexión e intenta de nuevo.";
+  }finally{
+    $("#btnAddVend").disabled = false; $("#btnAddVend").textContent = "Agregar vendedor";
   }
 });
 
