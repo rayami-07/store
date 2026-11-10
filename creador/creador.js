@@ -931,7 +931,7 @@ const ENTRAR_URL = new URL("../entrar/", location.href).href;
 /* Link corto: rayamistore.com/<nombre> (lo resuelve /404.html con links/<nombre> en Firebase) */
 const SITE_URL = new URL("../", location.href).href;
 const RESERVADOS = ["tienda", "creador", "crm", "ropa", "entrar", "servicios", "privacidad", "quiero-mi-tienda", "icons", "functions",
-  "admin", "api", "app", "login", "www", "mail", "rayami", "rayamistore", "soporte", "ayuda", "blog", "precios", "planes"];
+  "admin", "api", "app", "login", "www", "mail", "rayami", "rayamistore", "soporte", "ayuda", "blog", "precios", "planes", "tienda-en-linea", "atrae-clientes", "controla-tu-negocio", "gracias"];
 const linkTienda = (id) => (demos[id]?.corto ? SITE_URL + demos[id].corto : `${TIENDA_URL}?t=${id}`);
 const MOTIVOS = ["Falta de pago", "Lo pidió el cliente", "Cambios en la tienda", "Otro"];
 let omId = "", omAdmin = {}, omPausing = false, omWelcome = "", appAlta = null;
