@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="site.css?v=4" />
+  <link rel="stylesheet" href="site.css?v=5" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
   <script>
@@ -25,8 +25,13 @@
 <header class="nav">
   <div class="wrap nav-in">
     <a class="logo" href="./">RAYAMI <span>Tiendas</span></a>
-    <nav class="nav-links" aria-label="Secciones"><a href="servicios/">Servicios</a><a href="leads-y-crm/">Leads y CRM</a><a href="analisis/">Análisis</a><a href="precios/">Precios</a><a href="preguntas/">Preguntas</a></nav>
+    <nav class="nav-links" id="mnav" aria-label="Secciones">
+      <a href="./">Inicio</a>
+      <div class="has-sub"><button class="sub-btn" type="button" aria-expanded="false">Servicios</button><div class="sub"><a href="servicios/pagina-web/"><i class="fa-solid fa-globe"></i>Página web o catálogo</a><a href="servicios/pedidos-whatsapp/"><i class="fa-brands fa-whatsapp"></i>Pedidos por WhatsApp</a><a href="servicios/qr/"><i class="fa-solid fa-qrcode"></i>Código QR</a><a href="servicios/perfil-google/"><i class="fa-brands fa-google"></i>Perfil de Google</a><a href="servicios/anuncios-google/"><i class="fa-solid fa-bullhorn"></i>Anuncios en Google</a><a href="leads-y-crm/"><i class="fa-solid fa-address-book"></i>Leads y CRM</a><a href="analisis/"><i class="fa-solid fa-chart-line"></i>Análisis</a><a href="servicios/inventario/"><i class="fa-solid fa-boxes-stacked"></i>Control de inventario</a><a href="servicios/finanzas/"><i class="fa-solid fa-calculator"></i>Finanzas<small>pronto</small></a><a href="servicios/cursos-excel/"><i class="fa-solid fa-graduation-cap"></i>Cursos de Excel<small>pronto</small></a><a href="servicios/redes-sociales/"><i class="fa-solid fa-share-nodes"></i>Redes sociales<small>pronto</small></a><a href="servicios/para-crecer/"><i class="fa-solid fa-store"></i>Para crecer<small>pronto</small></a><a class="all" href="servicios/">Ver todos los servicios →</a></div></div>
+      <a href="por-que/">¿Por qué usarlo?</a><a href="preguntas/">Preguntas</a><a href="precios/">Precios</a>
+    </nav>
     <a class="btn btn-wa wa-link" data-msg="Hola, quiero una muestra gratis de mi tienda en línea"><i class="fa-brands fa-whatsapp"></i> Pide tu muestra</a>
+    <button class="burger" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
   </div>
 </header>
 
@@ -53,6 +58,12 @@
       <div class="phone"><iframe id="demo" title="Ejemplo de tienda en línea"></iframe></div>
       <p class="phone-hint">Es un ejemplo real: toca productos, elige tallas y arma un pedido.</p>
     </div>
+  </section>
+
+  <section class="wrap" id="felices">
+    <h2>Negocios contentos con su página</h2>
+    <p class="lede" style="margin-top:12px">Esto es lo que consiguen los negocios que ya se organizaron.</p>
+    <div class="happy"><a class="hcard rv" href="servicios/pagina-web/"><img loading="lazy" decoding="async" alt="Ya tiene su página web" onerror="this.parentNode.remove()" src="https://images.unsplash.com/photo-1753351052363-53ce102830eb?auto=format&fit=crop&w=700&h=875&q=70" /><span class="hcap">Foto ilustrativa</span><div><b>Ya tiene su página web</b><span>Sus clientes piden por WhatsApp, a cualquier hora.</span></div></a><a class="hcard rv" href="leads-y-crm/"><img loading="lazy" decoding="async" alt="Ya organizó su CRM" onerror="this.parentNode.remove()" src="https://images.unsplash.com/photo-1753351056301-73dbe05f84a8?auto=format&fit=crop&w=700&h=875&q=70" /><span class="hcap">Foto ilustrativa</span><div><b>Ya organizó su CRM</b><span>No se le pierde ningún cliente interesado.</span></div></a><a class="hcard rv" href="servicios/anuncios-google/"><img loading="lazy" decoding="async" alt="Ya tiene anuncios" onerror="this.parentNode.remove()" src="https://images.unsplash.com/photo-1786912029764-944951f895df?auto=format&fit=crop&w=700&h=875&q=70" /><span class="hcap">Foto ilustrativa</span><div><b>Ya tiene anuncios</b><span>Lo encuentran cuando buscan lo que vende.</span></div></a></div>
   </section>
 
   <section class="wrap" id="explora">
@@ -124,6 +135,14 @@
   document.querySelectorAll("[data-giro]").forEach((b) => b.addEventListener("click", () => show(b.dataset.giro)));
 </script>
 <script>
+  (function () {
+    const nav = document.querySelector(".nav"), burger = document.querySelector(".burger");
+    const closeAll = () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); document.querySelectorAll(".has-sub").forEach((h) => { h.classList.remove("open"); h.querySelector(".sub-btn").setAttribute("aria-expanded", "false"); }); };
+    burger.addEventListener("click", () => { const o = !nav.classList.contains("open"); closeAll(); if (o) { nav.classList.add("open"); burger.setAttribute("aria-expanded", "true"); } });
+    document.querySelectorAll(".sub-btn").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); const h = b.parentElement, o = !h.classList.contains("open"); document.querySelectorAll(".has-sub").forEach((x) => x.classList.remove("open")); if (o) h.classList.add("open"); b.setAttribute("aria-expanded", String(o)); }));
+    document.addEventListener("click", (e) => { if (!e.target.closest(".has-sub")) document.querySelectorAll(".has-sub").forEach((h) => h.classList.remove("open")); });
+    addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+  })();
   (function () {
     const bar = document.createElement("div"); bar.className = "progress"; document.body.appendChild(bar);
     addEventListener("scroll", () => { const h = document.documentElement; bar.style.width = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + "%"; }, { passive: true });
