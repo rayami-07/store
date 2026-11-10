@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="../site.css?v=3" />
+  <link rel="stylesheet" href="../site.css?v=4" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
   <script>
@@ -72,7 +72,7 @@
   (function () {
     const bar = document.createElement("div"); bar.className = "progress"; document.body.appendChild(bar);
     addEventListener("scroll", () => { const h = document.documentElement; bar.style.width = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + "%"; }, { passive: true });
-    const sel = ".case,.feat,.scard,.step,.topic,.svc,.qr-item,.price-card,.faq details,section h2,.who,.embudo,.page-head .lede";
+    const sel = ".case,.feat,.scard,.step,.topic,.svc,.qr-item,.price-card,.faq details,section h2,.who,.embudo,.page-head .lede,.rv";
     const els = document.querySelectorAll(sel);
     if (!("IntersectionObserver" in window)) return;
     els.forEach((e, i) => { e.classList.add("rv"); e.style.setProperty("--d", ((i % 4) * 0.08) + "s"); });
