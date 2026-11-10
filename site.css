@@ -196,4 +196,22 @@
     .price-card .big { font-family: var(--display); font-weight: 900; font-size: clamp(54px, 9vw, 96px); line-height: .9; color: var(--orange-deep); }
     .price-card .big small { font-size: .3em; color: var(--muted); font-weight: 700; }
     @media (max-width: 860px) { .topics { grid-template-columns: 1fr; } }
+    .crumb { display: inline-block; margin-bottom: 18px; font-weight: 700; color: var(--orange-deep); text-decoration: none; }
+    .sgroup { margin-top: 40px; font-size: clamp(26px, 3.4vw, 36px); }
+    .sgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; margin-top: 20px; }
+    .scard { display: grid; gap: 8px; align-content: start; border: 2px solid var(--ink); border-radius: 16px; padding: 20px; text-decoration: none; }
+    .scard:hover { background: var(--orange-wash); }
+    .scard i { font-size: 24px; color: var(--orange-deep); }
+    .scard h3 { font-size: 20px; }
+    .scard p { color: var(--muted); font-size: 16px; }
+    .scard b { color: var(--orange-deep); font-size: 15px; }
+    .scard .tag { justify-self: start; }
+    .scard.soon { border-color: var(--line, #d6d3d1); border-style: dashed; }
+    .bul { list-style: none; padding: 0; margin: 18px 0 0; display: grid; gap: 12px; max-width: 70ch; }
+    .bul li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 10px; font-size: 18px; }
+    .bul li::before { content: "✓"; color: var(--orange-deep); font-weight: 800; }
+    .det h2 { margin-top: 44px; font-size: clamp(28px, 3.6vw, 40px); }
+    .others { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+    .others a { border: 1.5px solid var(--ink); border-radius: 100px; padding: 6px 14px; font-weight: 600; font-size: 15px; text-decoration: none; color: var(--ink); }
+    .others a:hover { background: var(--orange-wash); }
 

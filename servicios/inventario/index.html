@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Control de inventario · RAYAMI Tiendas</title>
+  <meta name="description" content="Sabes qué tienes, qué se vendió y qué se está acabando." />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="../../site.css?v=1" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GR83B3NZX9');
+  </script>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="../../">RAYAMI <span>Tiendas</span></a>
+    <nav class="nav-links" aria-label="Secciones"><a href="../../servicios/" class="on" aria-current="page">Servicios</a><a href="../../leads-y-crm/">Leads y CRM</a><a href="../../analisis/">Análisis</a><a href="../../precios/">Precios</a><a href="../../preguntas/">Preguntas</a></nav>
+    <a class="btn btn-wa wa-link" data-msg="Hola, quiero una muestra gratis de mi tienda en línea"><i class="fa-brands fa-whatsapp"></i> Pide tu muestra</a>
+  </div>
+</header>
+<main>
+<section class="wrap page-head det"><a class="crumb" href="../">← Todos los servicios</a><h1>Control de inventario</h1><p class="lede">Sabes qué tienes, qué se vendió y qué se está acabando.</p><p style="margin-top:14px"><span class="tag ok">Disponible</span></p></section>
+<section class="wrap det" style="padding-top:0">
+<h2>¿Para qué sirve?</h2>
+<ul class="bul"><li><span>Existencias por producto y por talla, en un solo lugar.</span></li><li><span>Ves qué se está acabando antes de quedarte sin él.</span></li><li><span>Hoy lo armamos a la medida de tu negocio. El inventario que descuenta solo al vender, dentro de tu tienda, viene próximamente.</span></li></ul>
+<h2>Ejemplos</h2>
+<div class="cases"><div class="case"><small>Boutique</small><h3>Tallas que se agotan</h3><p>Ves qué talla ya no tienes antes de ofrecerla.</p></div><div class="case"><small>Abarrotes</small><h3>Qué reponer esta semana</h3><p>Una lista de lo que está por acabarse.</p></div><div class="case"><small>Taller</small><h3>Refacciones en existencia</h3><p>Sabes si tienes la pieza antes de cotizar.</p></div></div>
+<h2>Cómo empezamos</h2>
+<ul class="bul"><li><span>Nos cuentas qué productos manejas y cómo los controlas hoy.</span></li><li><span>Armamos tu control a la medida y te lo entregamos.</span></li><li><span>Te enseñamos a usarlo.</span></li></ul>
+<p style="margin-top:22px"><a class="btn btn-wa wa-link" data-conv="1" data-msg="Hola, quiero cotizar el control de inventario para mi negocio"><i class="fa-brands fa-whatsapp"></i> Cotizar este servicio</a></p>
+<h2>Otros servicios</h2>
+<div class="others"><a href="../../servicios/pagina-web/">Página web o catálogo en línea</a><a href="../../servicios/pedidos-whatsapp/">Pedidos por WhatsApp</a><a href="../../servicios/qr/">Código QR (menú o catálogo)</a><a href="../../servicios/perfil-google/">Perfil de Negocio de Google</a><a href="../../servicios/anuncios-google/">Anuncios en Google</a><a href="../../leads-y-crm/">Leads y CRM</a><a href="../../analisis/">Análisis de tu negocio</a><a href="../../servicios/finanzas/">Finanzas</a><a href="../../servicios/cursos-excel/">Cursos de Excel</a><a href="../../servicios/redes-sociales/">Conexión a redes sociales</a><a href="../../servicios/para-crecer/">Para crecer</a></div>
+</section>
+  <section class="close">
+    <div class="wrap close-in">
+      <div>
+        <h2>Mira tu tienda antes de decidir</h2>
+        <p>Mándanos el nombre de tu negocio y tu logo. Te enviamos una muestra para que la pruebes en tu celular.</p>
+      </div>
+      <a class="btn btn-wa wa-link" data-msg="Hola, quiero ver la muestra de mi tienda. Mi negocio se llama: "><i class="fa-brands fa-whatsapp"></i> Pedir mi muestra</a>
+    </div>
+  </section>
+</main>
+<footer class="wrap">
+  <div class="foot-in">
+    <span>© 2026 RAYAMI Tiendas</span>
+    <span>WhatsApp: 55 8107 4978</span>
+    <a href="../../privacidad/">Aviso de privacidad</a>
+  </div>
+</footer>
+<script>
+  const WA = "525581074978";
+  document.querySelectorAll(".wa-link").forEach((a) => {
+    a.href = `https://api.whatsapp.com/send?phone=${WA}&text=${encodeURIComponent(a.dataset.msg || "")}`;
+    a.target = "_blank"; a.rel = "noopener";
+    // Cotizar: abre WhatsApp y esta pestaña pasa a /gracias/ (página que Google Ads mide como cotización)
+    if (a.dataset.conv) a.addEventListener("click", () => setTimeout(() => { location.href = "../../gracias/"; }, 700));
+  });
+</script>
+</body>
+</html>
