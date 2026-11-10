@@ -10,7 +10,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
-  <link rel="stylesheet" href="../../site.css?v=1" />
+  <link rel="stylesheet" href="../../site.css?v=3" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
   <script>
@@ -29,7 +29,7 @@
   </div>
 </header>
 <main>
-<section class="wrap page-head det"><a class="crumb" href="../">← Todos los servicios</a><h1>Anuncios en Google</h1><p class="lede">Campañas para que te busquen y te escriban por WhatsApp.</p><p style="margin-top:14px"><span class="tag ok">Disponible</span></p></section>
+<section class="wrap page-head det"><a class="crumb" href="../">← Todos los servicios</a><div class="hero2"><div><h1>Anuncios en Google</h1><p class="lede">Campañas para que te busquen y te escriban por WhatsApp.</p><p style="margin-top:14px"><span class="tag ok">Disponible</span></p></div><div class="mock-wrap rv"><div class="mock" aria-hidden="true"><div class="m-search">🔍 cocinas integrales</div><div class="m-card"><div class="m-ad">Anuncio · tunegocio.com</div><h4>Cocinas integrales a tu medida</h4><div>Cotiza hoy por WhatsApp. Te respondemos en minutos.</div></div><div class="m-kpis"><div><b>124</b><span>Clics</span></div><div><b>9</b><span>Cotizaciones</span></div><div><b>$80</b><span>Por día</span></div></div></div><span class="mock-note">Ejemplo ilustrativo</span></div></div></section>
 <section class="wrap det" style="padding-top:0">
 <h2>¿Para qué sirve?</h2>
 <ul class="bul"><li><span>Tu anuncio sale cuando alguien busca lo que vendes.</span></li><li><span>Medimos cuántos clics terminan en cotización o mensaje.</span></li><li><span>Tú decides el presupuesto diario. Google cobra por clic, y no puede pasar de ese límite.</span></li></ul>
@@ -66,6 +66,18 @@
     // Cotizar: abre WhatsApp y esta pestaña pasa a /gracias/ (página que Google Ads mide como cotización)
     if (a.dataset.conv) a.addEventListener("click", () => setTimeout(() => { location.href = "../../gracias/"; }, 700));
   });
+
+  (function () {
+    const bar = document.createElement("div"); bar.className = "progress"; document.body.appendChild(bar);
+    addEventListener("scroll", () => { const h = document.documentElement; bar.style.width = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + "%"; }, { passive: true });
+    const sel = ".case,.feat,.scard,.step,.topic,.svc,.qr-item,.price-card,.faq details,section h2,.who,.embudo,.page-head .lede";
+    const els = document.querySelectorAll(sel);
+    if (!("IntersectionObserver" in window)) return;
+    els.forEach((e, i) => { e.classList.add("rv"); e.style.setProperty("--d", ((i % 4) * 0.08) + "s"); });
+    const io = new IntersectionObserver((en) => en.forEach((x) => { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }), { threshold: .12 });
+    els.forEach((e) => io.observe(e));
+    document.querySelectorAll(".mock-wrap").forEach((m) => { m.classList.add("in"); });
+  })();
 </script>
 </body>
 </html>
