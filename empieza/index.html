@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Tu tienda en línea para vender por WhatsApp · RAYAMI Tiendas</title>
+  <meta name="description" content="Catálogo en línea y pedidos por WhatsApp para tu negocio, desde $60 al mes. Mira un ejemplo y pide tu muestra gratis." />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="../site.css?v=5" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GR83B3NZX9');
+  </script>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="../">RAYAMI <span>Tiendas</span></a>
+    <a class="btn btn-wa wa-link" data-conv="1" data-msg="Hola, vi su anuncio y quiero mi tienda en línea. Mi negocio se llama: "><i class="fa-brands fa-whatsapp"></i> Escríbenos</a>
+  </div>
+</header>
+<main>
+  <section class="wrap hero">
+    <div>
+      <h1>¿Vendes por WhatsApp? <span class="rot">Ten tu tienda en línea</span></h1>
+      <p class="lede">Tus clientes ven tu catálogo con fotos y precios, arman su pedido y te llega ordenado a tu WhatsApp. Sin app, sin complicarte.</p>
+      <div class="hero-btns">
+        <a class="btn btn-wa wa-link" data-conv="1" data-msg="Hola, vi su anuncio y quiero mi muestra gratis. Mi negocio se llama: "><i class="fa-brands fa-whatsapp"></i> Quiero mi muestra gratis</a>
+      </div>
+      <p class="hero-note">Desde $60 al mes · Te armamos una muestra con tu nombre y logo antes de que decidas.</p>
+    </div>
+    <div class="phone-col">
+      <div class="giros" role="group" aria-label="Ver ejemplo de">
+        <button data-giro="comida" aria-pressed="true">Comida</button>
+        <button data-giro="ropa" aria-pressed="false">Ropa</button>
+        <button data-giro="calzado" aria-pressed="false">Calzado</button>
+        <button data-giro="belleza" aria-pressed="false">Belleza</button>
+      </div>
+      <div class="phone"><iframe id="demo" title="Ejemplo de tienda en línea"></iframe></div>
+      <p class="phone-hint">Es un ejemplo: toca productos y arma un pedido.</p>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Para qué te sirve</h2>
+    <div class="topics">
+      <div class="topic"><i class="fa-solid fa-store"></i><h3>Catálogo siempre al día</h3><p>Cambias un precio o marcas "agotado" desde tu celular.</p></div>
+      <div class="topic"><i class="fa-brands fa-whatsapp"></i><h3>Pedidos ordenados</h3><p>Te llegan productos, cantidades y total en un solo mensaje.</p></div>
+      <div class="topic"><i class="fa-solid fa-boxes-stacked"></i><h3>Control de inventario</h3><p>Se descuentan las piezas cuando marcas el pedido como vendido.</p></div>
+    </div>
+  </section>
+
+  <section class="wrap">
+    <h2>Así empiezas</h2>
+    <div class="topics">
+      <div class="topic"><h3>1. Nos escribes</h3><p>Dinos el nombre de tu negocio y mándanos tu logo.</p></div>
+      <div class="topic"><h3>2. Te enviamos tu muestra</h3><p>La ves y la pruebas en tu celular, sin compromiso.</p></div>
+      <div class="topic"><h3>3. Si te gusta, queda activa</h3><p>Compartes tu link en redes y WhatsApp.</p></div>
+    </div>
+    <p class="extras-note">Desde $60 al mes. El precio final depende de cuántos productos tengas y si quieres QR impresos. Te decimos el costo exacto antes de empezar.</p>
+  </section>
+
+  <section class="close">
+    <div class="wrap close-in">
+      <div>
+        <h2>Mira tu tienda antes de decidir</h2>
+        <p>Escríbenos hoy y te mandamos tu muestra.</p>
+      </div>
+      <a class="btn btn-wa wa-link" data-conv="1" data-msg="Hola, vi su anuncio y quiero mi muestra gratis. Mi negocio se llama: "><i class="fa-brands fa-whatsapp"></i> Pedir mi muestra</a>
+    </div>
+  </section>
+</main>
+<footer class="wrap">
+  <div class="foot-in">
+    <span>© 2026 RAYAMI Tiendas</span>
+    <span>WhatsApp: 55 8107 4978</span>
+    <a href="../privacidad/">Aviso de privacidad</a>
+  </div>
+</footer>
+<script type="module">
+  import { GIROS, productosDeEjemplo, disenoDePlantilla } from "../tienda/muestras.js";
+
+  const WA = "525581074978";
+  document.querySelectorAll(".wa-link").forEach((a) => {
+    a.href = `https://api.whatsapp.com/send?phone=${WA}&text=${encodeURIComponent(a.dataset.msg || "")}`;
+    a.target = "_blank"; a.rel = "noopener";
+    // Cotizar: abre WhatsApp y esta pestaña pasa a /gracias/ (página que Google Ads mide como cotización)
+    if (a.dataset.conv) a.addEventListener("click", () => setTimeout(() => { location.href = "../gracias/"; }, 700));
+  });
+
+  // Ejemplos de negocio para el celular en vivo
+  const EJEMPLOS = {
+    comida:  { name: "Tacos Don Beto",   plantilla: "sabor", aviso: "Pedidos para llevar y a domicilio", pagos: { metodos: ["transferencia", "link"], anticipado: true, banco: "BBVA", clabe: "012180000000000000", titular: "Tacos Don Beto" } },
+    ropa:    { name: "Moda Ana",         plantilla: "street", aviso: "Envíos a todo México" },
+    calzado: { name: "Zapatería Lupita", plantilla: "energia", aviso: "Cambios de talla sin costo" },
+    belleza: { name: "Studio Brillo",    plantilla: "floral", aviso: "Productos originales" },
+  };
+  const frame = document.getElementById("demo");
+  let current = "comida", ready = false;
+  function configFor(giro) {
+    const g = GIROS[giro], e = EJEMPLOS[giro];
+    return {
+      name: e.name, giro, tagline: g.tagline, whatsapp: WA, aviso: e.aviso, logo: "",
+      ...disenoDePlantilla(e.plantilla),   // cada ejemplo con una plantilla de diseño distinta
+      categorias: g.categorias, status: "activa",
+      products: productosDeEjemplo(giro),
+      pedidos: { datos: "opcional", entregas: ["recoger", "domicilio"] },
+      pagos: e.pagos || { metodos: ["entrega", "transferencia"], anticipado: false },
+    };
+  }
+  function show(giro) {
+    current = giro;
+    document.querySelectorAll("[data-giro]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.giro === giro)));
+    if (ready) frame.contentWindow.postMessage({ type: "tienda-preview", config: configFor(giro) }, location.origin);
+  }
+  window.addEventListener("message", (e) => {
+    if (e.origin === location.origin && e.data?.type === "tienda-ready") { ready = true; show(current); }
+  });
+  frame.addEventListener("load", () => { ready = true; show(current); });
+  frame.src = `../tienda/?preview=1&muestra=1&v=${Date.now()}`;
+  document.querySelectorAll("[data-giro]").forEach((b) => b.addEventListener("click", () => show(b.dataset.giro)));
+</script>
+</body>
+</html>
