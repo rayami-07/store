@@ -213,6 +213,10 @@
           },
           "delivery": {
             ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "status": {
+            ".write": "(auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists() && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+            ".validate": "newData.isString() && newData.val().length <= 20"
           }
         },
         ".read": "(auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists())"

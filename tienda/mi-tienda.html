@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="editar.css?v=7" />
-  <link rel="stylesheet" href="mi-tienda.css?v=1" />
+  <link rel="stylesheet" href="mi-tienda.css?v=2" />
 </head>
 <body>
 <div class="loading" id="loading"><div class="spinner"></div></div>
@@ -52,6 +52,7 @@
     </div>
     <nav class="wrap tabs" role="tablist">
       <button class="tab active" data-tab="productos" role="tab">Productos</button>
+      <button class="tab" data-tab="pedidos" role="tab">Pedidos <span class="tab-badge" id="pedBadge" hidden></span></button>
       <button class="tab" data-tab="negocio" role="tab">Mi negocio</button>
       <button class="tab" data-tab="cuenta" role="tab">Cuenta</button>
     </nav>
@@ -87,6 +88,15 @@
           <button class="btn btn-dark" id="addProd"><i class="fa-solid fa-plus"></i> Agregar producto</button>
           <button class="btn btn-light" id="addCombo"><i class="fa-solid fa-layer-group"></i> Agregar combo</button>
         </div>
+      </section>
+    </div>
+
+    <!-- PEDIDOS -->
+    <div class="tab-pane" data-pane="pedidos" hidden>
+      <section class="block">
+        <div class="block-head"><h2>Pedidos <span class="muted" id="pedCount"></span></h2></div>
+        <p class="muted small">Cuando un cliente te pague y recibas el pedido, toca <b>Marcar vendido</b>: se descuentan las piezas de tu inventario.</p>
+        <div class="list" id="pedList"><p class="muted">Cargando…</p></div>
       </section>
     </div>
 
@@ -174,6 +184,7 @@
         <label>Categoría
           <select id="fCat"></select>
         </label>
+        <label>¿Cuántas piezas tienes? <span class="muted">(opcional)</span><input id="fStock" inputmode="numeric" maxlength="5" placeholder="Ej. 12. Vacío = sin control" /></label>
         <label id="newCatWrap" hidden>Nombre de la categoría nueva<input id="fNewCat" maxlength="30" placeholder="Ej. Promociones" /></label>
         <label><span id="descLabel">Descripción <span class="muted">(opcional)</span></span><textarea id="fDesc" rows="2" maxlength="300" placeholder="Material, medidas, qué incluye…"></textarea></label>
         <details class="opts" id="optsBox">
@@ -194,6 +205,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 
-<script type="module" src="mi-tienda.js?v=5"></script>
+<script type="module" src="mi-tienda.js?v=6"></script>
 </body>
 </html>

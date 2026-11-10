@@ -211,6 +211,7 @@ $("qCopy").addEventListener("click", async () => {
 
 /* ── Pestañas ── */
 document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => {
+  if (b.dataset.tab === "pedidos") loadPedidos();
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === b));
   document.querySelectorAll(".tab-pane").forEach((p) => (p.hidden = p.dataset.pane !== b.dataset.tab));
   scrollTo(0, 0);
@@ -261,6 +262,12 @@ async function saveProducts(next, msg) {
   } catch (err) { console.error(err); toast(saveError(err)); return false; }
 }
 
+/* ── Inventario: "stock" es opcional. Vacío = sin control; 0 = agotado automático ── */
+const LOW = 3;
+const tracked = (p) => p.stock !== undefined && p.stock !== null && p.stock !== "";
+const isOff = (p) => !!p.agotado || (tracked(p) && Number(p.stock) <= 0);
+const stockBadge = (p) => !tracked(p) ? "" : Number(p.stock) <= 0 ? "" : `<span class="badge${Number(p.stock) <= LOW ? " low" : ""}">${Number(p.stock) <= LOW ? "Quedan" : "Hay"} ${Number(p.stock)}</span>`;
+
 /* ── Lista de productos ── */
 function render() {
   const all = products();
@@ -270,14 +277,14 @@ function render() {
   $("search").hidden = all.length < 8;
   $("list").innerHTML = list.length ? list.map((p) => {
     const sale = p.salePrice > 0 && p.salePrice < p.price;
-    return `<div class="item${p.agotado ? " off" : ""}">
+    return `<div class="item${isOff(p) ? " off" : ""}">
       <img src="${esc(photoOf(p))}" alt="" loading="lazy" />
       <div>
         <div class="item-name">${esc(p.name)}</div>
         <div class="item-meta">
           ${sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : `<span>${money(p.price)}</span>`}
           ${p.category ? `<span>· ${esc(p.category)}</span>` : ""}
-          ${p.agotado ? `<span class="badge off">Agotado</span>` : ""}
+          ${isOff(p) ? `<span class="badge off">Agotado</span>` : stockBadge(p)}
           ${(p.variantes || []).length ? `<span class="badge">${(p.variantes || []).map((g) => esc(g.nombre)).join(", ")}</span>` : ""}
         </div>
       </div>
@@ -331,6 +338,7 @@ function openSheet(id, combo = false) {
   $("fName").placeholder = draftCombo ? "Ej. Combo 2 tacos + refresco" : "Ej. Tenis blancos";
   $("fPrice").value = p?.price || "";
   $("fSale").value = p?.salePrice || "";
+  $("fStock").value = tracked(p || {}) ? p.stock : "";
   const cats = categories();
   if (draftCombo && !cats.includes("Combos")) cats.unshift("Combos");
   const cur = p?.category || (draftCombo ? "Combos" : cats[0] || "");
@@ -387,6 +395,9 @@ $("pForm").addEventListener("submit", async (e) => {
       name, price, salePrice, category, desc: $("fDesc").value.trim(), variantes, ...fotos,
       ...(draftCombo ? { combo: true } : {}),
     };
+    const st = $("fStock").value.trim();
+    if (st === "") delete item.stock; else item.stock = Math.max(0, Math.min(99999, Math.floor(num(st))));
+    if (item.stock > 0 && item.agotado) item.agotado = false; // si repones piezas, vuelve a estar disponible
     if (!item.photoMini) delete item.photoMini; // sin miniatura: la tienda usa la foto normal
     const next = prev ? products().map((x) => (x.id === prev.id ? item : x)) : [item, ...products()];
     if (await saveProducts(next, prev ? "Producto actualizado" : "Producto agregado")) closeSheet();
@@ -398,6 +409,63 @@ $("sheetClose").addEventListener("click", closeSheet);
 $("sheetCancel").addEventListener("click", closeSheet);
 $("sheet").addEventListener("click", (e) => { if (e.target === $("sheet")) closeSheet(); });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("sheet").hidden) closeSheet(); });
+
+/* ── Pedidos: el dueño confirma la venta y se descuenta el inventario ── */
+let pedidos = [];
+const fechaCorta = (ms) => new Date(ms).toLocaleString("es-MX", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+async function loadPedidos() {
+  try {
+    const snap = await get(ref(db, `leads/${storeId}`));
+    pedidos = Object.entries(snap.val() || {}).map(([id, l]) => ({ id, ...l })).filter((l) => l.type === "pedido").sort((a, b) => (b.ts || 0) - (a.ts || 0)).slice(0, 60);
+  } catch (err) { console.error(err); $("pedList").innerHTML = `<p class="err">No pude cargar tus pedidos.</p>`; return; }
+  renderPedidos();
+}
+function renderPedidos() {
+  const nuevos = pedidos.filter((l) => !l.status || l.status === "nuevo").length;
+  $("pedBadge").hidden = !nuevos; $("pedBadge").textContent = nuevos;
+  $("pedCount").textContent = pedidos.length ? `(${pedidos.length})` : "";
+  $("pedList").innerHTML = pedidos.length ? pedidos.map((l) => {
+    const items = asList(l.items);
+    const pend = !l.status || l.status === "nuevo";
+    const tag = l.status === "vendido" ? `<span class="tag2 ok">Vendido</span>` : l.status === "cancelado" ? `<span class="tag2 no">Cancelado</span>` : `<span class="tag2">Nuevo</span>`;
+    const sinStock = pend ? items.filter((i) => { const p = products().find((x) => x.id === i.id); return p && tracked(p) && Number(p.stock) < (i.qty || 1); }) : [];
+    return `<div class="ped${pend ? "" : " done"}">
+      <div class="ped-top"><span>${esc(l.name || "Cliente")} <small>${l.phone ? "· " + esc(l.phone) : ""}</small></span><span>${money(l.total)} ${tag}</span></div>
+      <small class="muted">${l.ts ? fechaCorta(l.ts) : ""}${l.delivery ? " · " + esc(l.delivery) : ""}${l.mesa ? " · mesa " + esc(l.mesa) : ""}</small>
+      <ul>${items.map((i) => `<li>${esc(i.qty || 1)} × ${esc(i.name)}${i.v ? ` (${esc(i.v)})` : ""}</li>`).join("")}</ul>
+      ${sinStock.length ? `<div class="warn">⚠ No alcanza el inventario de: ${sinStock.map((i) => esc(i.name)).join(", ")}</div>` : ""}
+      ${pend ? `<div class="acts"><button class="btn btn-dark" data-sold="${esc(l.id)}"><i class="fa-solid fa-check"></i> Marcar vendido</button><button class="mini" data-cancel="${esc(l.id)}">Cancelar</button></div>` : ""}
+    </div>`;
+  }).join("") : `<p class="muted">Aún no hay pedidos. Cuando tus clientes manden uno, aparece aquí.</p>`;
+}
+$("pedList").addEventListener("click", async (e) => {
+  const sold = e.target.closest("[data-sold]"), cancel = e.target.closest("[data-cancel]");
+  const btn = sold || cancel; if (!btn) return;
+  const l = pedidos.find((x) => x.id === (sold ? sold.dataset.sold : cancel.dataset.cancel));
+  if (!l || (l.status && l.status !== "nuevo")) return;
+  btn.disabled = true;
+  try {
+    const up = {};
+    if (sold) {
+      // Inventario fresco desde Firebase (por si cambió desde otro celular) y descuento solo de lo que se controla
+      const fresh = asList((await get(ref(db, `stores/${storeId}/products`))).val());
+      const next = fresh.map((p) => {
+        const it = asList(l.items).filter((i) => i.id === p.id).reduce((n, i) => n + (Number(i.qty) || 1), 0);
+        if (!it || !tracked(p)) return p;
+        const left = Math.max(0, Number(p.stock) - it);
+        return { ...p, stock: left };
+      });
+      up[`stores/${storeId}/products`] = clean(next);
+      up[`stores/${storeId}/updatedAt`] = serverTimestamp();
+      store.products = next;
+    }
+    up[`leads/${storeId}/${l.id}/status`] = sold ? "vendido" : "cancelado";
+    await update(ref(db), up);
+    l.status = sold ? "vendido" : "cancelado";
+    renderPedidos(); render();
+    toast(sold ? "Venta registrada. Inventario actualizado" : "Pedido cancelado");
+  } catch (err) { console.error(err); toast(saveError(err)); btn.disabled = false; }
+});
 
 /* ── Mi negocio ── */
 function renderLogo() {

@@ -56,6 +56,8 @@ function applyTheme() {
 function render(config) {
   cfg = { products: [], categorias: [], ...config };
   cfg.products = Array.isArray(cfg.products) ? cfg.products : Object.values(cfg.products || {});
+  // Inventario: si el dueño controla piezas y llegan a 0, se muestra como agotado
+  cfg.products = cfg.products.filter(Boolean).map((p) => (p.stock !== undefined && p.stock !== null && p.stock !== "" && Number(p.stock) <= 0 ? { ...p, agotado: true } : p));
   applyTheme();
 
   const giro = GIROS[cfg.giro] || GIROS.otro;
@@ -441,7 +443,7 @@ document.addEventListener("click", (e) => {
   const key = t.dataset.inc || t.dataset.dec;
   const item = cart.find((i) => (i.key || i.id + "|") === key);
   if (!item) return;
-  if (t.dataset.inc) item.qty++;
+  if (t.dataset.inc) { const pr = prodById(item.id); const lim = pr && pr.stock !== undefined && pr.stock !== null && pr.stock !== "" ? Number(pr.stock) : Infinity; if (item.qty >= lim) { toast("Solo quedan " + lim); return; } item.qty++; }
   else { item.qty--; if (item.qty <= 0) cart = cart.filter((i) => i !== item); }
   saveCart(); renderCart(); renderGrid();
 });
