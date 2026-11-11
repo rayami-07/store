@@ -462,7 +462,7 @@ $("pedList").addEventListener("click", async (e) => {
       const lea = lealtad(), k = telKey(l.phone);
       if (lea.activo && k.length === 10) {
         const prev = (await get(ref(db, `clientes/${storeId}/${k}`))).val() || nuevoCliente(l.name, k);
-        up[`clientes/${storeId}/${k}`] = clean({ ...prev, name: prev.name || (l.name || "").slice(0, 60), sellos: (Number(prev.sellos) || 0) + 1, visitas: (Number(prev.visitas) || 0) + 1, ultima: Date.now() });
+        up[`clientes/${storeId}/${k}`] = clean({ ...conSello(prev, lea), name: prev.name || (l.name || "").slice(0, 60) });
         selloA = prev.name || l.name || "tu cliente";
       }
       up[`stores/${storeId}/updatedAt`] = serverTimestamp();
@@ -480,12 +480,19 @@ $("pedList").addEventListener("click", async (e) => {
 /* ── Clientes frecuentes: tarjeta de sellos por número de WhatsApp ── */
 const telKey = (t) => digits(t).slice(-10);
 const waIntl = (t) => "52" + telKey(t);
-const lealtad = () => ({ activo: false, meta: 10, premio: "", ...(store.lealtad || {}) });
+const lealtad = () => ({ activo: false, meta: 10, premio: "", plazo: 0, ...(store.lealtad || {}) });
+// Plazo: la tarjeta empieza con el primer sello (inicio) y vence "plazo" meses después
+const masMeses = (ts, m) => { const d = new Date(ts); d.setMonth(d.getMonth() + m); return d.getTime(); };
+const venceEn = (c, l) => (l.plazo && c.inicio ? masMeses(c.inicio, l.plazo) : 0);
+const vencida = (c, l) => { const v = venceEn(c, l); return !!v && Date.now() > v; };
+const sellosDe = (c, l) => (vencida(c, l) ? 0 : Number(c.sellos) || 0);
+// Suma un sello; si la tarjeta venció o estaba vacía, empieza una nueva desde hoy
+const conSello = (c, l) => { const n = sellosDe(c, l), now = Date.now(); return { ...c, sellos: n + 1, inicio: n === 0 ? now : c.inicio || now, visitas: (Number(c.visitas) || 0) + 1, ultima: now }; };
 const nuevoCliente = (name, phone) => ({ name: String(name || "").slice(0, 60), phone: telKey(phone), sellos: 0, canjes: 0, visitas: 0, alta: Date.now() });
 let clientes = [];
 function fillLealtad() {
   const l = lealtad();
-  $("lActivo").checked = !!l.activo; $("lMeta").value = l.meta; $("lPremio").value = l.premio || ""; $("lErr").textContent = "";
+  $("lActivo").checked = !!l.activo; $("lMeta").value = l.meta; $("lPremio").value = l.premio || ""; $("lPlazo").value = String(l.plazo || 0); $("lErr").textContent = "";
 }
 async function loadClientes() {
   fillLealtad();
@@ -501,15 +508,16 @@ function renderClientes() {
     .sort((a, b) => (b.ultima || b.alta || 0) - (a.ultima || a.alta || 0));
   $("cliCount").textContent = clientes.length ? `(${clientes.length})` : "";
   $("cliList").innerHTML = list.length ? list.map((c) => {
-    const n = Number(c.sellos) || 0, listo = n >= l.meta;
+    const n = sellosDe(c, l), listo = n >= l.meta, v = venceEn(c, l), venc = vencida(c, l) && (Number(c.sellos) || 0) > 0;
+    const fechaV = v ? new Date(v).toLocaleDateString("es-MX", { day: "numeric", month: "short" }) : "";
     const dots = Array.from({ length: l.meta }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("");
     const msg = listo
       ? `Hola ${c.name || ""}, ¡completaste tus ${l.meta} sellos en ${store.name}! Tu premio: ${l.premio || "un regalo"}. Te esperamos para entregártelo.`
-      : `Hola ${c.name || ""}, llevas ${n} de ${l.meta} sellos en ${store.name}. ¡Te faltan ${l.meta - n} para tu premio${l.premio ? ": " + l.premio : ""}!`;
+      : `Hola ${c.name || ""}, llevas ${n} de ${l.meta} sellos en ${store.name}. ¡Te faltan ${l.meta - n} para tu premio${l.premio ? ": " + l.premio : ""}${v && !venc && n ? ` (tienes hasta el ${fechaV})` : ""}!`;
     return `<div class="cli${listo ? " ready" : ""}">
       <div class="cli-top"><b>${esc(c.name || "Cliente")}</b><small>${esc(c.phone || "")}</small></div>
       <div class="sellos" aria-label="${n} de ${l.meta} sellos">${dots}</div>
-      <small class="muted">${n} de ${l.meta} sellos${c.canjes ? ` · ${c.canjes} premio(s) entregado(s)` : ""}${c.ultima ? ` · última compra ${fechaCorta(c.ultima)}` : ""}</small>
+      <small class="muted">${n} de ${l.meta} sellos${venc ? ` · <b class="vence">su tarjeta venció; empieza de nuevo</b>` : v && n && !listo ? ` · <b class="vence">vence el ${fechaV}</b>` : ""}${c.canjes ? ` · ${c.canjes} premio(s) entregado(s)` : ""}${c.ultima ? ` · última compra ${fechaCorta(c.ultima)}` : ""}</small>
       <div class="acts">
         <button class="mini" data-sello="${esc(c.k)}"><i class="fa-solid fa-plus"></i> 1 sello</button>
         ${listo ? `<button class="btn btn-dark" data-canje="${esc(c.k)}"><i class="fa-solid fa-gift"></i> Entregar premio</button>` : ""}
@@ -528,10 +536,10 @@ $("cliBuscar").addEventListener("input", renderClientes);
 $("cliList").addEventListener("click", async (e) => {
   const b = e.target.closest("[data-sello],[data-canje]"); if (!b) return;
   const c = clientes.find((x) => x.k === (b.dataset.sello || b.dataset.canje)); if (!c) return;
-  const l = lealtad(), n = Number(c.sellos) || 0;
+  const l = lealtad(), n = sellosDe(c, l);
   const next = b.dataset.sello
-    ? { ...c, sellos: n + 1, visitas: (Number(c.visitas) || 0) + 1, ultima: Date.now() }
-    : { ...c, sellos: Math.max(0, n - l.meta), canjes: (Number(c.canjes) || 0) + 1 };
+    ? conSello(c, l)
+    : { ...c, sellos: Math.max(0, n - l.meta), inicio: n - l.meta > 0 ? Date.now() : 0, canjes: (Number(c.canjes) || 0) + 1 };
   b.disabled = true;
   if (await saveCliente(next, b.dataset.sello ? `+1 sello para ${c.name || "tu cliente"}` : "Premio entregado. Empieza una tarjeta nueva")) Object.assign(c, next);
   renderClientes();
@@ -552,7 +560,8 @@ $("lForm").addEventListener("submit", async (e) => {
   if (meta < 2 || meta > 30) { $("lErr").textContent = "Elige entre 2 y 30 sellos."; $("lMeta").focus(); return; }
   const premio = $("lPremio").value.trim();
   if ($("lActivo").checked && !premio) { $("lErr").textContent = "Escribe cuál es el premio."; $("lPremio").focus(); return; }
-  const lealtadNueva = { activo: $("lActivo").checked, meta, premio };
+  const plazo = Number($("lPlazo").value) || 0;
+  const lealtadNueva = { activo: $("lActivo").checked, meta, premio, plazo };
   const btn = $("lSave"); btn.disabled = true;
   try {
     await update(ref(db, `stores/${storeId}`), { lealtad: lealtadNueva, updatedAt: serverTimestamp() });

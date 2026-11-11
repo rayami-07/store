@@ -75,7 +75,7 @@ function render(config) {
   // Clientes frecuentes: aviso de la tarjeta de sellos
   const lea = cfg.lealtad;
   $("lealtad").hidden = !(lea && lea.activo && Number(lea.meta) > 0);
-  if (!$("lealtad").hidden) $("lealtad").innerHTML = `<i class="fa-solid fa-star"></i> <b>Cliente frecuente:</b> junta ${Number(lea.meta)} sellos y gana ${esc(lea.premio || "un premio")}. Te los sumamos con tu número de WhatsApp.`;
+  if (!$("lealtad").hidden) $("lealtad").innerHTML = `<i class="fa-solid fa-star"></i> <b>Cliente frecuente:</b> junta ${Number(lea.meta)} sellos${Number(lea.plazo) > 0 ? ` en ${Number(lea.plazo) === 12 ? "1 año" : Number(lea.plazo) === 1 ? "1 mes" : Number(lea.plazo) + " meses"}` : ""} y gana ${esc(lea.premio || "un premio")}. Te los sumamos con tu número de WhatsApp.`;
   $("heroEyebrow").textContent = cfg.name || "";
   $("heroTitle").textContent = cfg.tagline || giro.tagline;
   const first = cfg.products[0];
