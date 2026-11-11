@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="editar.css?v=7" />
-  <link rel="stylesheet" href="mi-tienda.css?v=4" />
+  <link rel="stylesheet" href="mi-tienda.css?v=5" />
 </head>
 <body>
 <div class="loading" id="loading"><div class="spinner"></div></div>
@@ -107,11 +107,20 @@
         <h2>Tarjeta de sellos</h2>
         <p class="muted small">Premia a quien te compra seguido. Cada compra suma un sello al número de WhatsApp de tu cliente; sin cuentas ni contraseñas.</p>
         <label class="check-line"><input type="checkbox" id="lActivo" /> Activar clientes frecuentes</label>
-        <div class="row2">
-          <label>Sellos para el premio<input id="lMeta" inputmode="numeric" maxlength="2" placeholder="10" /></label>
-          <label>Premio<input id="lPremio" maxlength="60" placeholder="Ej. Una orden gratis" /></label>
+        <label>Sellos para ganar el premio<input id="lMeta" inputmode="numeric" maxlength="2" placeholder="10" /></label>
+
+        <h2 class="sub">¿Cómo gana un sello tu cliente?</h2>
+        <div class="reglas" id="lRegla">
+          <label class="check-line"><input type="radio" name="lRegla" value="cualquiera" /> Con cualquier compra</label>
+          <label class="check-line"><input type="radio" name="lRegla" value="minimo" /> Con una compra mínima</label>
+          <label class="regla-extra" id="lMinWrap">Monto mínimo de la compra<input id="lMinimo" inputmode="numeric" maxlength="6" placeholder="Ej. 100" /></label>
+          <label class="check-line"><input type="radio" name="lRegla" value="producto" /> Comprando ciertos productos de tu catálogo</label>
+          <div class="regla-extra prod-picks" id="lProdWrap"></div>
         </div>
-        <label>Compra mínima para ganar un sello <span class="muted">(opcional)</span><input id="lMinimo" inputmode="numeric" maxlength="6" placeholder="Ej. 100. Vacío = cualquier compra" /></label>
+
+        <h2 class="sub">¿Qué premio vas a dar?</h2>
+        <label>Escribe tu premio<textarea id="lPremio" maxlength="80" rows="2" placeholder="Ej. Una orden de tacos gratis · 20% de descuento · Un refresco de regalo"></textarea></label>
+
         <label>Plazo para juntarlos
           <select id="lPlazo">
             <option value="0">Sin límite</option>
@@ -243,6 +252,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 
-<script type="module" src="mi-tienda.js?v=9"></script>
+<script type="module" src="mi-tienda.js?v=10"></script>
 </body>
 </html>

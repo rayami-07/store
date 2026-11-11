@@ -73,9 +73,19 @@ function render(config) {
     ? `<div class="mq" aria-hidden="true">${`<span>${esc(avisoTxt)}</span>`.repeat(8)}</div><span class="sr-only">${esc(avisoTxt)}</span>`
     : esc(avisoTxt);
   // Clientes frecuentes: aviso de la tarjeta de sellos
+  const reglaTxt = (l) => {
+    const regla = l.regla || (Number(l.minimo) > 0 ? "minimo" : "cualquiera");
+    if (regla === "minimo" && Number(l.minimo) > 0) return ` Cuenta cada compra desde $${Number(l.minimo).toLocaleString("es-MX")}.`;
+    if (regla === "producto") {
+      const ids = Array.isArray(l.productos) ? l.productos : Object.values(l.productos || {});
+      const n = ids.map((id) => prodById(id)?.name).filter(Boolean);
+      if (n.length) return ` Suma sello al comprar ${esc(n.slice(0, 3).join(", "))}${n.length > 3 ? " y más" : ""}.`;
+    }
+    return "";
+  };
   const lea = cfg.lealtad;
   $("lealtad").hidden = !(lea && lea.activo && Number(lea.meta) > 0);
-  if (!$("lealtad").hidden) $("lealtad").innerHTML = `<i class="fa-solid fa-star"></i> <b>Cliente frecuente:</b> junta ${Number(lea.meta)} sellos${Number(lea.plazo) > 0 ? ` en ${Number(lea.plazo) === 12 ? "1 año" : Number(lea.plazo) === 1 ? "1 mes" : Number(lea.plazo) + " meses"}` : ""} y gana ${esc(lea.premio || "un premio")}.${Number(lea.minimo) > 0 ? ` Cuenta cada compra desde $${Number(lea.minimo).toLocaleString("es-MX")}.` : ""} Te los sumamos con tu número de WhatsApp.`;
+  if (!$("lealtad").hidden) $("lealtad").innerHTML = `<i class="fa-solid fa-star"></i> <b>Cliente frecuente:</b> junta ${Number(lea.meta)} sellos${Number(lea.plazo) > 0 ? ` en ${Number(lea.plazo) === 12 ? "1 año" : Number(lea.plazo) === 1 ? "1 mes" : Number(lea.plazo) + " meses"}` : ""} y gana ${esc(lea.premio || "un premio")}.${reglaTxt(lea)} Te los sumamos con tu número de WhatsApp.`;
   $("heroEyebrow").textContent = cfg.name || "";
   $("heroTitle").textContent = cfg.tagline || giro.tagline;
   const first = cfg.products[0];

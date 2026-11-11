@@ -464,7 +464,7 @@ $("pedList").addEventListener("click", async (e) => {
         const prev = (await get(ref(db, `clientes/${storeId}/${k}`))).val() || nuevoCliente(l.name, k);
         const r = conCompra(prev, lea, l);
         up[`clientes/${storeId}/${k}`] = clean({ ...r.c, name: prev.name || (l.name || "").slice(0, 60) });
-        selloA = r.sello ? `+1 sello para ${prev.name || l.name || "tu cliente"}` : `Sin sello: la compra es menor a ${money(lea.minimo)}`;
+        selloA = r.sello ? `+1 sello para ${prev.name || l.name || "tu cliente"}` : `Sin sello: ${r.motivo}`;
       }
       up[`stores/${storeId}/updatedAt`] = serverTimestamp();
       store.products = next;
@@ -481,7 +481,20 @@ $("pedList").addEventListener("click", async (e) => {
 /* ── Clientes frecuentes: tarjeta de sellos por número de WhatsApp ── */
 const telKey = (t) => digits(t).slice(-10);
 const waIntl = (t) => "52" + telKey(t);
-const lealtad = () => ({ activo: false, meta: 10, premio: "", plazo: 0, minimo: 0, ...(store.lealtad || {}) });
+const lealtad = () => {
+  const l = { activo: false, meta: 10, premio: "", plazo: 0, minimo: 0, productos: [], ...(store.lealtad || {}) };
+  l.productos = asList(l.productos);
+  if (!l.regla) l.regla = l.minimo > 0 ? "minimo" : "cualquiera"; // tiendas que ya lo tenían antes de elegir regla
+  return l;
+};
+const nombresProd = (ids) => ids.map((id) => products().find((p) => p.id === id)?.name).filter(Boolean);
+// ¿Esta compra gana sello? Devuelve el motivo si no
+function ganaSello(l, pedido) {
+  if (l.regla === "minimo" && (Number(pedido.total) || 0) < (Number(l.minimo) || 0)) return `la compra es menor a ${money(l.minimo)}`;
+  if (l.regla === "producto" && !asList(pedido.items).some((i) => l.productos.includes(i.id))) return "no incluye un producto del premio";
+  return "";
+}
+const reglaCorta = (l) => l.regla === "minimo" && l.minimo ? ` (compra desde ${money(l.minimo)})` : l.regla === "producto" ? " (si compró producto participante)" : "";
 // Plazo: la tarjeta empieza con el primer sello (inicio) y vence "plazo" meses después
 const masMeses = (ts, m) => { const d = new Date(ts); d.setMonth(d.getMonth() + m); return d.getTime(); };
 const venceEn = (c, l) => (l.plazo && c.inicio ? masMeses(c.inicio, l.plazo) : 0);
@@ -493,7 +506,8 @@ const resumenItems = (items) => asList(items).map((i) => `${Number(i.qty) || 1} 
 const conCompra = (c, l, pedido) => {
   const total = Number(pedido.total) || 0;
   const base = { ultimo: resumenItems(pedido.items), ultimoTotal: total, gastado: (Number(c.gastado) || 0) + total };
-  if (total < (Number(l.minimo) || 0)) return { c: { ...c, ...base, visitas: (Number(c.visitas) || 0) + 1, ultima: Date.now() }, sello: false };
+  const motivo = ganaSello(l, pedido);
+  if (motivo) return { c: { ...c, ...base, visitas: (Number(c.visitas) || 0) + 1, ultima: Date.now() }, sello: false, motivo };
   return { c: { ...conSello(c, l), ...base }, sello: true };
 };
 const conSello = (c, l) => { const n = sellosDe(c, l), now = Date.now(); return { ...c, sellos: n + 1, inicio: n === 0 ? now : c.inicio || now, visitas: (Number(c.visitas) || 0) + 1, ultima: now }; };
@@ -501,7 +515,13 @@ const nuevoCliente = (name, phone) => ({ name: String(name || "").slice(0, 60), 
 let clientes = [];
 function fillLealtad() {
   const l = lealtad();
-  $("lActivo").checked = !!l.activo; $("lMeta").value = l.meta; $("lPremio").value = l.premio || ""; $("lPlazo").value = String(l.plazo || 0); $("lMinimo").value = l.minimo ? String(l.minimo) : ""; $("lErr").textContent = "";
+  $("lActivo").checked = !!l.activo; $("lMeta").value = l.meta; $("lPremio").value = l.premio || ""; $("lPlazo").value = String(l.plazo || 0); $("lMinimo").value = l.minimo ? String(l.minimo) : "";
+  document.querySelectorAll('#lRegla input[name="lRegla"]').forEach((r) => (r.checked = r.value === l.regla));
+  const lista = products().filter((p) => p && p.id && p.name);
+  $("lProdWrap").innerHTML = lista.length
+    ? lista.map((p) => `<label><input type="checkbox" value="${esc(p.id)}"${l.productos.includes(p.id) ? " checked" : ""} /> ${esc(p.name)}</label>`).join("")
+    : `<p class="muted small">Primero agrega productos a tu catálogo.</p>`;
+  reglaVisibility(); $("lErr").textContent = "";
 }
 async function loadClientes() {
   fillLealtad();
@@ -529,8 +549,9 @@ function renderClientes() {
       <small class="muted">${n} de ${l.meta} sellos${venc ? ` · <b class="vence">su tarjeta venció; empieza de nuevo</b>` : v && n && !listo ? ` · <b class="vence">vence el ${fechaV}</b>` : ""}${c.canjes ? ` · ${c.canjes} premio(s) entregado(s)` : ""}${c.ultima ? ` · última compra ${fechaCorta(c.ultima)}` : ""}</small>
       ${c.ultimo ? `<small>Compró: ${esc(c.ultimo)}${c.ultimoTotal ? ` · ${money(c.ultimoTotal)}` : ""}</small>` : ""}
       ${c.gastado ? `<small class="muted">Total gastado: ${money(c.gastado)} en ${Number(c.visitas) || 0} compra(s)</small>` : ""}
+      ${reglaCorta(l) ? `<span class="regla-hint">Sello manual solo${reglaCorta(l).replace(/[()]/g, "")}</span>` : ""}
       <div class="acts">
-        <button class="mini" data-sello="${esc(c.k)}"><i class="fa-solid fa-plus"></i> 1 sello${l.minimo ? ` (compra desde ${money(l.minimo)})` : ""}</button>
+        <button class="mini" data-sello="${esc(c.k)}"><i class="fa-solid fa-plus"></i> 1 sello</button>
         ${listo ? `<button class="btn btn-dark" data-canje="${esc(c.k)}"><i class="fa-solid fa-gift"></i> Entregar premio</button>` : ""}
         <a class="mini" target="_blank" rel="noopener" href="${esc(waSend(waIntl(c.phone), msg))}"><i class="fa-brands fa-whatsapp"></i> Avisar</a>
       </div>
@@ -563,6 +584,11 @@ $("cliAdd").addEventListener("submit", async (e) => {
   const c = { k, ...nuevoCliente($("cName").value.trim(), k) };
   if (await saveCliente(c, "Cliente agregado")) { clientes.push(c); $("cName").value = ""; $("cPhone").value = ""; renderClientes(); }
 });
+function reglaVisibility() {
+  const r = document.querySelector('#lRegla input[name="lRegla"]:checked')?.value;
+  $("lMinWrap").hidden = r !== "minimo"; $("lProdWrap").hidden = r !== "producto";
+}
+$("lRegla").addEventListener("change", reglaVisibility);
 $("lForm").addEventListener("submit", async (e) => {
   e.preventDefault();
   $("lErr").textContent = "";
@@ -572,8 +598,12 @@ $("lForm").addEventListener("submit", async (e) => {
   const premio = $("lPremio").value.trim();
   if ($("lActivo").checked && !premio) { $("lErr").textContent = "Escribe cuál es el premio."; $("lPremio").focus(); return; }
   const plazo = Number($("lPlazo").value) || 0;
+  const regla = document.querySelector('#lRegla input[name="lRegla"]:checked')?.value || "cualquiera";
   const minimo = Math.max(0, Math.floor(num($("lMinimo").value)));
-  const lealtadNueva = { activo: $("lActivo").checked, meta, premio, plazo, minimo };
+  const productos = [...document.querySelectorAll("#lProdWrap input:checked")].map((c) => c.value).slice(0, 50);
+  if (regla === "minimo" && minimo < 1) { $("lErr").textContent = "Escribe el monto mínimo de la compra."; $("lMinimo").focus(); return; }
+  if (regla === "producto" && !productos.length) { $("lErr").textContent = "Elige al menos un producto que gane sello."; return; }
+  const lealtadNueva = { activo: $("lActivo").checked, meta, premio, plazo, regla, ...(regla === "minimo" ? { minimo } : {}), ...(regla === "producto" ? { productos } : {}) };
   const btn = $("lSave"); btn.disabled = true;
   try {
     await update(ref(db, `stores/${storeId}`), { lealtad: lealtadNueva, updatedAt: serverTimestamp() });

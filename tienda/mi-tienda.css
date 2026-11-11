@@ -81,7 +81,7 @@
 .cli-top { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .cli-top small { color: var(--muted); }
 .sellos { display: flex; gap: 6px; flex-wrap: wrap; }
-.sellos i { width: 22px; height: 22px; border-radius: 50%; border: 2px dashed var(--line-strong); }
+.sellos i { width: 22px; height: 22px; border-radius: 50%; border: 2px dashed #b9b4ae; }
 .sellos i.on { border: 0; background: var(--ink); box-shadow: inset 0 0 0 4px #fff, 0 0 0 2px var(--ink); }
 .cli .acts { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .cli .acts a.mini { text-decoration: none; }
@@ -89,3 +89,11 @@
 @media (max-width: 420px) { .tab { padding: 8px 10px; font-size: 14px; } }
 .form select { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; }
 .cli .vence { color: #9a3412; }
+.reglas { display: grid; gap: 10px; }
+.reglas .check-line { font-weight: 500 !important; }
+.regla-extra { margin-left: 30px; }
+.prod-picks { display: grid; gap: 6px; max-height: 240px; overflow: auto; border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+.form .prod-picks label { display: flex; gap: 8px; align-items: center; justify-content: flex-start; font-weight: 400; }
+.form .prod-picks input, .form .reglas input[type="radio"], .form label.check-line input { width: 20px; height: 20px; flex: none; margin: 0; }
+.cli .regla-hint { font-size: 13px; color: var(--muted); }
+.form textarea { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; }
