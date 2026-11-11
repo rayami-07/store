@@ -311,3 +311,7 @@ body { background-image: var(--tex-fondo, none); background-size: var(--tex-fond
   .mov-track { animation: none; }
   .mov-track [aria-hidden="true"] { display: none; }
 }
+
+/* Clientes frecuentes */
+.lealtad { text-align: center; font-size: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
+.lealtad i { margin-right: 4px; }

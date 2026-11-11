@@ -502,7 +502,7 @@ $("storeForm").addEventListener("submit", async (e) => {
     // Lo subido queda en el formulario como link, para no volver a subirlo
     if (up.ok && up.n) { state.logo = out.logo; out.products.forEach((p) => { const s = state.products.find((x) => x.id === p.id); if (s) s.photo = p.photo; }); }
     await set(ref(db, `stores/${id}`), { ...out, status: prev?.status || "demo", createdAt: prev?.createdAt || now, updatedAt: now,
-      ...(prev?.opcion ? { opcion: prev.opcion } : {}), ...(prev?.corto ? { corto: prev.corto } : {}) });
+      ...(prev?.opcion ? { opcion: prev.opcion } : {}), ...(prev?.corto ? { corto: prev.corto } : {}), ...(prev?.lealtad ? { lealtad: prev.lealtad } : {}) });
     // Si es una de las "3 opciones", el contenido (productos, nombre, logo, WhatsApp,
     // pagos…) se copia a las otras; solo el diseño queda distinto en cada una.
     let otras = 0;

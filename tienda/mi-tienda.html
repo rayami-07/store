@@ -11,7 +11,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&family=Fredoka:wght@500;600&family=Playfair+Display:wght@600;700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="editar.css?v=7" />
-  <link rel="stylesheet" href="mi-tienda.css?v=2" />
+  <link rel="stylesheet" href="mi-tienda.css?v=3" />
 </head>
 <body>
 <div class="loading" id="loading"><div class="spinner"></div></div>
@@ -53,6 +53,7 @@
     <nav class="wrap tabs" role="tablist">
       <button class="tab active" data-tab="productos" role="tab">Productos</button>
       <button class="tab" data-tab="pedidos" role="tab">Pedidos <span class="tab-badge" id="pedBadge" hidden></span></button>
+      <button class="tab" data-tab="clientes" role="tab">Clientes</button>
       <button class="tab" data-tab="negocio" role="tab">Mi negocio</button>
       <button class="tab" data-tab="cuenta" role="tab">Cuenta</button>
     </nav>
@@ -97,6 +98,31 @@
         <div class="block-head"><h2>Pedidos <span class="muted" id="pedCount"></span></h2></div>
         <p class="muted small">Cuando un cliente te pague y recibas el pedido, toca <b>Marcar vendido</b>: se descuentan las piezas de tu inventario.</p>
         <div class="list" id="pedList"><p class="muted">Cargando…</p></div>
+      </section>
+    </div>
+
+    <!-- CLIENTES FRECUENTES -->
+    <div class="tab-pane" data-pane="clientes" hidden>
+      <form class="block form" id="lForm" novalidate>
+        <h2>Tarjeta de sellos</h2>
+        <p class="muted small">Premia a quien te compra seguido. Cada compra suma un sello al número de WhatsApp de tu cliente; sin cuentas ni contraseñas.</p>
+        <label class="check-line"><input type="checkbox" id="lActivo" /> Activar clientes frecuentes</label>
+        <div class="row2">
+          <label>Sellos para el premio<input id="lMeta" inputmode="numeric" maxlength="2" placeholder="10" /></label>
+          <label>Premio<input id="lPremio" maxlength="60" placeholder="Ej. Una orden gratis" /></label>
+        </div>
+        <p class="err" id="lErr"></p>
+        <button class="btn btn-dark btn-block" type="submit" id="lSave"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+      </form>
+      <section class="block">
+        <div class="block-head"><h2>Tus clientes <span class="muted" id="cliCount"></span></h2></div>
+        <form class="cli-add" id="cliAdd" novalidate>
+          <input id="cName" maxlength="60" placeholder="Nombre" />
+          <input id="cPhone" inputmode="tel" maxlength="20" placeholder="WhatsApp a 10 dígitos" />
+          <button class="mini" type="submit"><i class="fa-solid fa-user-plus"></i> Agregar</button>
+        </form>
+        <input class="cli-search" id="cliBuscar" placeholder="Buscar por nombre o número" />
+        <div class="list" id="cliList"><p class="muted">Cargando…</p></div>
       </section>
     </div>
 
@@ -205,6 +231,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 
-<script type="module" src="mi-tienda.js?v=6"></script>
+<script type="module" src="mi-tienda.js?v=7"></script>
 </body>
 </html>

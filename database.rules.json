@@ -168,6 +168,10 @@
         "updatedAt": {
           ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
           ".validate": "newData.isNumber()"
+        },
+        "lealtad": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.hasChildren(['activo', 'meta']) && newData.child('activo').isBoolean() && newData.child('meta').isNumber() && newData.child('meta').val() >= 2 && newData.child('meta').val() <= 30 && (!newData.child('premio').exists() || (newData.child('premio').isString() && newData.child('premio').val().length <= 60))"
         }
       }
     },
@@ -249,6 +253,40 @@
       "$slug": {
         ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
         ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{3,60}$/) && $slug.matches(/^[a-z0-9-]{3,30}$/)"
+      }
+    },
+    "clientes": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$storeId": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists())",
+        "$tel": {
+          ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || ((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "$tel.matches(/^[0-9]{10}$/) && newData.hasChildren(['phone', 'sellos'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "phone": {
+            ".validate": "newData.isString() && newData.val() === $tel"
+          },
+          "sellos": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "canjes": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "visitas": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "ultima": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "alta": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
       }
     }
   }

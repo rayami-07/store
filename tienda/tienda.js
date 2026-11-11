@@ -72,6 +72,10 @@ function render(config) {
   $("aviso").innerHTML = mov
     ? `<div class="mq" aria-hidden="true">${`<span>${esc(avisoTxt)}</span>`.repeat(8)}</div><span class="sr-only">${esc(avisoTxt)}</span>`
     : esc(avisoTxt);
+  // Clientes frecuentes: aviso de la tarjeta de sellos
+  const lea = cfg.lealtad;
+  $("lealtad").hidden = !(lea && lea.activo && Number(lea.meta) > 0);
+  if (!$("lealtad").hidden) $("lealtad").innerHTML = `<i class="fa-solid fa-star"></i> <b>Cliente frecuente:</b> junta ${Number(lea.meta)} sellos y gana ${esc(lea.premio || "un premio")}. Te los sumamos con tu número de WhatsApp.`;
   $("heroEyebrow").textContent = cfg.name || "";
   $("heroTitle").textContent = cfg.tagline || giro.tagline;
   const first = cfg.products[0];

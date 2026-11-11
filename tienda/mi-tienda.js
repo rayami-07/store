@@ -212,6 +212,7 @@ $("qCopy").addEventListener("click", async () => {
 /* ── Pestañas ── */
 document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => {
   if (b.dataset.tab === "pedidos") loadPedidos();
+  if (b.dataset.tab === "clientes") loadClientes();
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === b));
   document.querySelectorAll(".tab-pane").forEach((p) => (p.hidden = p.dataset.pane !== b.dataset.tab));
   scrollTo(0, 0);
@@ -446,6 +447,7 @@ $("pedList").addEventListener("click", async (e) => {
   btn.disabled = true;
   try {
     const up = {};
+    let selloA = "";
     if (sold) {
       // Inventario fresco desde Firebase (por si cambió desde otro celular) y descuento solo de lo que se controla
       const fresh = asList((await get(ref(db, `stores/${storeId}/products`))).val());
@@ -456,6 +458,13 @@ $("pedList").addEventListener("click", async (e) => {
         return { ...p, stock: left };
       });
       up[`stores/${storeId}/products`] = clean(next);
+      // Clientes frecuentes: la venta suma un sello al WhatsApp del cliente
+      const lea = lealtad(), k = telKey(l.phone);
+      if (lea.activo && k.length === 10) {
+        const prev = (await get(ref(db, `clientes/${storeId}/${k}`))).val() || nuevoCliente(l.name, k);
+        up[`clientes/${storeId}/${k}`] = clean({ ...prev, name: prev.name || (l.name || "").slice(0, 60), sellos: (Number(prev.sellos) || 0) + 1, visitas: (Number(prev.visitas) || 0) + 1, ultima: Date.now() });
+        selloA = prev.name || l.name || "tu cliente";
+      }
       up[`stores/${storeId}/updatedAt`] = serverTimestamp();
       store.products = next;
     }
@@ -463,8 +472,94 @@ $("pedList").addEventListener("click", async (e) => {
     await update(ref(db), up);
     l.status = sold ? "vendido" : "cancelado";
     renderPedidos(); render();
-    toast(sold ? "Venta registrada. Inventario actualizado" : "Pedido cancelado");
+    toast(sold ? (selloA ? `Venta registrada. +1 sello para ${selloA}` : "Venta registrada. Inventario actualizado") : "Pedido cancelado");
+    if (selloA) clientes = [];
   } catch (err) { console.error(err); toast(saveError(err)); btn.disabled = false; }
+});
+
+/* ── Clientes frecuentes: tarjeta de sellos por número de WhatsApp ── */
+const telKey = (t) => digits(t).slice(-10);
+const waIntl = (t) => "52" + telKey(t);
+const lealtad = () => ({ activo: false, meta: 10, premio: "", ...(store.lealtad || {}) });
+const nuevoCliente = (name, phone) => ({ name: String(name || "").slice(0, 60), phone: telKey(phone), sellos: 0, canjes: 0, visitas: 0, alta: Date.now() });
+let clientes = [];
+function fillLealtad() {
+  const l = lealtad();
+  $("lActivo").checked = !!l.activo; $("lMeta").value = l.meta; $("lPremio").value = l.premio || ""; $("lErr").textContent = "";
+}
+async function loadClientes() {
+  fillLealtad();
+  try {
+    const snap = await get(ref(db, `clientes/${storeId}`));
+    clientes = Object.entries(snap.val() || {}).map(([k, c]) => ({ k, ...c }));
+  } catch (err) { console.error(err); $("cliList").innerHTML = `<p class="err">No pude cargar tus clientes.</p>`; return; }
+  renderClientes();
+}
+function renderClientes() {
+  const l = lealtad(), q = $("cliBuscar").value.trim().toLowerCase();
+  const list = clientes.filter((c) => !q || String(c.name || "").toLowerCase().includes(q) || String(c.phone || "").includes(q))
+    .sort((a, b) => (b.ultima || b.alta || 0) - (a.ultima || a.alta || 0));
+  $("cliCount").textContent = clientes.length ? `(${clientes.length})` : "";
+  $("cliList").innerHTML = list.length ? list.map((c) => {
+    const n = Number(c.sellos) || 0, listo = n >= l.meta;
+    const dots = Array.from({ length: l.meta }, (_, i) => `<i class="${i < n ? "on" : ""}"></i>`).join("");
+    const msg = listo
+      ? `Hola ${c.name || ""}, ¡completaste tus ${l.meta} sellos en ${store.name}! Tu premio: ${l.premio || "un regalo"}. Te esperamos para entregártelo.`
+      : `Hola ${c.name || ""}, llevas ${n} de ${l.meta} sellos en ${store.name}. ¡Te faltan ${l.meta - n} para tu premio${l.premio ? ": " + l.premio : ""}!`;
+    return `<div class="cli${listo ? " ready" : ""}">
+      <div class="cli-top"><b>${esc(c.name || "Cliente")}</b><small>${esc(c.phone || "")}</small></div>
+      <div class="sellos" aria-label="${n} de ${l.meta} sellos">${dots}</div>
+      <small class="muted">${n} de ${l.meta} sellos${c.canjes ? ` · ${c.canjes} premio(s) entregado(s)` : ""}${c.ultima ? ` · última compra ${fechaCorta(c.ultima)}` : ""}</small>
+      <div class="acts">
+        <button class="mini" data-sello="${esc(c.k)}"><i class="fa-solid fa-plus"></i> 1 sello</button>
+        ${listo ? `<button class="btn btn-dark" data-canje="${esc(c.k)}"><i class="fa-solid fa-gift"></i> Entregar premio</button>` : ""}
+        <a class="mini" target="_blank" rel="noopener" href="${esc(waSend(waIntl(c.phone), msg))}"><i class="fa-brands fa-whatsapp"></i> Avisar</a>
+      </div>
+    </div>`;
+  }).join("") : `<p class="muted">${clientes.length ? "Sin resultados." : "Aún no hay clientes. Se agregan solos cuando marcas un pedido como vendido, o agrégalos aquí arriba."}</p>`;
+}
+async function saveCliente(c, msg) {
+  if (!canEdit()) { toast("Tu tienda no está activa; no se pueden guardar cambios."); return false; }
+  const { k, ...data } = c;
+  try { await update(ref(db), { [`clientes/${storeId}/${k}`]: clean(data) }); toast(msg); return true; }
+  catch (err) { console.error(err); toast(saveError(err)); return false; }
+}
+$("cliBuscar").addEventListener("input", renderClientes);
+$("cliList").addEventListener("click", async (e) => {
+  const b = e.target.closest("[data-sello],[data-canje]"); if (!b) return;
+  const c = clientes.find((x) => x.k === (b.dataset.sello || b.dataset.canje)); if (!c) return;
+  const l = lealtad(), n = Number(c.sellos) || 0;
+  const next = b.dataset.sello
+    ? { ...c, sellos: n + 1, visitas: (Number(c.visitas) || 0) + 1, ultima: Date.now() }
+    : { ...c, sellos: Math.max(0, n - l.meta), canjes: (Number(c.canjes) || 0) + 1 };
+  b.disabled = true;
+  if (await saveCliente(next, b.dataset.sello ? `+1 sello para ${c.name || "tu cliente"}` : "Premio entregado. Empieza una tarjeta nueva")) Object.assign(c, next);
+  renderClientes();
+});
+$("cliAdd").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const k = telKey($("cPhone").value);
+  if (k.length !== 10) { toast("Escribe el WhatsApp a 10 dígitos"); $("cPhone").focus(); return; }
+  if (clientes.some((c) => c.k === k)) { toast("Ese número ya está en tu lista"); return; }
+  const c = { k, ...nuevoCliente($("cName").value.trim(), k) };
+  if (await saveCliente(c, "Cliente agregado")) { clientes.push(c); $("cName").value = ""; $("cPhone").value = ""; renderClientes(); }
+});
+$("lForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("lErr").textContent = "";
+  if (!canEdit()) { $("lErr").textContent = "Tu tienda no está activa; no se pueden guardar cambios."; return; }
+  const meta = Math.floor(num($("lMeta").value));
+  if (meta < 2 || meta > 30) { $("lErr").textContent = "Elige entre 2 y 30 sellos."; $("lMeta").focus(); return; }
+  const premio = $("lPremio").value.trim();
+  if ($("lActivo").checked && !premio) { $("lErr").textContent = "Escribe cuál es el premio."; $("lPremio").focus(); return; }
+  const lealtadNueva = { activo: $("lActivo").checked, meta, premio };
+  const btn = $("lSave"); btn.disabled = true;
+  try {
+    await update(ref(db, `stores/${storeId}`), { lealtad: lealtadNueva, updatedAt: serverTimestamp() });
+    store.lealtad = lealtadNueva; renderClientes();
+    toast(lealtadNueva.activo ? "Listo: tus clientes ya ven la tarjeta de sellos" : "Guardado");
+  } catch (err) { console.error(err); $("lErr").textContent = saveError(err); }
+  finally { btn.disabled = false; }
 });
 
 /* ── Mi negocio ── */
