@@ -97,3 +97,6 @@
 .form .prod-picks input, .form .reglas input[type="radio"], .form label.check-line input { width: 20px; height: 20px; flex: none; margin: 0; }
 .cli .regla-hint { font-size: 13px; color: var(--muted); }
 .form textarea { font: inherit; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; resize: vertical; }
+#lForm.off > *:not(h2):not(p.muted):not(.check-line:first-of-type):not(.err):not(#lSave) { opacity: .45; }
+#lForm.off input:disabled, #lForm.off select:disabled, #lForm.off textarea:disabled { background: var(--panel); cursor: not-allowed; }
+#lForm.off .reglas, #lForm.off label { cursor: not-allowed; }

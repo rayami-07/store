@@ -521,7 +521,7 @@ function fillLealtad() {
   $("lProdWrap").innerHTML = lista.length
     ? lista.map((p) => `<label><input type="checkbox" value="${esc(p.id)}"${l.productos.includes(p.id) ? " checked" : ""} /> ${esc(p.name)}</label>`).join("")
     : `<p class="muted small">Primero agrega productos a tu catálogo.</p>`;
-  reglaVisibility(); $("lErr").textContent = "";
+  reglaVisibility(); lealtadHabilitada(); $("lErr").textContent = "";
 }
 async function loadClientes() {
   fillLealtad();
@@ -584,6 +584,13 @@ $("cliAdd").addEventListener("submit", async (e) => {
   const c = { k, ...nuevoCliente($("cName").value.trim(), k) };
   if (await saveCliente(c, "Cliente agregado")) { clientes.push(c); $("cName").value = ""; $("cPhone").value = ""; renderClientes(); }
 });
+// Si la tarjeta de sellos no está activada, todo lo demás queda bloqueado
+function lealtadHabilitada() {
+  const on = $("lActivo").checked;
+  $("lForm").classList.toggle("off", !on);
+  $("lForm").querySelectorAll("input, select, textarea").forEach((el) => { if (el.id !== "lActivo") el.disabled = !on; });
+}
+$("lActivo").addEventListener("change", lealtadHabilitada);
 function reglaVisibility() {
   const r = document.querySelector('#lRegla input[name="lRegla"]:checked')?.value;
   $("lMinWrap").hidden = r !== "minimo"; $("lProdWrap").hidden = r !== "producto";
