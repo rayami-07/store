@@ -462,8 +462,9 @@ $("pedList").addEventListener("click", async (e) => {
       const lea = lealtad(), k = telKey(l.phone);
       if (lea.activo && k.length === 10) {
         const prev = (await get(ref(db, `clientes/${storeId}/${k}`))).val() || nuevoCliente(l.name, k);
-        up[`clientes/${storeId}/${k}`] = clean({ ...conSello(prev, lea), name: prev.name || (l.name || "").slice(0, 60) });
-        selloA = prev.name || l.name || "tu cliente";
+        const r = conCompra(prev, lea, l);
+        up[`clientes/${storeId}/${k}`] = clean({ ...r.c, name: prev.name || (l.name || "").slice(0, 60) });
+        selloA = r.sello ? `+1 sello para ${prev.name || l.name || "tu cliente"}` : `Sin sello: la compra es menor a ${money(lea.minimo)}`;
       }
       up[`stores/${storeId}/updatedAt`] = serverTimestamp();
       store.products = next;
@@ -472,7 +473,7 @@ $("pedList").addEventListener("click", async (e) => {
     await update(ref(db), up);
     l.status = sold ? "vendido" : "cancelado";
     renderPedidos(); render();
-    toast(sold ? (selloA ? `Venta registrada. +1 sello para ${selloA}` : "Venta registrada. Inventario actualizado") : "Pedido cancelado");
+    toast(sold ? (selloA ? `Venta registrada. ${selloA}` : "Venta registrada. Inventario actualizado") : "Pedido cancelado");
     if (selloA) clientes = [];
   } catch (err) { console.error(err); toast(saveError(err)); btn.disabled = false; }
 });
@@ -480,19 +481,27 @@ $("pedList").addEventListener("click", async (e) => {
 /* ── Clientes frecuentes: tarjeta de sellos por número de WhatsApp ── */
 const telKey = (t) => digits(t).slice(-10);
 const waIntl = (t) => "52" + telKey(t);
-const lealtad = () => ({ activo: false, meta: 10, premio: "", plazo: 0, ...(store.lealtad || {}) });
+const lealtad = () => ({ activo: false, meta: 10, premio: "", plazo: 0, minimo: 0, ...(store.lealtad || {}) });
 // Plazo: la tarjeta empieza con el primer sello (inicio) y vence "plazo" meses después
 const masMeses = (ts, m) => { const d = new Date(ts); d.setMonth(d.getMonth() + m); return d.getTime(); };
 const venceEn = (c, l) => (l.plazo && c.inicio ? masMeses(c.inicio, l.plazo) : 0);
 const vencida = (c, l) => { const v = venceEn(c, l); return !!v && Date.now() > v; };
 const sellosDe = (c, l) => (vencida(c, l) ? 0 : Number(c.sellos) || 0);
 // Suma un sello; si la tarjeta venció o estaba vacía, empieza una nueva desde hoy
+const resumenItems = (items) => asList(items).map((i) => `${Number(i.qty) || 1} × ${i.name}${i.v ? ` (${i.v})` : ""}`).join(", ").slice(0, 140);
+// Registra qué compró y cuánto; el sello solo cuenta si la compra llega al mínimo
+const conCompra = (c, l, pedido) => {
+  const total = Number(pedido.total) || 0;
+  const base = { ultimo: resumenItems(pedido.items), ultimoTotal: total, gastado: (Number(c.gastado) || 0) + total };
+  if (total < (Number(l.minimo) || 0)) return { c: { ...c, ...base, visitas: (Number(c.visitas) || 0) + 1, ultima: Date.now() }, sello: false };
+  return { c: { ...conSello(c, l), ...base }, sello: true };
+};
 const conSello = (c, l) => { const n = sellosDe(c, l), now = Date.now(); return { ...c, sellos: n + 1, inicio: n === 0 ? now : c.inicio || now, visitas: (Number(c.visitas) || 0) + 1, ultima: now }; };
 const nuevoCliente = (name, phone) => ({ name: String(name || "").slice(0, 60), phone: telKey(phone), sellos: 0, canjes: 0, visitas: 0, alta: Date.now() });
 let clientes = [];
 function fillLealtad() {
   const l = lealtad();
-  $("lActivo").checked = !!l.activo; $("lMeta").value = l.meta; $("lPremio").value = l.premio || ""; $("lPlazo").value = String(l.plazo || 0); $("lErr").textContent = "";
+  $("lActivo").checked = !!l.activo; $("lMeta").value = l.meta; $("lPremio").value = l.premio || ""; $("lPlazo").value = String(l.plazo || 0); $("lMinimo").value = l.minimo ? String(l.minimo) : ""; $("lErr").textContent = "";
 }
 async function loadClientes() {
   fillLealtad();
@@ -518,8 +527,10 @@ function renderClientes() {
       <div class="cli-top"><b>${esc(c.name || "Cliente")}</b><small>${esc(c.phone || "")}</small></div>
       <div class="sellos" aria-label="${n} de ${l.meta} sellos">${dots}</div>
       <small class="muted">${n} de ${l.meta} sellos${venc ? ` · <b class="vence">su tarjeta venció; empieza de nuevo</b>` : v && n && !listo ? ` · <b class="vence">vence el ${fechaV}</b>` : ""}${c.canjes ? ` · ${c.canjes} premio(s) entregado(s)` : ""}${c.ultima ? ` · última compra ${fechaCorta(c.ultima)}` : ""}</small>
+      ${c.ultimo ? `<small>Compró: ${esc(c.ultimo)}${c.ultimoTotal ? ` · ${money(c.ultimoTotal)}` : ""}</small>` : ""}
+      ${c.gastado ? `<small class="muted">Total gastado: ${money(c.gastado)} en ${Number(c.visitas) || 0} compra(s)</small>` : ""}
       <div class="acts">
-        <button class="mini" data-sello="${esc(c.k)}"><i class="fa-solid fa-plus"></i> 1 sello</button>
+        <button class="mini" data-sello="${esc(c.k)}"><i class="fa-solid fa-plus"></i> 1 sello${l.minimo ? ` (compra desde ${money(l.minimo)})` : ""}</button>
         ${listo ? `<button class="btn btn-dark" data-canje="${esc(c.k)}"><i class="fa-solid fa-gift"></i> Entregar premio</button>` : ""}
         <a class="mini" target="_blank" rel="noopener" href="${esc(waSend(waIntl(c.phone), msg))}"><i class="fa-brands fa-whatsapp"></i> Avisar</a>
       </div>
@@ -561,7 +572,8 @@ $("lForm").addEventListener("submit", async (e) => {
   const premio = $("lPremio").value.trim();
   if ($("lActivo").checked && !premio) { $("lErr").textContent = "Escribe cuál es el premio."; $("lPremio").focus(); return; }
   const plazo = Number($("lPlazo").value) || 0;
-  const lealtadNueva = { activo: $("lActivo").checked, meta, premio, plazo };
+  const minimo = Math.max(0, Math.floor(num($("lMinimo").value)));
+  const lealtadNueva = { activo: $("lActivo").checked, meta, premio, plazo, minimo };
   const btn = $("lSave"); btn.disabled = true;
   try {
     await update(ref(db, `stores/${storeId}`), { lealtad: lealtadNueva, updatedAt: serverTimestamp() });
