@@ -213,6 +213,7 @@ $("qCopy").addEventListener("click", async () => {
 document.querySelectorAll(".tab").forEach((b) => b.addEventListener("click", () => {
   if (b.dataset.tab === "pedidos") loadPedidos();
   if (b.dataset.tab === "clientes") loadClientes();
+  if (b.dataset.tab === "ofertas") fillUrgencia();
   document.querySelectorAll(".tab").forEach((x) => x.classList.toggle("active", x === b));
   document.querySelectorAll(".tab-pane").forEach((p) => (p.hidden = p.dataset.pane !== b.dataset.tab));
   scrollTo(0, 0);
@@ -619,6 +620,44 @@ $("lForm").addEventListener("submit", async (e) => {
     store.lealtad = lealtadNueva; renderClientes();
     toast(lealtadNueva.activo ? "Listo: tus clientes ya ven la tarjeta de sellos" : "Guardado");
   } catch (err) { console.error(err); $("lErr").textContent = saveError(err); }
+  finally { btn.disabled = false; }
+});
+
+/* ── Escasez y urgencia ── */
+const urgencia = () => ({ pocas: false, umbral: 5, flash: false, pct: 20, hasta: 0, texto: "", ...(store.urgencia || {}) });
+const fmtFin = (ms) => new Date(ms).toLocaleString("es-MX", { weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+function urgenciaHabilitada() {
+  $("uUmbral").disabled = !$("uPocas").checked;
+  ["uPct", "uTexto", "uDura"].forEach((id) => ($(id).disabled = !$("uFlash").checked));
+}
+function fillUrgencia() {
+  const u = urgencia(), vive = u.flash && Number(u.hasta) > Date.now();
+  $("uPocas").checked = !!u.pocas; $("uUmbral").value = u.umbral; $("uFlash").checked = !!u.flash && vive;
+  $("uPct").value = u.pct || ""; $("uTexto").value = u.texto || "";
+  $("uDura").querySelector('option[value="keep"]').hidden = !vive;
+  $("uDura").value = vive ? "keep" : "24";
+  $("uInfo").textContent = vive ? `Tu oferta está corriendo y termina el ${fmtFin(u.hasta)}` : (u.flash ? "Tu última oferta ya terminó." : "");
+  $("uErr").textContent = ""; urgenciaHabilitada();
+}
+$("uPocas").addEventListener("change", urgenciaHabilitada);
+$("uFlash").addEventListener("change", urgenciaHabilitada);
+$("uForm").addEventListener("submit", async (e) => {
+  e.preventDefault(); $("uErr").textContent = "";
+  if (!canEdit()) { $("uErr").textContent = "Tu tienda no está activa; no se pueden guardar cambios."; return; }
+  const umbral = Math.floor(num($("uUmbral").value)) || 5;
+  if (umbral < 1 || umbral > 50) { $("uErr").textContent = "Elige entre 1 y 50 piezas."; return; }
+  const pct = Math.floor(num($("uPct").value));
+  const flash = $("uFlash").checked;
+  if (flash && (pct < 5 || pct > 90)) { $("uErr").textContent = "El descuento debe ser entre 5% y 90%."; $("uPct").focus(); return; }
+  const prev = urgencia(), dura = $("uDura").value;
+  const hasta = !flash ? 0 : dura === "keep" && Number(prev.hasta) > Date.now() ? Number(prev.hasta) : Date.now() + (Number(dura) || 24) * 36e5;
+  const nueva = { pocas: $("uPocas").checked, umbral, flash, pct: pct || 20, hasta, texto: $("uTexto").value.trim().slice(0, 40) };
+  const btn = $("uSave"); btn.disabled = true;
+  try {
+    await update(ref(db, `stores/${storeId}`), { urgencia: nueva, updatedAt: serverTimestamp() });
+    store.urgencia = nueva; fillUrgencia();
+    toast(flash ? "¡Oferta relámpago en marcha!" : "Guardado");
+  } catch (err) { console.error(err); $("uErr").textContent = saveError(err); }
   finally { btn.disabled = false; }
 });
 

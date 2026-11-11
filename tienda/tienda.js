@@ -18,6 +18,8 @@ const waNumber = (n) => { const d = String(n || "").replace(/\D/g, ""); return d
 const waLink = (n, text) => `https://api.whatsapp.com/send?phone=${waNumber(n)}${text ? "&text=" + encodeURIComponent(text) : ""}`;
 
 let cfg = null;
+let lastConfig = null;
+let urgTimer = 0;
 let cart = [];
 let cat = "";
 let storeId = "";
@@ -58,6 +60,18 @@ function render(config) {
   cfg.products = Array.isArray(cfg.products) ? cfg.products : Object.values(cfg.products || {});
   // Inventario: si el dueño controla piezas y llegan a 0, se muestra como agotado
   cfg.products = cfg.products.filter(Boolean).map((p) => (p.stock !== undefined && p.stock !== null && p.stock !== "" && Number(p.stock) <= 0 ? { ...p, agotado: true } : p));
+  // Escasez y urgencia: oferta relámpago (descuento con cuenta regresiva) y aviso de pocas piezas
+  const urg = cfg.urgencia || {};
+  const flash = !isSample && urg.flash && Number(urg.pct) > 0 && Number(urg.hasta) > Date.now() ? urg : null;
+  cfg.products = cfg.products.map((p) => {
+    const q = { ...p };
+    if (flash && !q.agotado) { const d = Math.round(q.price * (1 - Number(flash.pct) / 100)); if (d > 0 && d < q.price && !(q.salePrice > 0 && q.salePrice <= d)) { q.salePrice = d; q.flash = true; } }
+    const st = q.stock;
+    if (urg.pocas && !q.agotado && st !== undefined && st !== null && st !== "" && Number(st) > 0 && Number(st) <= Math.max(1, Number(urg.umbral) || 5)) q.quedan = Number(st);
+    return q;
+  });
+  lastConfig = config;
+  renderUrgencia(flash);
   applyTheme();
 
   const giro = GIROS[cfg.giro] || GIROS.otro;
@@ -147,7 +161,7 @@ function renderGrid() {
         ? `<button class="add${inCart ? " in" : ""}" data-open="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Elegir opciones"}</button>`
         : `<button class="add${inCart ? " in" : ""}" data-add="${esc(p.id)}">${inCart ? "En tu pedido ✓" : "Agregar"}</button>`;
     return `<article class="card reveal${off ? " sold-out" : ""}" style="--d:${(i % 4) * 70}ms">
-      <div class="card-img" data-open="${esc(p.id)}"><img src="${esc(miniOf(p))}" alt="${esc(p.name)}" loading="lazy" decoding="async" />${off ? `<span class="tag-off">Agotado</span>` : sale ? `<span class="tag-sale">Oferta</span>` : ""}</div>
+      <div class="card-img" data-open="${esc(p.id)}"><img src="${esc(miniOf(p))}" alt="${esc(p.name)}" loading="lazy" decoding="async" />${off ? `<span class="tag-off">Agotado</span>` : sale ? `<span class="tag-sale">${p.flash ? "Relámpago ⚡" : "Oferta"}</span>` : ""}${p.quedan ? `<span class="tag-few">${p.quedan === 1 ? "¡Última pieza!" : "¡Quedan " + p.quedan + "!"}</span>` : ""}</div>
       <div class="card-name" data-open="${esc(p.id)}">${esc(p.name)}</div>
       ${p.category ? `<div class="card-cat">${esc(p.category)}</div>` : ""}
       <div class="card-price">${sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : money(p.price)}</div>
@@ -245,6 +259,7 @@ function openModal(id) {
   $("pmName").textContent = p.name;
   $("pmPrice").innerHTML = sale ? `<span class="sale">${money(p.salePrice)}</span><s>${money(p.price)}</s>` : money(p.price);
   $("pmDesc").textContent = p.desc || "";
+  $("pmFew").hidden = !p.quedan; $("pmFew").textContent = p.quedan ? (p.quedan === 1 ? "🔥 ¡Última pieza disponible!" : `🔥 ¡Date prisa! Solo quedan ${p.quedan} piezas`) : "";
   $("pmAsk").href = waLink(cfg.whatsapp, askText(p));
   modalSel = {};
   renderVars(p);
@@ -557,4 +572,21 @@ function initLealtad(lea) {
   });
   let g = ""; try { g = localStorage.getItem("rt_tel_" + storeId) || ""; } catch {}
   if (g.length === 10) { $("leaTel").value = g; ver(g, false); }
+}
+
+// Banner de oferta relámpago con cuenta regresiva
+function renderUrgencia(flash) {
+  clearInterval(urgTimer);
+  const el = $("urgencia"); if (!el) return;
+  el.hidden = !flash; if (!flash) return;
+  const fin = Number(flash.hasta);
+  const txt = (flash.texto || "").trim().slice(0, 40);
+  const tick = () => {
+    const ms = fin - Date.now();
+    if (ms <= 0) { clearInterval(urgTimer); if (lastConfig) render(lastConfig); return; }
+    const d = Math.floor(ms / 864e5), h = Math.floor(ms % 864e5 / 36e5), m = Math.floor(ms % 36e5 / 6e4), sg = Math.floor(ms % 6e4 / 1e3);
+    const p2 = (n) => String(n).padStart(2, "0");
+    el.innerHTML = `<b>⚡ ${esc(txt || "Oferta relámpago")}: ${Number(flash.pct)}% de descuento</b> · termina en <span class="u-time">${d ? d + "d " : ""}${p2(h)}:${p2(m)}:${p2(sg)}</span>`;
+  };
+  tick(); urgTimer = setInterval(tick, 1000);
 }

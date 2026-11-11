@@ -54,6 +54,7 @@
       <button class="tab active" data-tab="productos" role="tab">Productos</button>
       <button class="tab" data-tab="pedidos" role="tab">Pedidos <span class="tab-badge" id="pedBadge" hidden></span></button>
       <button class="tab" data-tab="clientes" role="tab">Clientes</button>
+      <button class="tab" data-tab="ofertas" role="tab">Urgencia</button>
       <button class="tab" data-tab="negocio" role="tab">Mi negocio</button>
       <button class="tab" data-tab="cuenta" role="tab">Cuenta</button>
     </nav>
@@ -99,6 +100,41 @@
         <p class="muted small">Cuando un cliente te pague y recibas el pedido, toca <b>Marcar vendido</b>: se descuentan las piezas de tu inventario.</p>
         <div class="list" id="pedList"><p class="muted">Cargando…</p></div>
       </section>
+    </div>
+
+    <!-- ESCASEZ Y URGENCIA -->
+    <div class="tab-pane" data-pane="ofertas" hidden>
+      <form class="block form" id="uForm" novalidate>
+        <h2>Escasez y urgencia</h2>
+        <p class="muted small">Motiva a tus clientes a comprar ya: avisa cuando quedan pocas piezas y lanza ofertas por tiempo limitado. Actívalo o desactívalo cuando quieras.</p>
+
+        <h2 class="sub">Aviso de pocas piezas</h2>
+        <label class="check-line"><input type="checkbox" id="uPocas" /> Mostrar "¡Quedan pocas!" en mis productos</label>
+        <label>Avisar cuando queden este número de piezas o menos<input id="uUmbral" inputmode="numeric" maxlength="2" placeholder="5" /></label>
+        <p class="muted small">Funciona con los productos que tienen inventario (piezas) en la pestaña Productos. Sin inventario no hay forma de saber cuántas quedan.</p>
+
+        <h2 class="sub">Oferta relámpago</h2>
+        <label class="check-line"><input type="checkbox" id="uFlash" /> Activar oferta relámpago</label>
+        <label>Descuento en todos tus productos (%)<input id="uPct" inputmode="numeric" maxlength="2" placeholder="Ej. 20" /></label>
+        <label>Mensaje del aviso<input id="uTexto" maxlength="40" placeholder="Ej. Solo hoy · Fin de semana loco" /></label>
+        <label>Dura
+          <select id="uDura">
+            <option value="keep" hidden>Mantener el tiempo actual</option>
+            <option value="1">1 hora</option>
+            <option value="3">3 horas</option>
+            <option value="6">6 horas</option>
+            <option value="12">12 horas</option>
+            <option value="24" selected>24 horas</option>
+            <option value="48">2 días</option>
+            <option value="72">3 días</option>
+            <option value="168">7 días</option>
+          </select>
+        </label>
+        <p class="muted small" id="uInfo"></p>
+        <p class="muted small">Tus clientes ven una cuenta regresiva en la tienda. Al terminar, los precios vuelven solos a la normalidad. Si un producto ya tiene su propio precio de oferta más bajo, se respeta.</p>
+        <p class="err" id="uErr"></p>
+        <button class="btn btn-dark btn-block" type="submit" id="uSave"><i class="fa-solid fa-floppy-disk"></i> Guardar</button>
+      </form>
     </div>
 
     <!-- CLIENTES FRECUENTES -->
@@ -252,6 +288,6 @@
   <div class="toast" id="toast" role="status"></div>
 </div>
 
-<script type="module" src="mi-tienda.js?v=12"></script>
+<script type="module" src="mi-tienda.js?v=13"></script>
 </body>
 </html>

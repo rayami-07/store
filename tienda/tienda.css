@@ -321,3 +321,8 @@ body { background-image: var(--tex-fondo, none); background-size: var(--tex-fond
 .lea-form .btn { padding: 8px 14px; }
 .lea-res { margin-top: 6px; font-size: 14px; }
 .lea-res:empty { display: none; }
+
+.urgencia { text-align: center; font-size: 14px; padding: 10px 16px; background: #dc2626; color: #fff; }
+.u-time { font-variant-numeric: tabular-nums; font-weight: 800; background: rgba(0,0,0,.25); padding: 2px 8px; border-radius: 6px; margin-left: 2px; }
+.tag-few { position: absolute; bottom: 10px; left: 10px; background: #dc2626; color: #fff; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 100px; }
+.few-note { color: #dc2626; font-weight: 700; font-size: 14px; margin: 6px 0; }

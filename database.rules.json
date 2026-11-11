@@ -169,6 +169,10 @@
           ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
           ".validate": "newData.isNumber()"
         },
+        "urgencia": {
+          ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "newData.hasChildren(['pocas', 'flash']) && newData.child('pocas').isBoolean() && newData.child('flash').isBoolean() && (!newData.child('umbral').exists() || (newData.child('umbral').isNumber() && newData.child('umbral').val() >= 1 && newData.child('umbral').val() <= 50)) && (!newData.child('pct').exists() || (newData.child('pct').isNumber() && newData.child('pct').val() >= 1 && newData.child('pct').val() <= 90)) && (!newData.child('hasta').exists() || newData.child('hasta').isNumber()) && (!newData.child('texto').exists() || (newData.child('texto').isString() && newData.child('texto').val().length <= 40))"
+        },
         "lealtad": {
           ".write": "((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
           ".validate": "newData.hasChildren(['activo', 'meta']) && newData.child('activo').isBoolean() && newData.child('meta').isNumber() && newData.child('meta').val() >= 2 && newData.child('meta').val() <= 30 && (!newData.child('premio').exists() || (newData.child('premio').isString() && newData.child('premio').val().length <= 80)) && (!newData.child('plazo').exists() || (newData.child('plazo').isNumber() && newData.child('plazo').val() >= 0 && newData.child('plazo').val() <= 12)) && (!newData.child('minimo').exists() || (newData.child('minimo').isNumber() && newData.child('minimo').val() >= 0 && newData.child('minimo').val() <= 1000000)) && (!newData.child('regla').exists() || newData.child('regla').val().matches(/^(cualquiera|minimo|producto)$/)) && (!newData.child('productos').exists() || newData.child('productos').hasChildren())"
