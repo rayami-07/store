@@ -464,6 +464,7 @@ $("pedList").addEventListener("click", async (e) => {
         const prev = (await get(ref(db, `clientes/${storeId}/${k}`))).val() || nuevoCliente(l.name, k);
         const r = conCompra(prev, lea, l);
         up[`clientes/${storeId}/${k}`] = clean({ ...r.c, name: prev.name || (l.name || "").slice(0, 60) });
+        up[`sellosPub/${storeId}/${k}`] = pubSellos(r.c, lea);
         selloA = r.sello ? `+1 sello para ${prev.name || l.name || "tu cliente"}` : `Sin sello: ${r.motivo}`;
       }
       up[`stores/${storeId}/updatedAt`] = serverTimestamp();
@@ -511,6 +512,7 @@ const conCompra = (c, l, pedido) => {
   return { c: { ...conSello(c, l), ...base }, sello: true };
 };
 const conSello = (c, l) => { const n = sellosDe(c, l), now = Date.now(); return { ...c, sellos: n + 1, inicio: n === 0 ? now : c.inicio || now, visitas: (Number(c.visitas) || 0) + 1, ultima: now }; };
+const pubSellos = (c, l) => ({ sellos: sellosDe(c, l), vence: venceEn(c, l) || 0 });
 const nuevoCliente = (name, phone) => ({ name: String(name || "").slice(0, 60), phone: telKey(phone), sellos: 0, canjes: 0, visitas: 0, alta: Date.now() });
 let clientes = [];
 function fillLealtad() {
@@ -561,7 +563,7 @@ function renderClientes() {
 async function saveCliente(c, msg) {
   if (!canEdit()) { toast("Tu tienda no está activa; no se pueden guardar cambios."); return false; }
   const { k, ...data } = c;
-  try { await update(ref(db), { [`clientes/${storeId}/${k}`]: clean(data) }); toast(msg); return true; }
+  try { await update(ref(db), { [`clientes/${storeId}/${k}`]: clean(data), [`sellosPub/${storeId}/${k}`]: pubSellos(data, lealtad()) }); toast(msg); return true; }
   catch (err) { console.error(err); toast(saveError(err)); return false; }
 }
 $("cliBuscar").addEventListener("input", renderClientes);

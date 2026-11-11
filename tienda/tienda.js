@@ -85,7 +85,8 @@ function render(config) {
   };
   const lea = cfg.lealtad;
   $("lealtad").hidden = !(lea && lea.activo && Number(lea.meta) > 0);
-  if (!$("lealtad").hidden) $("lealtad").innerHTML = `<i class="fa-solid fa-star"></i> <b>Cliente frecuente:</b> junta ${Number(lea.meta)} sellos${Number(lea.plazo) > 0 ? ` en ${Number(lea.plazo) === 12 ? "1 año" : Number(lea.plazo) === 1 ? "1 mes" : Number(lea.plazo) + " meses"}` : ""} y gana ${esc(lea.premio || "un premio")}.${reglaTxt(lea)} Te los sumamos con tu número de WhatsApp.`;
+  if (!$("lealtad").hidden) $("lealtad").innerHTML = `<i class="fa-solid fa-star"></i> <b>Cliente frecuente:</b> junta ${Number(lea.meta)} sellos${Number(lea.plazo) > 0 ? ` en ${Number(lea.plazo) === 12 ? "1 año" : Number(lea.plazo) === 1 ? "1 mes" : Number(lea.plazo) + " meses"}` : ""} y gana ${esc(lea.premio || "un premio")}.${reglaTxt(lea)} Te los sumamos con tu número de WhatsApp.<form class="lea-form" id="leaForm"><input id="leaTel" type="tel" inputmode="numeric" maxlength="14" placeholder="Tu WhatsApp (10 dígitos)" aria-label="Tu WhatsApp"><button class="btn btn-dark" type="submit">Ver mis sellos</button></form><div class="lea-res" id="leaRes" aria-live="polite"></div>`;
+    initLealtad(lea);
   $("heroEyebrow").textContent = cfg.name || "";
   $("heroTitle").textContent = cfg.tagline || giro.tagline;
   const first = cfg.products[0];
@@ -529,4 +530,31 @@ if (params.get("preview")) {
       })
       .catch(notFound);
   }
+}
+
+// Clientes frecuentes: el cliente consulta sus sellos con su WhatsApp (sirve en cualquier dispositivo)
+function initLealtad(lea) {
+  const form = $("leaForm"), res = $("leaRes"); if (!form || isPreview || isSample) { if (form) form.hidden = true; return; }
+  const meta = Number(lea.meta);
+  const ver = async (tel, guardar) => {
+    res.textContent = "Buscando…";
+    try {
+      const r = await fetch(`${DB_URL}/sellosPub/${storeId}/${tel}.json`);
+      const d = r.ok ? await r.json() : null;
+      if (guardar) { try { localStorage.setItem("rt_tel_" + storeId, tel); } catch {} }
+      const vencida = d && d.vence && Date.now() > d.vence;
+      const n = d && !vencida ? Number(d.sellos) || 0 : 0;
+      if (!d) res.innerHTML = "Aún no tienes sellos. ¡Haz tu primer pedido y empieza a juntarlos!";
+      else if (n >= meta) res.innerHTML = `<b>¡Ya completaste ${meta} de ${meta}!</b> Pide tu premio: ${esc(lea.premio || "un premio")}.`;
+      else res.innerHTML = `Llevas <b>${n} de ${meta} sellos</b>${vencida ? " (tu tarjeta anterior venció, empiezas de nuevo)" : ""}.${n && d.vence ? " Vencen el " + new Date(d.vence).toLocaleDateString("es-MX", { day: "numeric", month: "short", year: "numeric" }) + "." : ""}`;
+    } catch { res.textContent = "No pudimos consultar tus sellos. Intenta de nuevo."; }
+  };
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const t = $("leaTel").value.replace(/\D/g, "").slice(-10);
+    if (t.length !== 10) { res.textContent = "Escribe tu WhatsApp a 10 dígitos."; return; }
+    ver(t, true);
+  });
+  let g = ""; try { g = localStorage.getItem("rt_tel_" + storeId) || ""; } catch {}
+  if (g.length === 10) { $("leaTel").value = g; ver(g, false); }
 }

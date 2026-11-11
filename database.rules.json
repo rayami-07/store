@@ -255,6 +255,18 @@
         ".validate": "newData.isString() && newData.val().matches(/^[a-z0-9-]{3,60}$/) && $slug.matches(/^[a-z0-9-]{3,30}$/)"
       }
     },
+    "sellosPub": {
+      "$storeId": {
+        "$tel": {
+          ".read": true,
+          ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || ((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
+          ".validate": "$tel.matches(/^[0-9]{10}$/) && newData.hasChildren(['sellos', 'vence'])",
+          "sellos": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" },
+          "vence": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+          "$other": { ".validate": false }
+        }
+      }
+    },
     "clientes": {
       ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
       "$storeId": {

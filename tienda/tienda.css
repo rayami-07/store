@@ -315,3 +315,9 @@ body { background-image: var(--tex-fondo, none); background-size: var(--tex-fond
 /* Clientes frecuentes */
 .lealtad { text-align: center; font-size: 14px; padding: 10px 16px; border-bottom: 1px solid var(--line); }
 .lealtad i { margin-right: 4px; }
+
+.lea-form { display: flex; gap: 8px; justify-content: center; margin-top: 8px; flex-wrap: wrap; }
+.lea-form input { padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px; font: inherit; min-width: 190px; }
+.lea-form .btn { padding: 8px 14px; }
+.lea-res { margin-top: 6px; font-size: 14px; }
+.lea-res:empty { display: none; }
