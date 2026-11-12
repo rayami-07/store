@@ -133,6 +133,60 @@ async function guardarEntrante(db, m) {
   return { ok: true, base, convId, prospectoId, nuevo: !chat };
 }
 
+
+/* ---------- Respuestas automáticas ----------
+   Configuración (la edita el dueño en el CRM):
+     <config>/autorespuesta = {
+       activa: true,
+       bienvenida: "texto",                       // al primer mensaje de un contacto nuevo
+       fuera: { activa: true, texto: "texto",     // cuando escriben fuera de horario
+                desde: "09:00", hasta: "18:00", dias: [1,2,3,4,5,6] }  // 0 = domingo
+     }
+   <config> es "crm/config" (CRM de Raúl) o "tenants/<tid>/config" (cada negocio).
+*/
+const TZ_AUTO = "America/Mexico_City";
+const HORA_FUERA_MS = 12 * 60 * 60 * 1000; // el aviso de "fuera de horario" se manda máximo una vez cada 12 h por contacto
+
+function rutaAuto(base) {
+  return base === "crm" ? "crm/config/autorespuesta" : `tenants/${String(base).split("/")[1]}/config/autorespuesta`;
+}
+
+const aMin = (hhmm) => {
+  const m = /^(\d{1,2}):(\d{2})$/.exec(String(hhmm || ""));
+  return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+
+/** ¿Este momento cae fuera del horario de atención configurado? */
+function fueraDeHorario(f, ts, tz = TZ_AUTO) {
+  if (!f) return false;
+  const partes = new Intl.DateTimeFormat("en-US", { timeZone: tz, weekday: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).formatToParts(new Date(ts));
+  const get = (t) => (partes.find((x) => x.type === t) || {}).value;
+  const dia = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 }[get("weekday")];
+  const min = Number(get("hour")) * 60 + Number(get("minute"));
+  const dias = Array.isArray(f.dias) ? f.dias.map(Number) : [1, 2, 3, 4, 5, 6];
+  if (!dias.includes(dia)) return true;
+  const d = aMin(f.desde), h = aMin(f.hasta);
+  if (d == null || h == null || d === h) return false; // sin horario válido: no se considera fuera
+  return d < h ? min < d || min >= h : !(min >= d || min < h); // d > h = horario que cruza la medianoche
+}
+
+/**
+ * Decide si hay que contestar solo. Devuelve { tipo, texto } o null.
+ * ctx = { nuevo: es el primer mensaje del contacto, ts: hora del mensaje, chat: conversación ya guardada }
+ */
+function decidirAuto(cfg, ctx) {
+  if (!cfg || !cfg.activa) return null;
+  const limpia = (t) => String(t || "").trim().slice(0, 1000);
+  const f = cfg.fuera;
+  if (f && f.activa && limpia(f.texto) && fueraDeHorario(f, ctx.ts, cfg.tz || TZ_AUTO)) {
+    const ult = (ctx.chat && ctx.chat.autoFueraTs) || 0;
+    if (ctx.ts - ult >= HORA_FUERA_MS) return { tipo: "fuera", texto: limpia(f.texto) };
+    return null; // ya se le avisó hace poco; tampoco se manda la bienvenida fuera de horario
+  }
+  if (ctx.nuevo && limpia(cfg.bienvenida)) return { tipo: "bienvenida", texto: limpia(cfg.bienvenida) };
+  return null;
+}
+
 /** Petición HTTP para contestar por cada canal (API de Meta). */
 /**
  * México entrega el número del cliente como 521XXXXXXXXXX (WhatsApp agrega un 1
@@ -165,4 +219,4 @@ function armarEnvio(canal, cuenta, cfg, para, texto, version = "v23.0") {
   };
 }
 
-module.exports = { extraerEntrantes, guardarEntrante, armarEnvio, normalizaWa, llave, VENTANA_MS, NOMBRE_CANAL };
+module.exports = { extraerEntrantes, guardarEntrante, armarEnvio, normalizaWa, llave, VENTANA_MS, NOMBRE_CANAL, decidirAuto, fueraDeHorario, rutaAuto };
