@@ -14,7 +14,7 @@ const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
-const { extraerEntrantes, guardarEntrante, armarEnvio, llave } = require("./procesar");
+const { extraerEntrantes, guardarEntrante, armarEnvio, llave, decidirAuto, rutaAuto } = require("./procesar");
 
 admin.initializeApp();
 // Tope de copias corriendo a la vez: protege de cobros por errores o ataques
@@ -40,6 +40,30 @@ function firmaValida(req, secreto) {
   return a.length === b.length && crypto.timingSafeEqual(a, b);
 }
 
+// Respuesta automática (bienvenida / fuera de horario). Nunca debe tumbar el webhook: todo va en try/catch.
+async function autoResponder(m, r) {
+  try {
+    if (!r || !r.ok || r.motivo || !r.base) return; // sin guardar, o duplicado de Meta
+    const cfg = await db.get(rutaAuto(r.base));
+    if (!cfg || !cfg.activa) return;
+    const chat = await db.get(`${r.base}/chats/${r.convId}`);
+    const d = decidirAuto(cfg, { nuevo: !!r.nuevo, ts: m.ts, chat });
+    if (!d) return;
+    const sec = await db.get(`secrets/${llave(`${m.canal}_${m.cuenta}`)}`);
+    if (!sec || !sec.token) return;
+    const pet = armarEnvio(m.canal, m.cuenta, sec, m.contactoId, d.texto, GRAPH_VERSION);
+    const resp = await fetch(pet.url, { method: "POST", headers: pet.headers, body: JSON.stringify(pet.body) });
+    const j = await resp.json().catch(() => ({}));
+    if (!resp.ok) { logger.warn("Respuesta automática rechazada por Meta", { status: resp.status, error: j.error }); return; }
+    const ts = Date.now();
+    const mid = llave((j.messages && j.messages[0] && j.messages[0].id) || j.message_id || `auto${ts}`);
+    await db.set(`${r.base}/mensajes/${r.convId}/${mid}`, { dir: "out", texto: d.texto, ts, por: "auto" });
+    await db.update(`${r.base}/chats/${r.convId}`, { autoTs: ts, ...(d.tipo === "fuera" ? { autoFueraTs: m.ts } : {}) });
+  } catch (e) {
+    logger.error("Error en respuesta automática", e);
+  }
+}
+
 exports.metaWebhook = onRequest({ secrets: [META_APP_SECRET, META_VERIFY_TOKEN], timeoutSeconds: 30 }, async (req, res) => {
   // Paso de verificación cuando registras la dirección en Meta
   if (req.method === "GET") {
@@ -58,6 +82,7 @@ exports.metaWebhook = onRequest({ secrets: [META_APP_SECRET, META_VERIFY_TOKEN],
     for (const m of entrantes) {
       const r = await guardarEntrante(db, m);
       if (!r.ok) logger.info("Mensaje no guardado", { canal: m.canal, cuenta: m.cuenta, motivo: r.motivo });
+      else await autoResponder(m, r);
     }
   } catch (e) {
     logger.error("Error procesando webhook", e);
