@@ -294,6 +294,30 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       </form>
     </section>
 
+    <section id="secAuto" hidden style="display:flex;flex-direction:column;gap:10px">
+      <h2>Respuestas automáticas</h2>
+      <p class="sub">Contestan solas por WhatsApp, Messenger e Instagram cuando alguien te escribe. Solo funcionan con los canales ya conectados.</p>
+      <form id="formAuto" style="display:flex;flex-direction:column;gap:12px" autocomplete="off">
+        <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="au-activa" style="width:auto"> Encender respuestas automáticas</label>
+        <div class="field"><label for="au-bienv">Mensaje de bienvenida (solo al primer mensaje de un contacto nuevo)</label>
+          <textarea id="au-bienv" maxlength="1000" placeholder="Ej. Hola, gracias por escribirnos. En un momento te atendemos."></textarea></div>
+        <label style="display:flex;gap:8px;align-items:center;font-weight:600"><input type="checkbox" id="au-fuera-on" style="width:auto"> Avisar cuando escriban fuera de horario</label>
+        <div class="field"><label for="au-fuera">Mensaje fuera de horario (se manda máximo una vez cada 12 horas por contacto)</label>
+          <textarea id="au-fuera" maxlength="1000" placeholder="Ej. Ahorita estamos cerrados. Mañana desde las 9:00 te contestamos."></textarea></div>
+        <div class="row" style="flex-wrap:nowrap;gap:10px">
+          <div class="field" style="flex:1"><label for="au-desde">Abren a las</label><input type="time" id="au-desde" value="09:00"></div>
+          <div class="field" style="flex:1"><label for="au-hasta">Cierran a las</label><input type="time" id="au-hasta" value="18:00"></div>
+        </div>
+        <div class="field"><label>Días que atienden</label>
+          <div class="row" id="au-dias" style="gap:10px;flex-wrap:wrap">
+            <label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-dia="1" style="width:auto"> Lun</label><label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-dia="2" style="width:auto"> Mar</label><label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-dia="3" style="width:auto"> Mié</label><label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-dia="4" style="width:auto"> Jue</label><label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-dia="5" style="width:auto"> Vie</label><label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-dia="6" style="width:auto"> Sáb</label><label style="display:flex;gap:4px;align-items:center"><input type="checkbox" data-dia="0" style="width:auto"> Dom</label>
+          </div></div>
+        <p class="err" id="auErr"></p>
+        <div class="row"><button class="btn primary" type="submit" id="btnAuto">Guardar respuestas</button></div>
+        <p class="sub">La hora es la de México (centro). Para tener un mensaje distinto por cada negocio, cada dueño lo configura en su propio CRM.</p>
+      </form>
+    </section>
+
     <h2>Cómo calificar a un prospecto</h2>
     <p class="sub" id="critSub">El puntaje suma un punto por cada criterio que cumple. Prioriza los más altos.</p>
     <div class="kv" id="critHelp"></div>
@@ -701,6 +725,7 @@ function aplicarModo(){
   $("#lnkCreador").hidden = !(esAdmin && CTX.propio);
   const editaPropios = CTX.modo==="rayami" && esAdmin && CTX.propio;
   $("#secCats").hidden = !(editaPropios || (CTX.modo==="general" && (esAdmin || CTX.rol==="owner")));
+  $("#secAuto").hidden = $("#secCats").hidden; if(!$("#secAuto").hidden) cargarAuto();
   if(CTX.modo==="rayami"){
     $("#catsTitulo").textContent = "Tus paquetes y servicios";
     $("#catsSub").textContent = "Lo que le vendes a tus prospectos. Aparecen en \"Paquete que le interesa\". Toca la × para quitar uno.";
@@ -1561,6 +1586,47 @@ $("#formCanal").addEventListener("submit", async ev=>{
 let cotizaciones = [], cotP = null, cotActual = null;
 const ESTADO_COT = { borrador:"Borrador", enviada:"Enviada", aceptada:"Aceptada", rechazada:"Rechazada" };
 const rutaConfig = () => CTX.modo==="rayami" ? "crm/config" : `tenants/${CTX.tid}/config`;
+
+/* ============================================================
+   RESPUESTAS AUTOMÁTICAS (bienvenida y fuera de horario)
+   Se guardan en <config>/autorespuesta; el servidor las lee al llegar un mensaje.
+============================================================ */
+async function cargarAuto(){
+  try{
+    const c = (await get(ref(fdb, `${rutaConfig()}/autorespuesta`))).val() || {};
+    const f = c.fuera || {};
+    $("#au-activa").checked = !!c.activa;
+    $("#au-bienv").value = c.bienvenida || "";
+    $("#au-fuera-on").checked = !!f.activa;
+    $("#au-fuera").value = f.texto || "";
+    $("#au-desde").value = f.desde || "09:00";
+    $("#au-hasta").value = f.hasta || "18:00";
+    const dias = Array.isArray(f.dias) ? f.dias.map(Number) : [1,2,3,4,5,6];
+    document.querySelectorAll("#au-dias [data-dia]").forEach(i=>{ i.checked = dias.includes(Number(i.dataset.dia)); });
+  }catch(e){ /* sin permiso o sin datos: se deja el formulario con sus valores por defecto */ }
+}
+$("#formAuto").addEventListener("submit", async e=>{
+  e.preventDefault();
+  const err = $("#auErr"); err.textContent = "";
+  const bienv = $("#au-bienv").value.trim(), fuera = $("#au-fuera").value.trim();
+  const dias = [...document.querySelectorAll("#au-dias [data-dia]")].filter(i=>i.checked).map(i=>Number(i.dataset.dia));
+  if($("#au-activa").checked && !bienv && !($("#au-fuera-on").checked && fuera)){ err.textContent = "Escribe al menos un mensaje (bienvenida o fuera de horario)."; return; }
+  if($("#au-fuera-on").checked){
+    if(!fuera){ err.textContent = "Escribe el mensaje de fuera de horario."; return; }
+    if(!$("#au-desde").value || !$("#au-hasta").value){ err.textContent = "Pon la hora de apertura y de cierre."; return; }
+    if(!dias.length){ err.textContent = "Elige al menos un día de atención."; return; }
+  }
+  const b = $("#btnAuto"); b.disabled = true;
+  try{
+    await set(ref(fdb, `${rutaConfig()}/autorespuesta`), {
+      activa: $("#au-activa").checked, bienvenida: bienv,
+      fuera: { activa: $("#au-fuera-on").checked, texto: fuera, desde: $("#au-desde").value, hasta: $("#au-hasta").value, dias }
+    });
+    toast("Respuestas guardadas");
+  }catch(ex){
+    err.textContent = String(ex && ex.code||ex).includes("PERMISSION") ? "No tienes permiso para cambiar esto." : "No se pudo guardar. Intenta otra vez.";
+  }finally{ b.disabled = false; }
+});
 const r2 = n => Math.round((+n||0)*100)/100;
 const moneda = n => (+n||0).toLocaleString("es-MX",{style:"currency",currency:"MXN"});
 const serviciosCot = () => CTX.modo==="rayami" ? (M.paquetes||[]).filter(x=>x!=="—") : (CTX.cats||[]);
