@@ -1,6 +1,6 @@
 // Pruebas con mensajes simulados de Meta: node test/procesar.test.js
 const assert = require("assert");
-const { extraerEntrantes, guardarEntrante, armarEnvio, normalizaWa } = require("../procesar");
+const { extraerEntrantes, guardarEntrante, armarEnvio, normalizaWa, decidirAuto, fueraDeHorario, rutaAuto } = require("../procesar");
 
 function memDb(data) {
   const at = (p) => p.split("/").reduce((o, k) => (o == null ? undefined : o[k]), data);
@@ -89,6 +89,32 @@ const ig = { object: "instagram", entry: [{ id: "IG7", messaging: [{ sender: { i
   const m = armarEnvio("instagram", "IG7", { token: "T", pageId: "PAGE9" }, "IGSID3", "Hola");
   assert.equal(m.url, "https://graph.facebook.com/v23.0/PAGE9/messages");
   assert.equal(m.body.messaging_type, "RESPONSE");
+
+  // 8) Respuestas automáticas
+  assert.equal(rutaAuto("crm"), "crm/config/autorespuesta");
+  assert.equal(rutaAuto("tenantData/taller1"), "tenants/taller1/config/autorespuesta");
+  const mx = (iso) => new Date(iso).getTime(); // las horas van con -06:00 (hora de México, sin horario de verano)
+  const lun10 = mx("2026-11-09T10:00:00-06:00"), lun20 = mx("2026-11-09T20:00:00-06:00"), dom11 = mx("2026-11-15T11:00:00-06:00"), lun0730 = mx("2026-11-09T07:30:00-06:00");
+  const horario = { activa: true, texto: "Ahorita no estamos", desde: "09:00", hasta: "18:00", dias: [1, 2, 3, 4, 5, 6] };
+  assert.equal(fueraDeHorario(horario, lun10), false, "lunes 10:00 está dentro");
+  assert.equal(fueraDeHorario(horario, lun20), true, "lunes 20:00 está fuera");
+  assert.equal(fueraDeHorario(horario, lun0730), true, "lunes 7:30 está fuera");
+  assert.equal(fueraDeHorario(horario, dom11), true, "domingo no está en los días");
+  assert.equal(fueraDeHorario({ desde: "22:00", hasta: "06:00" }, mx("2026-11-09T23:00:00-06:00")), false, "horario que cruza medianoche: 23:00 está dentro");
+  assert.equal(fueraDeHorario({ desde: "22:00", hasta: "06:00" }, lun10), true);
+  assert.equal(fueraDeHorario({ desde: "", hasta: "" }, lun20), false, "sin horario válido no se considera fuera");
+
+  const cfgA = { activa: true, bienvenida: "Hola, gracias por escribir", fuera: horario };
+  assert.equal(decidirAuto(null, { nuevo: true, ts: lun10 }), null);
+  assert.equal(decidirAuto({ ...cfgA, activa: false }, { nuevo: true, ts: lun10 }), null, "apagada no contesta");
+  assert.deepEqual(decidirAuto(cfgA, { nuevo: true, ts: lun10 }), { tipo: "bienvenida", texto: "Hola, gracias por escribir" });
+  assert.equal(decidirAuto(cfgA, { nuevo: false, ts: lun10, chat: {} }), null, "la bienvenida solo va en el primer mensaje");
+  assert.deepEqual(decidirAuto(cfgA, { nuevo: true, ts: lun20, chat: null }), { tipo: "fuera", texto: "Ahorita no estamos" }, "fuera de horario gana a la bienvenida");
+  assert.equal(decidirAuto(cfgA, { nuevo: false, ts: lun20 + 3600000, chat: { autoFueraTs: lun20 } }), null, "no repite el aviso en menos de 12 h");
+  assert.equal(decidirAuto(cfgA, { nuevo: true, ts: lun20 + 3600000, chat: { autoFueraTs: lun20 } }), null, "ni manda la bienvenida fuera de horario si ya se avisó");
+  assert.equal(decidirAuto(cfgA, { nuevo: false, ts: lun20 + 13 * 3600000, chat: { autoFueraTs: lun20 } }), null, "pasadas 12 h ya es horario de atención y no hay bienvenida");
+  assert.equal(decidirAuto(cfgA, { nuevo: false, ts: mx("2026-11-10T21:00:00-06:00"), chat: { autoFueraTs: lun20 } }).tipo, "fuera", "al día siguiente fuera de horario sí vuelve a avisar");
+  assert.equal(decidirAuto({ activa: true, bienvenida: "   " }, { nuevo: true, ts: lun10 }), null, "texto vacío no manda nada");
 
   console.log("✔ Todas las pruebas pasaron");
 })().catch((e) => { console.error("✘", e.message); process.exit(1); });
