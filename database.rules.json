@@ -265,9 +265,15 @@
           ".read": true,
           ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || ((auth != null && root.child('storeOwners/' + $storeId + '/' + auth.uid).exists()) && root.child('stores/' + $storeId + '/status').val() === 'activa')",
           ".validate": "$tel.matches(/^[0-9]{10}$/) && newData.hasChildren(['sellos', 'vence'])",
-          "sellos": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000" },
-          "vence": { ".validate": "newData.isNumber() && newData.val() >= 0" },
-          "$other": { ".validate": false }
+          "sellos": {
+            ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 1000"
+          },
+          "vence": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "$other": {
+            ".validate": false
+          }
         }
       }
     },
@@ -314,6 +320,110 @@
           "$other": {
             ".validate": false
           }
+        }
+      }
+    },
+    "finanzas": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid",
+        "perfil": {
+          ".validate": "newData.hasChildren(['aceptoPrivacidad'])",
+          "nombre": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "aceptoPrivacidad": {
+            ".validate": "newData.isBoolean() && newData.val() === true"
+          },
+          "creado": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        },
+        "negocios": {
+          "$negocioId": {
+            ".validate": "newData.hasChildren(['nombre'])",
+            "nombre": {
+              ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 60"
+            },
+            "giro": {
+              ".validate": "newData.isString() && newData.val().length <= 30"
+            },
+            "modo": {
+              ".validate": "newData.isString() && newData.val().matches(/^(simple|avanzado)$/)"
+            },
+            "creado": {
+              ".validate": "newData.isNumber()"
+            },
+            "meses": {
+              "$mes": {
+                ".validate": "$mes.matches(/^[0-9]{4}-(0[1-9]|1[0-2])$/) && newData.hasChildren(['ventas'])",
+                "ventas": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "costoVentas": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "caja": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "actualizado": {
+                  ".validate": "newData.isNumber()"
+                },
+                "gastos": {
+                  "renta": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "sueldos": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "servicios": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "otros": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                },
+                "productos": {
+                  "$pid": {
+                    ".validate": "newData.hasChildren(['nombre'])",
+                    "nombre": {
+                      ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+                    },
+                    "precio": {
+                      ".validate": "newData.isNumber() && newData.val() >= 0"
+                    },
+                    "costo": {
+                      ".validate": "newData.isNumber() && newData.val() >= 0"
+                    },
+                    "unidades": {
+                      ".validate": "newData.isNumber() && newData.val() >= 0"
+                    },
+                    "$other": {
+                      ".validate": false
+                    }
+                  }
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        },
+        "$other": {
+          ".validate": false
         }
       }
     }

@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Mis finanzas · RAYAMI Tiendas</title>
+  <meta name="description" content="Captura tus ventas, costos y gastos cada mes y te decimos cuánto ganaste, cuánto debes vender para no perder y qué hacer." />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="../../site.css?v=5" />
+  <link rel="stylesheet" href="./app.css?v=1" />
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-GR83B3NZX9');
+    gtag('config', 'AW-18059855370');
+  </script>
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="logo" href="../../">RAYAMI <span>Tiendas</span></a>
+    <nav class="nav-links" id="mnav" aria-label="Secciones">
+      <a href="../../">Inicio</a>
+      <div class="has-sub"><button class="sub-btn on" type="button" aria-expanded="false">Servicios</button><div class="sub"><a href="../../servicios/pagina-web/"><i class="fa-solid fa-globe"></i>Página web o catálogo</a><a href="../../servicios/pedidos-whatsapp/"><i class="fa-brands fa-whatsapp"></i>Pedidos por WhatsApp</a><a href="../../servicios/qr/"><i class="fa-solid fa-qrcode"></i>Código QR</a><a href="../../servicios/perfil-google/"><i class="fa-brands fa-google"></i>Perfil de Google</a><a href="../../servicios/anuncios-google/"><i class="fa-solid fa-bullhorn"></i>Anuncios en Google</a><a href="../../leads-y-crm/"><i class="fa-solid fa-address-book"></i>Leads y CRM</a><a href="../../analisis/"><i class="fa-solid fa-chart-line"></i>Análisis</a><a href="../../servicios/inventario/"><i class="fa-solid fa-boxes-stacked"></i>Control de inventario</a><a href="../../servicios/punto-de-venta/"><i class="fa-solid fa-cash-register"></i>Punto de venta<small>pronto</small></a><a href="../../servicios/clientes-frecuentes/"><i class="fa-solid fa-heart"></i>Clientes frecuentes</a><a href="../../servicios/finanzas/"><i class="fa-solid fa-calculator"></i>Finanzas</a><a href="../../servicios/cursos-excel/"><i class="fa-solid fa-graduation-cap"></i>Cursos de Excel<small>pronto</small></a><a class="all" href="../../servicios/">Ver todos los servicios →</a></div></div>
+      <a href="../../por-que/">¿Por qué usarlo?</a><a href="../../preguntas/">Preguntas</a><a href="../../precios/">Precios</a><a href="../../recursos/">Recursos</a><a href="../../nosotros/">Nosotros</a>
+    </nav>
+    <a class="btn btn-wa wa-link" data-msg="Hola, quiero una muestra gratis de mi tienda en línea"><i class="fa-brands fa-whatsapp"></i> Pide tu muestra</a>
+    <button class="burger" type="button" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span><span></span></button>
+  </div>
+</header>
+<main>
+<section class="wrap page-head app-head">
+  <a class="crumb" href="../../servicios/finanzas/">← Servicio de Finanzas</a>
+  <h1>Mis finanzas</h1>
+  <p class="lede">Captura los números de tu negocio cada mes y te decimos cuánto ganaste de verdad, cuánto necesitas vender para no perder y qué hacer.</p>
+  <p class="nota"><i class="fa-solid fa-circle-info"></i><span>Esto no es contabilidad ni asesoría fiscal: eso lo sigue llevando tu contador. Aquí te ayudamos a entender tus números y decidir. <b>Prototipo</b> en prueba.</span></p>
+</section>
+
+<section class="wrap app">
+
+  <!-- ===== Entrar / Crear cuenta ===== -->
+  <div id="view-auth" class="card auth-card">
+    <div class="tabs" role="tablist" aria-label="Acceso">
+      <button type="button" role="tab" id="tab-login" aria-selected="true">Entrar</button>
+      <button type="button" role="tab" id="tab-registro" aria-selected="false">Crear cuenta</button>
+    </div>
+
+    <form id="form-login" novalidate>
+      <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" inputmode="email" required placeholder="tu@correo.com" /></label>
+      <label class="field"><span>Contraseña</span><input type="password" name="password" autocomplete="current-password" required minlength="6" /></label>
+      <div class="msg" id="msg-login" role="alert"></div>
+      <div class="acciones">
+        <button class="btn btn-main" type="submit">Entrar</button>
+        <button class="btn btn-google" type="button" id="btn-google"><i class="fa-brands fa-google"></i> Entrar con Google</button>
+      </div>
+      <p style="margin-top:14px;font-size:14px"><button type="button" class="link-btn" id="btn-olvide">Olvidé mi contraseña</button></p>
+    </form>
+
+    <form id="form-registro" hidden novalidate>
+      <label class="field"><span>Tu nombre</span><input type="text" name="nombre" autocomplete="name" required maxlength="60" placeholder="Como quieres que te llamemos" /></label>
+      <label class="field"><span>Correo</span><input type="email" name="email" autocomplete="email" inputmode="email" required placeholder="tu@correo.com" /></label>
+      <label class="field"><span>Contraseña <small style="font-weight:400;color:var(--muted)">(mínimo 6 caracteres)</small></span><input type="password" name="password" autocomplete="new-password" required minlength="6" /></label>
+      <label class="check"><input type="checkbox" name="privacidad" required /><span>Leí y acepto el <a href="../../privacidad/" target="_blank" rel="noopener">aviso de privacidad</a>. Mis datos solo los veo yo y sirven para calcular mis resultados.</span></label>
+      <div class="msg" id="msg-registro" role="alert"></div>
+      <div class="acciones">
+        <button class="btn btn-main" type="submit">Crear mi cuenta</button>
+        <button class="btn btn-google" type="button" id="btn-google-reg"><i class="fa-brands fa-google"></i> Crear con Google</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== App (cuando ya entraste) ===== -->
+  <div id="view-app" hidden>
+    <div class="card topbar">
+      <div class="negocio">
+        <label for="sel-negocio" style="font-weight:700;font-size:14px">Negocio</label>
+        <select id="sel-negocio" aria-label="Elige tu negocio"></select>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-nuevo-negocio"><i class="fa-solid fa-plus"></i> Nuevo</button>
+      </div>
+      <div class="derecha">
+        <div class="toggle" role="group" aria-label="Modo">
+          <button type="button" id="modo-simple" aria-pressed="true">Simple</button>
+          <button type="button" id="modo-avanzado" aria-pressed="false">Avanzado</button>
+        </div>
+        <span class="usuario" id="usuario"></span>
+        <button type="button" class="btn btn-ghost btn-sm" id="btn-salir">Salir</button>
+      </div>
+    </div>
+
+    <!-- Crear negocio -->
+    <div class="card" id="view-negocio" hidden style="margin-top:14px;max-width:520px">
+      <h2>Tu negocio</h2>
+      <p class="sub">Puedes tener varios negocios; cada uno lleva sus propios meses.</p>
+      <form id="form-negocio" novalidate>
+        <label class="field"><span>Nombre del negocio</span><input type="text" name="nombre" required maxlength="60" placeholder="Ej. Fonda Doña Mary" /></label>
+        <label class="field"><span>Giro</span>
+          <select name="giro">
+            <option value="comida">Comida / restaurante</option><option value="abarrotes">Abarrotes / tienda</option><option value="ropa">Ropa / accesorios</option>
+            <option value="servicios">Servicios</option><option value="belleza">Belleza / estética</option><option value="taller">Taller / reparaciones</option><option value="otro">Otro</option>
+          </select></label>
+        <div class="msg" id="msg-negocio" role="alert"></div>
+        <div class="acciones"><button class="btn btn-main" type="submit">Guardar negocio</button><button class="btn btn-ghost" type="button" id="btn-cancelar-negocio" hidden>Cancelar</button></div>
+      </form>
+    </div>
+
+    <div id="view-main" hidden>
+      <div class="tabs" role="tablist" aria-label="Secciones de la app" style="max-width:520px">
+        <button type="button" role="tab" data-tab="capturar" aria-selected="true"><i class="fa-solid fa-pen"></i> Capturar</button>
+        <button type="button" role="tab" data-tab="resultados" aria-selected="false"><i class="fa-solid fa-gauge-high"></i> Resultados</button>
+        <button type="button" role="tab" data-tab="historial" aria-selected="false"><i class="fa-solid fa-chart-column"></i> Historial</button>
+      </div>
+
+      <!-- Capturar -->
+      <div id="tab-capturar" class="card" style="margin-top:14px">
+        <h2>Captura tu mes</h2>
+        <p class="sub">Con los números gruesos basta. Si no tienes el dato exacto, pon tu mejor estimado.</p>
+        <form id="form-mes" novalidate>
+          <label class="field"><span>Mes</span><input type="month" name="mes" required /></label>
+          <div class="msg warn" id="msg-mes-existe"></div>
+
+          <div class="bloque">
+            <h3>Ventas</h3>
+            <label class="field"><span>Ventas del mes <button type="button" class="ayuda-btn" data-ayuda="a-ventas">¿qué es esto?</button></span>
+              <span class="ayuda" id="a-ventas" hidden>Todo lo que cobraste en el mes, en efectivo, transferencia o tarjeta. Sin restar nada.</span>
+              <span class="money"><input type="text" inputmode="decimal" name="ventas" placeholder="0" /></span></label>
+            <label class="field"><span>Costo de lo vendido <button type="button" class="ayuda-btn" data-ayuda="a-costo">¿qué es esto?</button></span>
+              <span class="ayuda" id="a-costo" hidden>Lo que te costó la mercancía o los insumos que sí vendiste este mes (no lo que compraste para guardar). Si vendes comida: ingredientes, desechables, gas.</span>
+              <span class="money"><input type="text" inputmode="decimal" name="costoVentas" placeholder="0" /></span></label>
+          </div>
+
+          <div class="bloque">
+            <h3>Gastos fijos <button type="button" class="ayuda-btn" data-ayuda="a-gastos">¿qué es esto?</button></h3>
+            <span class="ayuda" id="a-gastos" hidden>Lo que pagas aunque no vendas: renta, sueldos (incluye lo que tú te pagas), luz, agua, internet, teléfono, comisiones fijas, publicidad.</span>
+            <div id="gastos-simple">
+              <label class="field"><span>Total de gastos fijos del mes</span><span class="money"><input type="text" inputmode="decimal" name="gastosTotal" placeholder="0" /></span></label>
+            </div>
+            <div id="gastos-avanzado" class="gastos-grid" hidden>
+              <label class="field"><span>Renta</span><span class="money"><input type="text" inputmode="decimal" name="renta" placeholder="0" /></span></label>
+              <label class="field"><span>Sueldos</span><span class="money"><input type="text" inputmode="decimal" name="sueldos" placeholder="0" /></span></label>
+              <label class="field"><span>Servicios (luz, agua, internet…)</span><span class="money"><input type="text" inputmode="decimal" name="servicios" placeholder="0" /></span></label>
+              <label class="field"><span>Otros gastos fijos</span><span class="money"><input type="text" inputmode="decimal" name="otros" placeholder="0" /></span></label>
+            </div>
+          </div>
+
+          <div class="bloque">
+            <h3>Dinero disponible</h3>
+            <label class="field"><span>Dinero en caja o banco al cierre <button type="button" class="ayuda-btn" data-ayuda="a-caja">¿qué es esto?</button></span>
+              <span class="ayuda" id="a-caja" hidden>Lo que tenías el último día del mes sumando efectivo y cuentas del negocio. Es tu "colchón".</span>
+              <span class="money"><input type="text" inputmode="decimal" name="caja" placeholder="0" /></span></label>
+          </div>
+
+          <div class="bloque" id="bloque-productos" hidden>
+            <h3>Productos <button type="button" class="ayuda-btn" data-ayuda="a-prod">¿qué es esto?</button></h3>
+            <span class="ayuda" id="a-prod" hidden>Tus productos o servicios principales: a cuánto los vendes, cuánto te cuesta cada uno y cuántos vendiste en el mes. Con 3 a 8 basta para ver cuáles dejan más.</span>
+            <div class="prod-head"><span>Producto</span><span>Precio</span><span>Costo</span><span>Unidades</span><span></span></div>
+            <div id="productos"></div>
+            <p style="margin-top:10px"><button type="button" class="btn btn-ghost btn-sm" id="btn-add-prod"><i class="fa-solid fa-plus"></i> Agregar producto</button></p>
+          </div>
+
+          <div class="msg" id="msg-mes" role="alert"></div>
+          <div class="acciones">
+            <button class="btn btn-main" type="submit" id="btn-guardar">Guardar y ver resultados</button>
+            <button class="btn btn-ghost" type="button" id="btn-borrar-mes" hidden><i class="fa-solid fa-trash"></i> Borrar este mes</button>
+          </div>
+        </form>
+      </div>
+
+      <!-- Resultados -->
+      <div id="tab-resultados" hidden style="margin-top:14px">
+        <div class="card" style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;justify-content:space-between">
+          <label class="field" style="margin:0"><span>Mes a revisar</span><select id="sel-mes-res" aria-label="Mes de resultados"></select></label>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-editar-mes"><i class="fa-solid fa-pen"></i> Editar este mes</button>
+        </div>
+        <div id="res-contenido" style="margin-top:14px"></div>
+      </div>
+
+      <!-- Historial -->
+      <div id="tab-historial" hidden style="margin-top:14px">
+        <div class="card">
+          <h2>Mes a mes</h2>
+          <p class="sub">Así va tu negocio con el tiempo. Captura al menos dos meses para comparar.</p>
+          <div id="hist-contenido"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+<footer class="wrap">
+  <div class="foot-in">
+    <span>© 2026 RAYAMI Tiendas</span>
+    <span>WhatsApp: 55 8107 4978</span>
+    <a href="../../nosotros/">Nosotros</a>
+    <a href="../../recursos/">Recursos</a>
+    <a href="../../privacidad/">Aviso de privacidad</a>
+  </div>
+</footer>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+  const WA = "525581074978";
+  document.querySelectorAll(".wa-link").forEach((a) => {
+    a.href = `https://api.whatsapp.com/send?phone=${WA}&text=${encodeURIComponent(a.dataset.msg || "")}`;
+    a.target = "_blank"; a.rel = "noopener";
+    if (a.dataset.conv) a.addEventListener("click", () => setTimeout(() => { location.href = "../../gracias/"; }, 700));
+  });
+  (function () {
+    const nav = document.querySelector(".nav"), burger = document.querySelector(".burger");
+    const closeAll = () => { nav.classList.remove("open"); burger.setAttribute("aria-expanded", "false"); document.querySelectorAll(".has-sub").forEach((h) => { h.classList.remove("open"); h.querySelector(".sub-btn").setAttribute("aria-expanded", "false"); }); };
+    burger.addEventListener("click", () => { const o = !nav.classList.contains("open"); closeAll(); if (o) { nav.classList.add("open"); burger.setAttribute("aria-expanded", "true"); } });
+    document.querySelectorAll(".sub-btn").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); const h = b.parentElement, o = !h.classList.contains("open"); document.querySelectorAll(".has-sub").forEach((x) => x.classList.remove("open")); if (o) h.classList.add("open"); b.setAttribute("aria-expanded", String(o)); }));
+    document.addEventListener("click", (e) => { if (!e.target.closest(".has-sub")) document.querySelectorAll(".has-sub").forEach((h) => h.classList.remove("open")); });
+    addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+  })();
+</script>
+<script type="module" src="./app.js?v=1"></script>
+</body>
+</html>

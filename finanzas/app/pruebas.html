@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pruebas · Finanzas app</title>
+  <meta name="robots" content="noindex" />
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 760px; margin: 32px auto; padding: 0 16px; color: #1a1714; }
+    h1 { font-size: 22px; } li { padding: 4px 0; font-family: ui-monospace, monospace; font-size: 14px; }
+    .ok { color: #136c39; } .mal { color: #b3261e; font-weight: 700; } .fin { margin-top: 16px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>Pruebas de calculos.js</h1>
+  <ul id="lista"></ul>
+  <p class="fin" id="fin"></p>
+  <script type="module">
+    import { correr } from "./pruebas.js";
+    const ul = document.getElementById("lista"), fin = document.getElementById("fin");
+    const todo = correr((msg, ok) => {
+      if (/correctas/.test(msg)) { fin.textContent = msg; fin.className = "fin " + (ok ? "ok" : "mal"); return; }
+      const li = document.createElement("li"); li.textContent = msg; li.className = ok ? "ok" : "mal"; ul.appendChild(li);
+    });
+  </script>
+</body>
+</html>
