@@ -142,3 +142,69 @@ table.tabla { width: 100%; border-collapse: collapse; font-size: 14px; min-width
 
 /* Instalar como app */
 .instalar { margin-top: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
+
+/* ---- Modo, ajustes y categorías ---- */
+.modo-hint { margin: 8px 4px 0; font-size: 13px; color: var(--muted); }
+.toggle-captura { margin-top: 4px; }
+.toggle-captura button { padding: 8px 16px; }
+.cats { display: grid; gap: 8px; margin-top: 12px; }
+.cat-row { display: grid; grid-template-columns: 1fr 44px; gap: 8px; align-items: center; }
+.cat-row input, .cat-nueva input { font: inherit; font-size: 16px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 12px; width: 100%; min-height: 44px; }
+.cat-row input:focus, .cat-nueva input:focus { outline: 2px solid var(--orange); border-color: var(--orange); }
+.cat-row .btn { width: 44px; padding: 0; }
+.cat-nueva { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-top: 12px; }
+.card.peligro { border-color: #f3c9c2; }
+.btn.rojo { color: #b3261e; }
+.hint-cats { margin-top: 10px; font-size: 13px; }
+.hint { font-size: 13px; color: var(--muted); }
+.muted { color: var(--muted); }
+#btn-ajustes .txt { display: none; }
+
+/* ---- Diario ---- */
+.fila-fecha { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; }
+.fila-fecha .field { flex: 1; min-width: 170px; }
+.field input[type="date"] { max-width: 240px; }
+.nav-dia { display: flex; gap: 6px; padding-bottom: 2px; }
+.gasto-dia { display: grid; grid-template-columns: 1fr 120px 40px; gap: 8px; align-items: center; margin-top: 8px; }
+.gasto-dia select, .gasto-dia input { font: inherit; font-size: 15px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; width: 100%; min-height: 44px; background: #fff; }
+.gasto-dia .quitar { width: 40px; padding: 0; height: 40px; }
+.dias-head { display: grid; gap: 4px; margin-bottom: 4px; }
+.dias-head h3 { font-size: 18px; }
+.tabla-dias { min-width: 420px; }
+.tabla-dias tbody tr { cursor: pointer; }
+.tabla-dias tbody tr:hover { background: #faf8f5; }
+.tabla-dias tr.sel td { background: var(--orange-wash); }
+.tabla-dias td.nota { white-space: normal; max-width: 220px; color: var(--muted); font-size: 13px; }
+.msg.ok .link-btn, .msg.warn .link-btn { display: inline; margin-left: 4px; }
+
+/* ---- Modo empresa ---- */
+.estados { display: grid; gap: 12px; margin-top: 14px; }
+.card.estado h3 { font-size: 18px; }
+table.edo { min-width: 0; font-size: 14px; margin-top: 8px; }
+.edo td { padding: 7px 6px; white-space: normal; }
+.edo td.n { white-space: nowrap; }
+.edo td:first-child { color: #4b453f; }
+.edo tr.sub td { color: var(--muted); font-size: 13px; padding-block: 4px; border-bottom: 0; }
+.edo tr.tot td { border-top: 2px solid var(--ink); border-bottom: 1px solid var(--line); background: #faf8f5; }
+.edo tr.big td { font-size: 16px; }
+
+@media (min-width: 720px) {
+  #btn-ajustes .txt { display: inline; }
+  .kpis-emp { grid-template-columns: repeat(2, 1fr); }
+  .estados { grid-template-columns: repeat(3, 1fr); align-items: start; }
+}
+@media (min-width: 1000px) {
+  .kpis-emp { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* ---- Imprimir estados financieros ---- */
+@media print {
+  header, footer, .app-head, .nota, .topbar, .modo-hint, .tabs, #tab-capturar, #tab-historial, #instalar, .toast, #aviso-vence, .acciones, #tab-resultados > .card:first-child, #res-contenido .acciones, #res-contenido > p { display: none !important; }
+  body { background: #fff; }
+  main > section.app { padding: 0; }
+  .card, .kpi, .res-hero { border: 1px solid #ccc; break-inside: avoid; box-shadow: none; }
+  .res-hero { background: #fff !important; color: #000 !important; }
+  .res-hero p, .res-hero small { color: #333 !important; }
+  .estados { grid-template-columns: 1fr; }
+  .kpis, .kpis-emp { grid-template-columns: repeat(2, 1fr); }
+}

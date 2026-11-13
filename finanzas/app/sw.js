@@ -1,7 +1,7 @@
 /* Service worker de RAYAMI Finanzas (solo /finanzas/app/).
    "Network first": siempre trae lo más nuevo de internet; si no hay señal, usa la copia guardada
    para que la app abra igual. No guarda nada de Firebase: los datos siempre van directo a la base. */
-const CACHE = "rayami-finanzas-v2";
+const CACHE = "rayami-finanzas-v3";
 const BASE = ["./", "./index.html", "./app.css?v=2", "./app.js?v=1", "./calculos.js", "./umbrales.js",
   "./manifest.json", "./icons/icon-192.png", "../../site.css?v=5"];
 

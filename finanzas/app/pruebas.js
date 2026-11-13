@@ -120,6 +120,82 @@ prueba("avisosMes avisa costo > ventas y gastos en 0", () => {
   esperar(C.avisosMes({ ventas: 100, costoVentas: 150, gastos: 0 }).length === 2);
 });
 
+// --- gastos con categorías libres
+prueba("totalGastos suma cualquier categoría", () => {
+  esperar(C.totalGastos({ renta: 5000, "publicidad-2": 800, luz: "200" }) === 6000);
+  esperar(C.listaCategorias(null).map((c) => c.id).join(",") === "renta,sueldos,servicios,otros", "categorías base");
+  esperar(C.listaCategorias({ b: { nombre: "B", orden: 2 }, a: { nombre: "A", orden: 1 } })[0].id === "a", "respeta orden");
+  esperar(C.idCategoria("Gasolina", { gasolina: 1 }) === "gasolina-2", "no repite ids");
+});
+
+// --- diario → mes
+const dias = {
+  "2026-10-01": { ventas: 1800, compras: 700, gastos: { renta: 8000 } },
+  "2026-10-02": { ventas: 2200, compras: 900, gastos: { luz: 350, renta: 0 } },
+  "2026-10-15": { ventas: 1500, compras: 0, gastos: {} },
+  "2026-09-30": { ventas: 9999, compras: 9999 },
+};
+prueba("resumenDias suma solo los días del mes", () => {
+  const r = C.resumenDias(dias, "2026-10");
+  esperar(r.n === 3 && r.ventas === 5500 && r.costoVentas === 1600, "ventas y compras");
+  esperar(r.gastos.renta === 8000 && r.gastos.luz === 350 && !("otros" in r.gastos), "gastos por categoría, sin ceros");
+  esperar(C.resumenDias(dias, "2026-08").n === 0, "mes vacío");
+});
+prueba("validarDia pide fecha y al menos un número", () => {
+  esperar(C.validarDia({ fecha: "", ventas: "10" }).some((e) => e.includes("fecha")));
+  esperar(C.validarDia({ fecha: "2026-10-01", ventas: "", compras: "" }).length === 1);
+  esperar(C.validarDia({ fecha: "2026-10-01", ventas: "-1" }).length === 1);
+  esperar(C.validarDia({ fecha: "2026-10-01", ventas: "100" }).length === 0);
+});
+
+// --- modo empresa
+const emp = { ventas: 300000, costoVentas: 180000, gastos: { renta: 20000, sueldos: 50000 }, caja: 40000,
+  empresa: { depreciacion: 5000, intereses: 4000, impuestos: 9000, cuentasPorCobrar: 60000, inventario: 90000, otrosActivosCirc: 10000, activoFijo: 300000,
+    cuentasPorPagar: 45000, deudaCortoPlazo: 35000, deudaLargoPlazo: 120000, capex: 20000, prestamosRecibidos: 0, pagosDeuda: 6000, aportaciones: 0, retiros: 10000 } };
+prueba("estado de resultados: de la utilidad bruta a la neta", () => {
+  const r = C.resultadosEmpresa(emp).resultados;
+  esperar(r.utilidadBruta === 120000 && r.ebitda === 50000 && r.utilidadOperativa === 45000, "bruta, EBITDA, operativa");
+  esperar(r.uai === 41000 && r.utilidadNeta === 32000, "antes y después de impuestos");
+});
+prueba("balance: activos, pasivos y capital cuadran", () => {
+  const b = C.resultadosEmpresa(emp).balance;
+  esperar(b.activoCirc === 200000 && b.activoTotal === 500000, "activo");
+  esperar(b.pasivoCirc === 80000 && b.pasivoTotal === 200000 && b.capital === 300000, "pasivo y capital");
+});
+prueba("razones: circulante, ácido, días y apalancamiento", () => {
+  const { razones: z, semaforo: s } = C.resultadosEmpresa(emp);
+  esperar(casi(z.razonCirculante, 2.5) && casi(z.pruebaAcido, 1.375, 0.001), "circulante 2.5 y ácido 1.375");
+  esperar(casi(z.diasInventario, 15) && casi(z.diasCobro, 6) && casi(z.diasPago, 7.5), "días inv/cobro/pago");
+  esperar(casi(z.cicloEfectivo, 13.5), "ciclo = 15 + 6 − 7.5");
+  esperar(casi(z.apalancamiento, 0.4) && casi(z.coberturaIntereses, 11.25), "apalancamiento 40 %, cobertura 11.25x");
+  esperar(casi(z.rotacionInventario, 24) && casi(z.roa, 0.768, 0.001) && casi(z.roe, 1.28, 0.001), "rotación anual, ROA, ROE");
+  esperar(s.razonCirculante === "verde" && s.pruebaAcido === "verde" && s.apalancamiento === "verde", "semáforos verdes");
+});
+prueba("razones en rojo cuando aprieta", () => {
+  const malo = { ...emp, empresa: { ...emp.empresa, inventario: 400000, cuentasPorCobrar: 700000, deudaCortoPlazo: 1500000, intereses: 50000 } };
+  const { semaforo: s } = C.resultadosEmpresa(malo);
+  esperar(s.pruebaAcido === "rojo" && s.diasInventario === "amarillo" && s.diasCobro === "rojo" && s.coberturaIntereses === "rojo", JSON.stringify(s));
+});
+prueba("flujo de efectivo indirecto cuadra con la caja", () => {
+  const anterior = { ...emp, caja: 30000, empresa: { ...emp.empresa, cuentasPorCobrar: 50000, inventario: 100000, cuentasPorPagar: 40000 } };
+  const f = C.resultadosEmpresa({ ...emp, anterior }).flujo;
+  // operativo = 32000 + 5000 − 10000 (más por cobrar) + 10000 (menos inventario) + 5000 (más proveedores) = 42000
+  esperar(f.operativo === 42000, "operativo " + f.operativo);
+  esperar(f.inversion === -20000 && f.financiamiento === -16000 && f.neto === 6000, "inversión, financiamiento y neto");
+  esperar(f.cajaFinalCalculada === 36000 && f.diferencia === 4000, "caja calculada 36000 vs real 40000");
+  esperar(C.resultadosEmpresa(emp).flujo.conAnterior === false, "sin anterior no hay deltas");
+});
+prueba("sin deudas ni inventario las razones no explotan", () => {
+  const r = C.resultadosEmpresa({ ventas: 1000, costoVentas: 400, gastos: {}, caja: 500, empresa: {} });
+  esperar(r.razones.razonCirculante === Infinity && r.semaforo.razonCirculante === "verde", "sin pasivo = Infinity y verde");
+  esperar(r.razones.diasInventario === 0 && r.razones.cicloEfectivo === 0 && r.balance.capital === 500);
+  esperar(r.notas.length === 1, "solo la nota de primer mes");
+});
+prueba("validarMes revisa campos de empresa y categorías libres", () => {
+  esperar(C.validarMes({ ventas: "100", gastos: { gasolina: "-5" } }).length === 1);
+  esperar(C.validarMes({ ventas: "100", empresa: { inventario: "abc" } }, "empresa").some((e) => e.includes("Inventario")));
+});
+
 // --- correr
 export function correr(reportar = console.log) {
   let ok = 0, mal = 0;

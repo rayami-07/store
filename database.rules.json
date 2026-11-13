@@ -356,7 +356,7 @@
               ".validate": "newData.isString() && newData.val().length <= 30"
             },
             "modo": {
-              ".validate": "newData.isString() && newData.val().matches(/^(simple|avanzado)$/)"
+              ".validate": "newData.isString() && newData.val().matches(/^(simple|avanzado|empresa)$/)"
             },
             "creado": {
               ".validate": "newData.isNumber()"
@@ -377,20 +377,8 @@
                   ".validate": "newData.isNumber()"
                 },
                 "gastos": {
-                  "renta": {
-                    ".validate": "newData.isNumber() && newData.val() >= 0"
-                  },
-                  "sueldos": {
-                    ".validate": "newData.isNumber() && newData.val() >= 0"
-                  },
-                  "servicios": {
-                    ".validate": "newData.isNumber() && newData.val() >= 0"
-                  },
-                  "otros": {
-                    ".validate": "newData.isNumber() && newData.val() >= 0"
-                  },
-                  "$other": {
-                    ".validate": false
+                  "$cat": {
+                    ".validate": "$cat.matches(/^[a-z0-9-]{1,24}$/) && newData.isNumber() && newData.val() >= 0"
                   }
                 },
                 "productos": {
@@ -411,6 +399,98 @@
                     "$other": {
                       ".validate": false
                     }
+                  }
+                },
+                "desdeDiario": {
+                  ".validate": "newData.isBoolean()"
+                },
+                "empresa": {
+                  "depreciacion": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "intereses": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "impuestos": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "cuentasPorCobrar": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "inventario": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "otrosActivosCirc": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "activoFijo": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "cuentasPorPagar": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "deudaCortoPlazo": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "deudaLargoPlazo": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "capex": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "prestamosRecibidos": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "pagosDeuda": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "aportaciones": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "retiros": {
+                    ".validate": "newData.isNumber() && newData.val() >= 0"
+                  },
+                  "$other": {
+                    ".validate": false
+                  }
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            },
+            "categorias": {
+              "$cat": {
+                ".validate": "$cat.matches(/^[a-z0-9-]{1,24}$/) && newData.hasChildren(['nombre'])",
+                "nombre": {
+                  ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 40"
+                },
+                "orden": {
+                  ".validate": "newData.isNumber()"
+                },
+                "$other": {
+                  ".validate": false
+                }
+              }
+            },
+            "dias": {
+              "$dia": {
+                ".validate": "$dia.matches(/^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])$/)",
+                "ventas": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "compras": {
+                  ".validate": "newData.isNumber() && newData.val() >= 0"
+                },
+                "nota": {
+                  ".validate": "newData.isString() && newData.val().length <= 120"
+                },
+                "actualizado": {
+                  ".validate": "newData.isNumber()"
+                },
+                "gastos": {
+                  "$cat": {
+                    ".validate": "$cat.matches(/^[a-z0-9-]{1,24}$/) && newData.isNumber() && newData.val() >= 0"
                   }
                 },
                 "$other": {

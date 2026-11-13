@@ -1,6 +1,6 @@
 // Lógica de cálculo de la app de finanzas. Funciones puras: no tocan el DOM ni Firebase.
 // Todas reciben números (o cosas que parecen números) y devuelven números u objetos simples.
-import { UMBRALES } from "./umbrales.js";
+import { UMBRALES, UMBRALES_EMPRESA } from "./umbrales.js";
 
 export const DIAS_MES = 30;
 
@@ -12,11 +12,54 @@ export function num(v) {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** Suma de gastos fijos. Acepta {renta,sueldos,servicios,otros} o un número. */
+/** Suma de gastos fijos. Acepta un mapa {categoria: monto} (las categorías son libres) o un número. */
 export function totalGastos(gastos) {
   if (gastos == null) return 0;
   if (typeof gastos !== "object") return num(gastos);
-  return ["renta", "sueldos", "servicios", "otros"].reduce((s, k) => s + num(gastos[k]), 0);
+  return Object.values(gastos).reduce((s, v) => s + num(v), 0);
+}
+
+/** Categorías de gasto fijo con las que arranca un negocio. El usuario puede cambiarlas. */
+export const CATEGORIAS_BASE = { renta: { nombre: "Renta", orden: 1 }, sueldos: { nombre: "Sueldos", orden: 2 }, servicios: { nombre: "Servicios (luz, agua, internet…)", orden: 3 }, otros: { nombre: "Otros gastos fijos", orden: 4 } };
+/** Lista ordenada [{id, nombre}] a partir del mapa de categorías (o las base si no hay). */
+export function listaCategorias(categorias) {
+  const src = categorias && Object.keys(categorias).length ? categorias : CATEGORIAS_BASE;
+  return Object.entries(src).map(([id, c]) => ({ id, nombre: String(c?.nombre || id), orden: Number(c?.orden) || 0 }))
+    .sort((a, b) => a.orden - b.orden || a.nombre.localeCompare(b.nombre));
+}
+/** Id corto y seguro para una categoría nueva (letras, números y guiones). */
+export function idCategoria(nombre, existentes = {}) {
+  let base = String(nombre || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 20) || "gasto";
+  let id = base, n = 2;
+  while (existentes[id]) id = `${base}-${n++}`;
+  return id;
+}
+
+// ---------- Diario: de los días al mes ----------
+/**
+ * dias = { "YYYY-MM-DD": { ventas, compras, gastos:{cat: monto}, nota } }
+ * Devuelve los totales del mes indicado: { n, ventas, costoVentas, gastos:{cat: suma} }.
+ * "compras" del día se toma como costo de lo vendido del mes (lo práctico en un negocio chico).
+ */
+export function resumenDias(dias, mesClave) {
+  const r = { n: 0, ventas: 0, costoVentas: 0, gastos: {} };
+  for (const [fecha, d] of Object.entries(dias || {})) {
+    if (!fecha.startsWith(mesClave + "-") || !d) continue;
+    r.n++; r.ventas += num(d.ventas); r.costoVentas += num(d.compras);
+    for (const [cat, monto] of Object.entries(d.gastos || {})) if (num(monto) > 0) r.gastos[cat] = (r.gastos[cat] || 0) + num(monto);
+  }
+  return r;
+}
+/** Valida un día antes de guardar. */
+export function validarDia(d) {
+  const err = [];
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d.fecha || "")) err.push("Elige la fecha.");
+  const esNum = (v) => v === "" || v == null || (Number.isFinite(parseFloat(String(v).replace(/[$,\s]/g, ""))) && parseFloat(String(v).replace(/[$,\s]/g, "")) >= 0);
+  if (!esNum(d.ventas)) err.push("Ventas: escribe un número positivo.");
+  if (!esNum(d.compras)) err.push("Compras: escribe un número positivo.");
+  for (const [k, v] of Object.entries(d.gastos || {})) if (!esNum(v)) err.push(`Gasto (${k}): escribe un número positivo.`);
+  if (!err.length && !num(d.ventas) && !num(d.compras) && !totalGastos(d.gastos)) err.push("Anota al menos un número del día.");
+  return err;
 }
 
 // ---------- Utilidad y margen ----------
@@ -214,8 +257,9 @@ export function validarMes(mes, modo = "simple") {
     if (!esNum(mes[k])) err.push(`${label}: escribe un número positivo.`);
   }
   const g = mes.gastos || {};
-  for (const k of ["renta", "sueldos", "servicios", "otros"]) if (!esNum(g[k])) err.push(`Gastos (${k}): escribe un número positivo.`);
-  if (modo === "avanzado") {
+  for (const [k, v] of Object.entries(g)) if (!esNum(v)) err.push(`Gastos (${k}): escribe un número positivo.`);
+  for (const [k, v] of Object.entries(mes.empresa || {})) if (!esNum(v)) err.push(`${CAMPOS_EMPRESA[k]?.label || k}: escribe un número positivo.`);
+  if (modo === "avanzado" || modo === "empresa") {
     (Array.isArray(mes.productos) ? mes.productos : Object.values(mes.productos || {})).forEach((p, i) => {
       if (!p) return;
       const hayAlgo = String(p.nombre || "").trim() || p.precio || p.costo || p.unidades;
@@ -233,4 +277,119 @@ export function avisosMes(mes) {
   if (num(mes.ventas) > 0 && num(mes.costoVentas) > num(mes.ventas)) av.push("El costo de lo vendido es mayor que las ventas. Si es correcto sigue, pero normalmente indica un error de captura.");
   if (num(mes.ventas) > 0 && totalGastos(mes.gastos) === 0) av.push("No pusiste gastos fijos. Si pagas renta, luz o sueldos, agrégalos para que el punto de equilibrio sea real.");
   return av;
+}
+
+
+// ============================================================
+// MODO EMPRESA: estados financieros, flujo de efectivo y razones
+// ============================================================
+/** Campos extra del mes en modo empresa (todos en pesos, al cierre del mes). */
+export const CAMPOS_EMPRESA = {
+  // Estado de resultados (lo que no es gasto fijo "de caja")
+  depreciacion: { grupo: "resultados", label: "Depreciación y amortización", ayuda: "Desgaste de tus equipos, local o vehículos repartido en el mes. No sale dinero, pero sí es un costo real. Tu contador la calcula; si no la tienes, pon 0." },
+  intereses: { grupo: "resultados", label: "Intereses pagados", ayuda: "Solo los intereses de préstamos o tarjetas del negocio. El pago a capital va en financiamiento, abajo." },
+  impuestos: { grupo: "resultados", label: "Impuestos sobre la utilidad", ayuda: "ISR del mes (o la parte proporcional). El IVA no va aquí: no es un costo tuyo." },
+  // Balance al cierre
+  cuentasPorCobrar: { grupo: "activo", label: "Cuentas por cobrar", ayuda: "Lo que tus clientes te deben al último día del mes (ventas a crédito, fiado)." },
+  inventario: { grupo: "activo", label: "Inventario", ayuda: "Mercancía o materia prima que tienes al cierre, a lo que te costó (no a precio de venta)." },
+  otrosActivosCirc: { grupo: "activo", label: "Otros activos circulantes", ayuda: "Anticipos a proveedores, impuestos a favor, depósitos en garantía que recuperas en menos de un año." },
+  activoFijo: { grupo: "activo", label: "Activo fijo (neto)", ayuda: "Equipo, maquinaria, vehículos, local propio, ya restando la depreciación acumulada." },
+  cuentasPorPagar: { grupo: "pasivo", label: "Cuentas por pagar a proveedores", ayuda: "Lo que debes a proveedores al cierre del mes." },
+  deudaCortoPlazo: { grupo: "pasivo", label: "Deuda a corto plazo", ayuda: "Préstamos, tarjetas y líneas que vencen en menos de un año (saldo al cierre), más impuestos y sueldos pendientes de pago." },
+  deudaLargoPlazo: { grupo: "pasivo", label: "Deuda a largo plazo", ayuda: "Préstamos que vencen después de un año (saldo al cierre)." },
+  // Movimientos del mes para el flujo
+  capex: { grupo: "flujo", label: "Compra de activos fijos", ayuda: "Lo que invertiste en el mes en equipo, maquinaria, mobiliario o remodelación." },
+  prestamosRecibidos: { grupo: "flujo", label: "Préstamos recibidos", ayuda: "Dinero que entró por créditos nuevos en el mes." },
+  pagosDeuda: { grupo: "flujo", label: "Pagos a capital de deuda", ayuda: "Lo que abonaste a capital (sin intereses) de préstamos en el mes." },
+  aportaciones: { grupo: "flujo", label: "Aportaciones de los dueños", ayuda: "Dinero que los socios metieron al negocio en el mes." },
+  retiros: { grupo: "flujo", label: "Retiros o dividendos", ayuda: "Dinero que los socios sacaron del negocio en el mes (aparte de sueldo, si ya lo pusiste en gastos fijos)." },
+};
+export const GRUPOS_EMPRESA = {
+  resultados: { titulo: "Depreciación, intereses e impuestos", sub: "Para pasar de la utilidad de operación a la utilidad neta." },
+  activo: { titulo: "Lo que tienes al cierre (activos)", sub: "Además de la caja que ya capturaste arriba." },
+  pasivo: { titulo: "Lo que debes al cierre (pasivos)", sub: "Saldos al último día del mes." },
+  flujo: { titulo: "Inversión y financiamiento del mes", sub: "Movimientos de dinero que no son operación." },
+};
+
+const div = (a, b) => (b > 0 ? a / b : (a > 0 ? Infinity : 0));
+
+/**
+ * Calcula estados financieros y razones a partir de un mes en modo empresa.
+ * mes = { ventas, costoVentas, gastos, caja, empresa:{...}, anterior? }
+ * Devuelve { resultados, balance, flujo, razones, semaforo, notas }. Todo en pesos y veces.
+ */
+export function resultadosEmpresa(mes, umb = UMBRALES_EMPRESA) {
+  const e = mes.empresa || {}, g = (k) => num(e[k]);
+  const ventas = num(mes.ventas), costoVentas = num(mes.costoVentas), gastosFijos = totalGastos(mes.gastos), caja = num(mes.caja);
+  // --- Estado de resultados
+  const utilidadBruta = ventas - costoVentas;
+  const ebitda = utilidadBruta - gastosFijos;                 // utilidad de operación antes de depreciación
+  const utilidadOperativa = ebitda - g("depreciacion");        // EBIT
+  const uai = utilidadOperativa - g("intereses");              // antes de impuestos
+  const utilidadNeta = uai - g("impuestos");
+  const resultados = { ventas, costoVentas, utilidadBruta, gastosFijos, ebitda, depreciacion: g("depreciacion"), utilidadOperativa,
+    intereses: g("intereses"), uai, impuestos: g("impuestos"), utilidadNeta, margenNeto: ventas > 0 ? utilidadNeta / ventas : 0, margenEbitda: ventas > 0 ? ebitda / ventas : 0 };
+  // --- Balance
+  const activoCirc = caja + g("cuentasPorCobrar") + g("inventario") + g("otrosActivosCirc");
+  const activoTotal = activoCirc + g("activoFijo");
+  const pasivoCirc = g("cuentasPorPagar") + g("deudaCortoPlazo");
+  const pasivoTotal = pasivoCirc + g("deudaLargoPlazo");
+  const balance = { caja, cuentasPorCobrar: g("cuentasPorCobrar"), inventario: g("inventario"), otrosActivosCirc: g("otrosActivosCirc"), activoCirc, activoFijo: g("activoFijo"), activoTotal,
+    cuentasPorPagar: g("cuentasPorPagar"), deudaCortoPlazo: g("deudaCortoPlazo"), pasivoCirc, deudaLargoPlazo: g("deudaLargoPlazo"), pasivoTotal, capital: activoTotal - pasivoTotal };
+  // --- Flujo de efectivo (método indirecto): parte de la utilidad y ajusta lo que no fue dinero
+  const ant = mes.anterior ? { e: mes.anterior.empresa || {}, caja: num(mes.anterior.caja) } : null;
+  const dlt = (k) => (ant ? g(k) - num(ant.e[k]) : 0);
+  const capitalTrabajo = ant ? -dlt("cuentasPorCobrar") - dlt("inventario") - dlt("otrosActivosCirc") + dlt("cuentasPorPagar") : 0;
+  const operativo = utilidadNeta + g("depreciacion") + capitalTrabajo;
+  const inversion = -g("capex");
+  const financiamiento = g("prestamosRecibidos") - g("pagosDeuda") + g("aportaciones") - g("retiros");
+  const neto = operativo + inversion + financiamiento;
+  const flujo = { utilidadNeta, depreciacion: g("depreciacion"), dCuentasPorCobrar: ant ? -dlt("cuentasPorCobrar") : 0, dInventario: ant ? -dlt("inventario") : 0, dOtrosActivos: ant ? -dlt("otrosActivosCirc") : 0,
+    dCuentasPorPagar: ant ? dlt("cuentasPorPagar") : 0, operativo, capex: -g("capex"), inversion, prestamosRecibidos: g("prestamosRecibidos"), pagosDeuda: -g("pagosDeuda"), aportaciones: g("aportaciones"), retiros: -g("retiros"), financiamiento, neto,
+    cajaInicial: ant ? ant.caja : null, cajaFinalCalculada: ant ? ant.caja + neto : null, cajaReal: caja, diferencia: ant ? caja - (ant.caja + neto) : null, conAnterior: !!ant };
+  // --- Razones
+  const invProm = ant && num(ant.e.inventario) > 0 ? (g("inventario") + num(ant.e.inventario)) / 2 : g("inventario");
+  const razones = {
+    razonCirculante: div(activoCirc, pasivoCirc),
+    pruebaAcido: div(activoCirc - g("inventario"), pasivoCirc),
+    diasInventario: costoVentas > 0 ? g("inventario") / (costoVentas / DIAS_MES) : (g("inventario") > 0 ? Infinity : 0),
+    rotacionInventario: invProm > 0 ? (costoVentas * 12) / invProm : (costoVentas > 0 ? Infinity : 0),
+    diasCobro: ventas > 0 ? g("cuentasPorCobrar") / (ventas / DIAS_MES) : (g("cuentasPorCobrar") > 0 ? Infinity : 0),
+    diasPago: costoVentas > 0 ? g("cuentasPorPagar") / (costoVentas / DIAS_MES) : 0,
+    apalancamiento: activoTotal > 0 ? pasivoTotal / activoTotal : 0,
+    coberturaIntereses: g("intereses") > 0 ? utilidadOperativa / g("intereses") : (utilidadOperativa >= 0 ? Infinity : 0),
+    roa: activoTotal > 0 ? (utilidadNeta * 12) / activoTotal : 0,
+    roe: balance.capital > 0 ? (utilidadNeta * 12) / balance.capital : 0,
+  };
+  razones.cicloEfectivo = (Number.isFinite(razones.diasInventario) ? razones.diasInventario : 0) + (Number.isFinite(razones.diasCobro) ? razones.diasCobro : 0) - razones.diasPago;
+  const semaforo = {
+    razonCirculante: pasivoCirc > 0 ? semaforoR(razones.razonCirculante, umb.razonCirculante) : "verde",
+    pruebaAcido: pasivoCirc > 0 ? semaforoR(razones.pruebaAcido, umb.pruebaAcido) : "verde",
+    diasInventario: g("inventario") > 0 ? semaforoR(razones.diasInventario, umb.diasInventario) : "verde",
+    diasCobro: g("cuentasPorCobrar") > 0 ? semaforoR(razones.diasCobro, umb.diasCobro) : "verde",
+    cicloEfectivo: semaforoR(razones.cicloEfectivo, umb.cicloEfectivo),
+    apalancamiento: semaforoR(razones.apalancamiento, umb.apalancamiento),
+    coberturaIntereses: g("intereses") > 0 ? semaforoR(razones.coberturaIntereses, umb.coberturaIntereses) : "verde",
+  };
+  const notas = [];
+  if (!ant) notas.push("Es tu primer mes en modo empresa: el flujo no puede calcular los cambios en cuentas por cobrar, inventario y proveedores. Desde el mes que viene sí.");
+  if (ant && Math.abs(flujo.diferencia) > Math.max(500, ventas * 0.02)) notas.push(`La caja real (${fmtMXN(caja)}) no cuadra con la que resulta del flujo (${fmtMXN(flujo.cajaFinalCalculada)}): diferencia de ${fmtMXN(flujo.diferencia)}. Suele ser un movimiento que no anotaste (un retiro, una compra de equipo, un préstamo) o un saldo mal capturado.`);
+  if (balance.capital < 0) notas.push("Debes más de lo que tienes (capital negativo). Es la señal más seria: platícalo con tu contador o con nosotros antes de pedir más crédito.");
+  return { resultados, balance, flujo, razones, semaforo, notas, frases: frasesEmpresa(razones, semaforo, balance, resultados) };
+}
+function semaforoR(v, u) { return semaforo(v, u); }
+
+/** Frases de negocio para cada razón. */
+export function frasesEmpresa(r, s, b, res) {
+  const f = (x, d = 1) => (Number.isFinite(x) ? x.toFixed(d) : "—");
+  return {
+    razonCirculante: b.pasivoCirc === 0 ? "No tienes deudas a corto plazo: nada que cubrir." : `Por cada $1 que debes a corto plazo tienes $${f(r.razonCirculante, 2)} para pagarlo (caja, por cobrar e inventario).`,
+    pruebaAcido: b.pasivoCirc === 0 ? "Sin deudas a corto plazo, la prueba del ácido no aplica." : `Sin contar el inventario, tienes $${f(r.pruebaAcido, 2)} por cada $1 que debes a corto plazo. ${s.pruebaAcido === "rojo" ? "Dependes de vender inventario para pagar." : "Puedes pagar sin malbaratar mercancía."}`,
+    diasInventario: b.inventario === 0 ? "No registraste inventario." : Number.isFinite(r.diasInventario) ? `Tu inventario tarda unos ${Math.round(r.diasInventario)} días en venderse (rota ${f(r.rotacionInventario)} veces al año).` : "Tienes inventario pero no registraste costo de ventas: no se puede saber cuánto tarda en venderse.",
+    diasCobro: b.cuentasPorCobrar === 0 ? "Cobras de contado: nadie te debe." : Number.isFinite(r.diasCobro) ? `Tus clientes tardan unos ${Math.round(r.diasCobro)} días en pagarte.` : "Te deben dinero pero no hubo ventas: no se puede calcular el plazo de cobro.",
+    cicloEfectivo: r.cicloEfectivo <= 0 ? `Tus proveedores te financian: cobras antes de pagarles (ciclo de ${Math.round(r.cicloEfectivo)} días). Excelente para la caja.` : `Financias tú la operación durante ${Math.round(r.cicloEfectivo)} días: desde que pagas la mercancía hasta que cobras la venta (pagas a ${Math.round(r.diasPago)} días).`,
+    apalancamiento: `${Math.round(r.apalancamiento * 100)} % de lo que tiene el negocio está financiado con deuda; el resto (${Math.round(Math.max(0, 1 - r.apalancamiento) * 100)} %) es de los dueños.`,
+    coberturaIntereses: res.intereses === 0 ? "No pagaste intereses este mes." : Number.isFinite(r.coberturaIntereses) ? `Tu utilidad de operación cubre ${f(r.coberturaIntereses)} veces los intereses que pagas.` : "No hay utilidad de operación para cubrir los intereses.",
+    rentabilidad: b.activoTotal > 0 ? `Anualizado, el negocio rinde ${Math.round(r.roa * 100)} % sobre todo lo que tiene (ROA)${b.capital > 0 ? ` y ${Math.round(r.roe * 100)} % sobre el dinero de los dueños (ROE)` : ""}.` : "Captura tus activos para calcular la rentabilidad sobre lo invertido.",
+  };
 }
