@@ -326,8 +326,8 @@
     "finanzas": {
       "$uid": {
         ".read": "auth != null && auth.uid === $uid",
-        ".write": "auth != null && auth.uid === $uid",
         "perfil": {
+          ".write": "auth != null && auth.uid === $uid",
           ".validate": "newData.hasChildren(['aceptoPrivacidad'])",
           "nombre": {
             ".validate": "newData.isString() && newData.val().length <= 60"
@@ -346,6 +346,7 @@
           }
         },
         "negocios": {
+          ".write": "auth != null && auth.uid === $uid && ((root.child('finanzasAcceso/' + $uid + '/estado').val() === 'activo' && root.child('finanzasAcceso/' + $uid + '/venceTs').isNumber() && root.child('finanzasAcceso/' + $uid + '/venceTs').val() > now) || auth.token.email === 'raulbenitez563@gmail.com')",
           "$negocioId": {
             ".validate": "newData.hasChildren(['nombre'])",
             "nombre": {
@@ -421,6 +422,44 @@
               ".validate": false
             }
           }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "finanzasAcceso": {
+      ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+      "$uid": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid)",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid && !data.exists() && newData.child('estado').val() === 'pendiente')",
+        ".validate": "newData.hasChildren(['estado'])",
+        "estado": {
+          ".validate": "newData.isString() && newData.val().matches(/^(pendiente|activo|pausado)$/)"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length <= 120"
+        },
+        "nombre": {
+          ".validate": "newData.isString() && newData.val().length <= 60"
+        },
+        "ts": {
+          ".validate": "newData.isNumber()"
+        },
+        "vigencia": {
+          ".validate": "newData.isString() && newData.val().matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/)"
+        },
+        "venceTs": {
+          ".validate": "newData.isNumber()"
+        },
+        "activadoEl": {
+          ".validate": "newData.isNumber()"
+        },
+        "pausadoEl": {
+          ".validate": "newData.isNumber()"
+        },
+        "notas": {
+          ".validate": "newData.isString() && newData.val().length <= 500"
         },
         "$other": {
           ".validate": false

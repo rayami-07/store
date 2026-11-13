@@ -66,7 +66,7 @@ function errorTexto(e) {
     "auth/popup-closed-by-user": "Cerraste la ventana de Google antes de terminar.",
     "auth/operation-not-allowed": "Este método de acceso no está activado todavía. Usa correo y contraseña.",
     "auth/unauthorized-domain": "Este dominio no está autorizado para Google. Usa correo y contraseña.",
-    "PERMISSION_DENIED": "No tienes permiso para guardar aquí. Vuelve a entrar.",
+    "PERMISSION_DENIED": "No se pudo guardar: tu acceso no está activo. Escríbenos por WhatsApp para activarlo.",
   };
   if (t[c]) return t[c];
   if (/permission_denied/i.test(e?.message || "")) return t.PERMISSION_DENIED;
@@ -148,14 +148,46 @@ async function guardarPerfil(user, nombre, acepto) {
 
 $("#btn-salir").addEventListener("click", () => signOut(auth));
 
-// ---------- Sesión ----------
-onAuthStateChanged(auth, (user) => {
-  S.user = user;
-  if (S.offNegocios) { S.offNegocios(); S.offNegocios = null; }
-  if (S.offMeses) { S.offMeses(); S.offMeses = null; }
-  $("#view-auth").hidden = !!user; $("#view-app").hidden = !user;
-  if (!user) { S.negocios = {}; S.negocioId = null; S.meses = {}; return; }
-  $("#usuario").textContent = user.displayName || user.email || "";
+// ---------- Sesión y acceso ----------
+// Cada cuenta nueva queda "pendiente" en finanzasAcceso/<uid>. Raúl la activa desde el creador
+// (con vigencia) cuando paga; las reglas de Firebase impiden guardar datos si no está activa.
+const ADMIN_EMAIL = "raulbenitez563@gmail.com";
+const PLAN_WA = (email) => `https://api.whatsapp.com/send?phone=${WA_RAYAMI}&text=${encodeURIComponent(`Hola, ya me registré en RAYAMI Finanzas con ${email}. Quiero activar mi cuenta.`)}`;
+const fFecha = (t) => new Date(t).toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" });
+
+function detener() {
+  for (const k of ["offNegocios", "offMeses", "offAcceso"]) if (S[k]) { S[k](); S[k] = null; }
+}
+function accesoVigente(a, user) {
+  if ((user?.email || "").toLowerCase() === ADMIN_EMAIL) return true;
+  return !!a && a.estado === "activo" && Number(a.venceTs) > Date.now();
+}
+async function crearSolicitud(user) {
+  // Un momento para que el nombre (updateProfile) alcance a guardarse antes de registrar la solicitud
+  await new Promise((r) => setTimeout(r, 900));
+  try {
+    await set(ref(db, `finanzasAcceso/${user.uid}`), { estado: "pendiente", email: user.email || "", nombre: (auth.currentUser?.displayName || "").slice(0, 60), ts: serverTimestamp() });
+  } catch (err) { toast(errorTexto(err)); }
+}
+function pintarBloqueo(a, user) {
+  const email = user.email || "";
+  let titulo = "Tu cuenta está lista", texto = "Falta activarla. Escríbenos por WhatsApp para activar tu acceso y empezar a capturar tus meses.";
+  if (a && a.estado === "pausado") { titulo = "Tu acceso está en pausa"; texto = "Escríbenos para reactivarlo y seguir capturando tus meses."; }
+  else if (a && a.estado === "activo") { titulo = "Tu acceso venció"; texto = `Tu acceso llegó hasta el ${fFecha(a.venceTs)}. Escríbenos para renovarlo y seguir capturando.`; }
+  $("#bloq-titulo").textContent = titulo; $("#bloq-texto").textContent = texto;
+  $("#bloq-wa").href = PLAN_WA(email);
+}
+function aplicarAcceso(a, user) {
+  const ok = accesoVigente(a, user);
+  $("#view-bloqueo").hidden = ok; $("#view-app").hidden = !ok;
+  if (!ok) { if (S.offNegocios) { S.offNegocios(); S.offNegocios = null; } if (S.offMeses) { S.offMeses(); S.offMeses = null; } pintarBloqueo(a, user); return; }
+  const aviso = $("#aviso-vence"), dias = a && a.venceTs ? Math.ceil((a.venceTs - Date.now()) / 86400000) : null;
+  const esAdmin = (user.email || "").toLowerCase() === ADMIN_EMAIL;
+  aviso.hidden = esAdmin || dias === null || dias > 5;
+  if (!aviso.hidden) aviso.innerHTML = `Tu acceso vence el ${esc(fFecha(a.venceTs))}. <a href="${PLAN_WA(user.email || "")}" target="_blank" rel="noopener">Escríbenos para renovarlo</a>.`;
+  if (!S.offNegocios) iniciarApp();
+}
+function iniciarApp() {
   S.offNegocios = onValue(ref(db, pNegocios()), (snap) => {
     S.negocios = snap.val() || {};
     const ids = Object.keys(S.negocios);
@@ -163,6 +195,19 @@ onAuthStateChanged(auth, (user) => {
     if (!S.negocioId || !S.negocios[S.negocioId]) S.negocioId = localStorage.getItem("fin:negocio") in S.negocios ? localStorage.getItem("fin:negocio") : ids[0];
     pintarSelectNegocios();
     if ($("#view-negocio").hidden) elegirNegocio(S.negocioId);
+  }, (err) => toast(errorTexto(err)));
+}
+$("#btn-salir-bloq").addEventListener("click", () => signOut(auth));
+
+onAuthStateChanged(auth, (user) => {
+  S.user = user;
+  detener();
+  $("#view-auth").hidden = !!user; $("#view-app").hidden = true; $("#view-bloqueo").hidden = true;
+  if (!user) { S.negocios = {}; S.negocioId = null; S.meses = {}; return; }
+  $("#usuario").textContent = user.displayName || user.email || "";
+  S.offAcceso = onValue(ref(db, `finanzasAcceso/${user.uid}`), (snap) => {
+    if (!snap.exists()) { crearSolicitud(user); return; }
+    aplicarAcceso(snap.val(), user);
   }, (err) => toast(errorTexto(err)));
 });
 

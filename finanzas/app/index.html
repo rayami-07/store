@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="../../site.css?v=5" />
-  <link rel="stylesheet" href="./app.css?v=2" />
+  <link rel="stylesheet" href="./app.css?v=3" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
   <script>
@@ -84,6 +84,19 @@
     </form>
   </div>
 
+  <!-- ===== Cuenta sin activar o vencida ===== -->
+  <div id="view-bloqueo" hidden>
+    <div class="card" style="max-width:520px">
+      <h2 id="bloq-titulo">Tu cuenta está lista</h2>
+      <p class="sub" id="bloq-texto"></p>
+      <div class="acciones" style="margin-top:14px">
+        <a class="btn btn-wa" id="bloq-wa" target="_blank" rel="noopener"><i class="fa-brands fa-whatsapp"></i> Escribirnos por WhatsApp</a>
+        <button type="button" class="btn btn-ghost" id="btn-salir-bloq">Salir</button>
+      </div>
+      <p style="margin-top:14px;font-size:13px;color:var(--muted)">Tus datos siguen guardados y solo tú los ves. En cuanto se active tu acceso, entras directo.</p>
+    </div>
+  </div>
+
   <!-- ===== App (cuando ya entraste) ===== -->
   <div id="view-app" hidden>
     <div class="card topbar">
@@ -101,6 +114,8 @@
         <button type="button" class="btn btn-ghost btn-sm" id="btn-salir">Salir</button>
       </div>
     </div>
+
+    <div class="msg show warn" id="aviso-vence" hidden style="margin-top:14px"></div>
 
     <!-- Crear negocio -->
     <div class="card" id="view-negocio" hidden style="margin-top:14px;max-width:520px">
@@ -242,6 +257,6 @@
     if (/iphone|ipad|ipod/i.test(navigator.userAgent)) { box.hidden = false; btn.hidden = true; ios.hidden = false; }
   })();
 </script>
-<script type="module" src="./app.js?v=1"></script>
+<script type="module" src="./app.js?v=2"></script>
 </body>
 </html>

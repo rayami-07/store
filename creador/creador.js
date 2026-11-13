@@ -548,6 +548,7 @@ $("copyLink").addEventListener("click", async () => {
 
 /* ── Mis demos ── */
 let demos = {}, owners = {}, admins = {};
+let finAcc = {}, finErr = "";   // cuentas de la app de Finanzas (finanzasAcceso/<uid>)
 const STATUS = { demo: "Demo", activa: "Activa", pausada: "Pausada" };
 const statusOf = (s) => (STATUS[s?.status] ? s.status : "activa");
 async function loadDemos() {
@@ -556,6 +557,8 @@ async function loadDemos() {
   try { owners = (await get(ref(db, "storeOwners"))).val() || {}; }
   catch (err) { owners = {}; console.warn("Faltan las reglas de storeOwners:", err.code || err.message); }
   try { admins = (await get(ref(db, "storeAdmin"))).val() || {}; } catch { admins = {}; }
+  try { finAcc = (await get(ref(db, "finanzasAcceso"))).val() || {}; finErr = ""; }
+  catch (err) { finAcc = {}; finErr = err.code || err.message || "error"; console.warn("Faltan las reglas de finanzasAcceso:", finErr); }
   const list = Object.entries(demos).sort((a, b) => (b[1].updatedAt || 0) - (a[1].updatedAt || 0));
   $("demoCount").textContent = list.length ? `(${list.length})` : "";
   if (!$("resumenView").hidden) loadResumen();
@@ -583,6 +586,9 @@ async function loadDemos() {
   const filtro = demoFilter;
   $("demoFilters").innerHTML = [["todas", "Todas", total], ...SEC.map(([k, l]) => [k, l, secc[k].length])]
     .map(([k, l, n]) => `<button type="button" class="dfil${filtro === k ? " active" : ""}" data-dfil="${k}"${n || k === "todas" ? "" : " disabled"}>${l} <span>${n}</span></button>`).join("");
+  const finN = Object.keys(finAcc).length, finPend = Object.values(finAcc).filter((x) => finEstado(x) === "pendiente").length;
+  $("demoFilters").insertAdjacentHTML("beforeend", `<button type="button" class="dfil${filtro === "finanzas" ? " active" : ""}" data-dfil="finanzas"><i class="fa-solid fa-chart-line"></i> Finanzas <span>${finN}</span>${finPend ? `<span class="dfil-pend">${finPend} por activar</span>` : ""}</button>`);
+  if (filtro === "finanzas") { $("demoList").innerHTML = finHTMLAll(); return; }
   const html = SEC.filter(([k]) => secc[k].length && (filtro === "todas" || filtro === k))
     .map(([k, l, ic, hint]) => `<section class="dsec">
         <div class="dsec-head"><h3><i class="fa-solid ${ic}"></i> ${l} <span>${secc[k].length}</span></h3><small class="muted">${hint}</small></div>
@@ -1310,3 +1316,95 @@ $("prods").addEventListener("keydown", (e) => {
 $("prods").addEventListener("focusout", (e) => { if (e.target.dataset?.newcat !== undefined && newCatRow !== -1) saveNewCat(e.target); });
 
 $("demoFilters").addEventListener("click", (e) => { const b = e.target.closest("[data-dfil]"); if (b && !b.disabled) { demoFilter = b.dataset.dfil; loadDemos(); } });
+
+
+/* ============================================================
+   FINANZAS: quién puede usar la app de /finanzas/app/
+   Cada cuenta nueva se registra sola como "pendiente" en finanzasAcceso/<uid>
+   { estado: pendiente|activo|pausado, email, nombre, ts, vigencia:"AAAA-MM-DD", venceTs, activadoEl, pausadoEl, notas }
+   Tú la activas cuando paga (con fecha de vigencia). Las reglas de Firebase impiden guardar datos
+   si no está activa o ya venció. Nunca lees los números de sus negocios, solo el acceso.
+============================================================ */
+const finEstado = (a) => (a.estado === "activo" ? (Number(a.venceTs) > Date.now() ? "activo" : "vencido") : a.estado === "pausado" ? "pausado" : "pendiente");
+const FIN_LBL = { pendiente: "Por activar", activo: "Activa", vencido: "Vencida", pausado: "Pausada" };
+const FIN_CLS = { pendiente: "demo", activo: "activa", vencido: "pausada", pausado: "pausada" };
+function finItemHTML(uid, a) {
+  const st = finEstado(a), nom = a.nombre || a.email || "Sin nombre";
+  const v = a.vigencia ? vigInfo(a.vigencia) : null;
+  const vig = (st === "activo" || st === "vencido") && v ? ` · <span class="vig ${v.cls}">${st === "vencido" ? "Venció" : "Vence"} ${fdate(a.vigencia)}${v.cls !== "ok" && st === "activo" ? ` (${v.t.toLowerCase()})` : ""}</span>` : "";
+  const act = { pendiente: ["Activar", "bolt", "btn-dark"], activo: ["Vigencia", "calendar-check", "btn-light"], vencido: ["Renovar", "rotate", "btn-dark"], pausado: ["Reactivar", "play", "btn-dark"] }[st];
+  return `<div class="demo-item">
+      <div class="demo-logo" style="background:#1a1714">${esc(nom[0].toUpperCase())}</div>
+      <div><div class="demo-name">${esc(nom)}<span class="status ${FIN_CLS[st]}">${FIN_LBL[st]}</span></div>
+        <div class="demo-meta">${esc(a.email || "")}${a.ts ? ` · se registró ${fcorta(a.ts)}` : ""}${vig}${a.notas ? ` · <i class="fa-regular fa-note-sticky"></i> ${esc(a.notas.slice(0, 60))}` : ""}</div></div>
+      <div class="demo-actions">
+        <button class="btn ${act[2]}" data-finact="${esc(uid)}"><i class="fa-solid fa-${act[1]}"></i> ${act[0]}</button>
+        ${st === "activo" ? `<button class="btn btn-ghost" data-finpause="${esc(uid)}"><i class="fa-solid fa-circle-pause"></i> Pausar</button>` : ""}
+      </div>
+    </div>`;
+}
+function finHTMLAll() {
+  if (finErr) return `<div class="empty-demos">No se pudo leer la lista de Finanzas (${esc(finErr)}). Falta publicar las reglas nuevas en Firebase.</div>`;
+  const all = Object.entries(finAcc);
+  if (!all.length) return `<div class="empty-demos">Todavía nadie se registra en la app de Finanzas. Cuando alguien cree su cuenta en <b>/finanzas/app/</b>, aparece aquí como <b>Por activar</b>.</div>`;
+  const by = (st) => all.filter(([, a]) => finEstado(a) === st);
+  const SECS = [
+    ["pendiente", "Por activar", "fa-hourglass-half", "Ya se registraron; activa su acceso cuando paguen.", by("pendiente").sort((x, y) => (y[1].ts || 0) - (x[1].ts || 0))],
+    ["activo", "Activas", "fa-circle-check", "Ordenadas por vencimiento: arriba las que hay que cobrar primero.", by("activo").sort((x, y) => (x[1].venceTs || 0) - (y[1].venceTs || 0))],
+    ["vencido", "Vencidas", "fa-clock", "Ya no pueden guardar datos hasta que renueves.", by("vencido")],
+    ["pausado", "Pausadas", "fa-circle-pause", "Las pausaste tú.", by("pausado")],
+  ];
+  return `<p class="hint" style="margin:0 0 14px">Aquí solo ves quién tiene acceso. Los números de cada negocio son privados: solo los ve su dueño.</p>` +
+    SECS.filter(([, , , , l]) => l.length).map(([, t, ic, hint, l]) => `<section class="dsec">
+      <div class="dsec-head"><h3><i class="fa-solid ${ic}"></i> ${t} <span>${l.length}</span></h3><small class="muted">${hint}</small></div>
+      ${l.map(([uid, a]) => finItemHTML(uid, a)).join("")}</section>`).join("");
+}
+
+let finId = "", finPausePend = "";
+function openFin(uid) {
+  finId = uid; const a = finAcc[uid] || {}, st = finEstado(a);
+  $("finTitle").innerHTML = `${esc(a.nombre || a.email || "Cuenta")} <span class="status ${FIN_CLS[st]}">${FIN_LBL[st]}</span>`;
+  $("finSub").textContent = a.email || "";
+  const def = st === "activo" && a.vigencia ? addMonths(a.vigencia, 1) : addMonths("", 1);
+  $("finBody").innerHTML = `<section class="om-sec">
+      <h4>${st === "activo" ? "Cambiar la vigencia" : st === "pendiente" ? "Activar acceso" : "Volver a activar"}</h4>
+      <p class="hint">Hasta qué día está pagada. Ese día todavía puede usar la app; al siguiente ya no puede guardar.</p>
+      <div class="field-label">Pagado hasta</div>${vigPicker("fVig", def)}
+      <label>Notas <span class="muted">(opcional: cuánto paga, cómo, a qué día cobrar)</span><textarea id="fNotas" rows="2" maxlength="500">${esc(a.notas || "")}</textarea></label>
+      <p class="err" id="fErr"></p>
+      <div class="res-actions"><button type="button" class="btn btn-dark" data-finsave><i class="fa-solid fa-check"></i> Guardar</button></div>
+    </section>`;
+  $("finModal").hidden = false;
+}
+function closeFin() { $("finModal").hidden = true; finId = ""; loadDemos(); }
+$("finClose").addEventListener("click", closeFin);
+$("finModal").addEventListener("click", (e) => { if (e.target === $("finModal")) closeFin(); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !$("finModal").hidden) closeFin(); });
+$("finBody").addEventListener("click", async (e) => {
+  const q = e.target.closest("[data-vq]");
+  if (q) { $(q.dataset.vq).value = addMonths("", +q.dataset.n); return; }
+  const sv = e.target.closest("[data-finsave]"); if (!sv) return;
+  const vig = $("fVig").value;
+  if (!vig) { $("fErr").textContent = "Elige hasta cuándo está pagada."; return; }
+  sv.disabled = true; $("fErr").textContent = "";
+  try {
+    const notas = $("fNotas").value.trim();
+    await update(ref(db), {
+      [`finanzasAcceso/${finId}/estado`]: "activo", [`finanzasAcceso/${finId}/vigencia`]: vig,
+      [`finanzasAcceso/${finId}/venceTs`]: new Date(vig + "T23:59:59").getTime(),
+      [`finanzasAcceso/${finId}/activadoEl`]: Date.now(), [`finanzasAcceso/${finId}/pausadoEl`]: null,
+      [`finanzasAcceso/${finId}/notas`]: notas || null,
+    });
+    toast(`Acceso activo hasta ${fdate(vig)}`);
+    closeFin();
+  } catch (err) { console.error(err); $("fErr").textContent = permErr(err); sv.disabled = false; }
+});
+$("demoList").addEventListener("click", async (e) => {
+  const ac = e.target.closest("[data-finact]"); if (ac) { openFin(ac.dataset.finact); return; }
+  const ps = e.target.closest("[data-finpause]"); if (!ps) return;
+  const uid = ps.dataset.finpause;
+  if (finPausePend !== uid) { finPausePend = uid; ps.innerHTML = "¿Pausar? Toca otra vez"; setTimeout(() => { if (finPausePend === uid) { finPausePend = ""; loadDemos(); } }, 4000); return; }
+  finPausePend = "";
+  try { await update(ref(db), { [`finanzasAcceso/${uid}/estado`]: "pausado", [`finanzasAcceso/${uid}/pausadoEl`]: Date.now() }); toast("Cuenta pausada"); loadDemos(); }
+  catch (err) { console.error(err); toast(permErr(err)); }
+});

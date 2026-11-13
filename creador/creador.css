@@ -402,3 +402,6 @@ legend { font-weight: 700; padding: 0 6px; }
 .dsec-head h3 { margin: 0; font-size: 17px; }
 .dsec-head h3 i { color: var(--muted); margin-right: 2px; }
 .dsec-head h3 span { font-weight: 500; color: var(--muted); font-size: 15px; }
+
+.dfil-pend { background: #ea580c; color: #fff !important; border-radius: 100px; padding: 1px 8px; font-size: 11px; font-weight: 700; margin-left: 6px !important; }
+.dfil.active .dfil-pend { background: #fff; color: #9a3412 !important; }
