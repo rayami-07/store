@@ -7,12 +7,18 @@
   <meta name="description" content="Captura tus ventas, costos y gastos cada mes y te decimos cuánto ganaste, cuánto debes vender para no perder y qué hacer." />
   <meta name="robots" content="noindex" />
   <meta name="theme-color" content="#ffffff" />
+  <link rel="manifest" href="./manifest.json" />
+  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-title" content="Finanzas" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="../../site.css?v=5" />
-  <link rel="stylesheet" href="./app.css?v=1" />
+  <link rel="stylesheet" href="./app.css?v=2" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
   <script>
@@ -41,6 +47,7 @@
   <a class="crumb" href="../../servicios/finanzas/">← Servicio de Finanzas</a>
   <h1>Mis finanzas</h1>
   <p class="lede">Captura los números de tu negocio cada mes y te decimos cuánto ganaste de verdad, cuánto necesitas vender para no perder y qué hacer.</p>
+  <p class="instalar" id="instalar" hidden><button type="button" class="btn btn-main btn-sm" id="btn-instalar"><i class="fa-solid fa-mobile-screen"></i> Instalar como app</button><span id="instalar-ios" hidden>En iPhone: toca <i class="fa-solid fa-arrow-up-from-bracket"></i> Compartir y luego <b>Agregar a inicio</b>.</span></p>
   <p class="nota"><i class="fa-solid fa-circle-info"></i><span>Esto no es contabilidad ni asesoría fiscal: eso lo sigue llevando tu contador. Aquí te ayudamos a entender tus números y decidir. <b>Prototipo</b> en prueba.</span></p>
 </section>
 
@@ -219,6 +226,20 @@
     document.querySelectorAll(".sub-btn").forEach((b) => b.addEventListener("click", (e) => { e.stopPropagation(); const h = b.parentElement, o = !h.classList.contains("open"); document.querySelectorAll(".has-sub").forEach((x) => x.classList.remove("open")); if (o) h.classList.add("open"); b.setAttribute("aria-expanded", String(o)); }));
     document.addEventListener("click", (e) => { if (!e.target.closest(".has-sub")) document.querySelectorAll(".has-sub").forEach((h) => h.classList.remove("open")); });
     addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
+  })();
+</script>
+<script>
+  // App instalable: service worker propio (solo controla /finanzas/app/) y botón "Instalar como app".
+  if ("serviceWorker" in navigator) addEventListener("load", () => navigator.serviceWorker.register("./sw.js", { scope: "./" }).catch(() => {}));
+  (function () {
+    const box = document.getElementById("instalar"), btn = document.getElementById("btn-instalar"), ios = document.getElementById("instalar-ios");
+    const yaInstalada = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
+    if (yaInstalada) return;
+    let evento = null;
+    addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); evento = e; box.hidden = false; btn.hidden = false; });
+    btn.addEventListener("click", async () => { if (!evento) return; evento.prompt(); await evento.userChoice; evento = null; box.hidden = true; });
+    addEventListener("appinstalled", () => { box.hidden = true; });
+    if (/iphone|ipad|ipod/i.test(navigator.userAgent)) { box.hidden = false; btn.hidden = true; ios.hidden = false; }
   })();
 </script>
 <script type="module" src="./app.js?v=1"></script>

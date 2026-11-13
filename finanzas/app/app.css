@@ -139,3 +139,6 @@ table.tabla { width: 100%; border-collapse: collapse; font-size: 14px; min-width
   .kpis { grid-template-columns: repeat(4, 1fr); }
   .layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
 }
+
+/* Instalar como app */
+.instalar { margin-top: 16px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; font-size: 14px; color: var(--muted); }
