@@ -346,7 +346,7 @@
           }
         },
         "negocios": {
-          ".write": "auth != null && auth.uid === $uid && ((root.child('finanzasAcceso/' + $uid + '/estado').val() === 'activo' && root.child('finanzasAcceso/' + $uid + '/venceTs').isNumber() && root.child('finanzasAcceso/' + $uid + '/venceTs').val() > now) || auth.token.email === 'raulbenitez563@gmail.com')",
+          ".write": "auth != null && auth.uid === $uid && (((root.child('finanzasAcceso/' + $uid + '/estado').val() === 'activo' || root.child('finanzasAcceso/' + $uid + '/estado').val() === 'prueba') && root.child('finanzasAcceso/' + $uid + '/venceTs').isNumber() && root.child('finanzasAcceso/' + $uid + '/venceTs').val() > now) || auth.token.email === 'raulbenitez563@gmail.com')",
           "$negocioId": {
             ".validate": "newData.hasChildren(['nombre'])",
             "nombre": {
@@ -432,10 +432,10 @@
       ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
       "$uid": {
         ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid)",
-        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid && !data.exists() && newData.child('estado').val() === 'pendiente')",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && auth.uid === $uid && !data.exists() && (newData.child('estado').val() === 'pendiente' || (newData.child('estado').val() === 'prueba' && newData.child('venceTs').isNumber() && newData.child('venceTs').val() <= now + 1296000000)))",
         ".validate": "newData.hasChildren(['estado'])",
         "estado": {
-          ".validate": "newData.isString() && newData.val().matches(/^(pendiente|activo|pausado)$/)"
+          ".validate": "newData.isString() && newData.val().matches(/^(pendiente|prueba|activo|pausado)$/)"
         },
         "email": {
           ".validate": "newData.isString() && newData.val().length <= 120"

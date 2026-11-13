@@ -586,8 +586,8 @@ async function loadDemos() {
   const filtro = demoFilter;
   $("demoFilters").innerHTML = [["todas", "Todas", total], ...SEC.map(([k, l]) => [k, l, secc[k].length])]
     .map(([k, l, n]) => `<button type="button" class="dfil${filtro === k ? " active" : ""}" data-dfil="${k}"${n || k === "todas" ? "" : " disabled"}>${l} <span>${n}</span></button>`).join("");
-  const finN = Object.keys(finAcc).length, finPend = Object.values(finAcc).filter((x) => finEstado(x) === "pendiente").length;
-  $("demoFilters").insertAdjacentHTML("beforeend", `<button type="button" class="dfil${filtro === "finanzas" ? " active" : ""}" data-dfil="finanzas"><i class="fa-solid fa-chart-line"></i> Finanzas <span>${finN}</span>${finPend ? `<span class="dfil-pend">${finPend} por activar</span>` : ""}</button>`);
+  const finN = Object.keys(finAcc).length, finPend = Object.values(finAcc).filter((x) => ["pendiente", "vencido"].includes(finEstado(x))).length;
+  $("demoFilters").insertAdjacentHTML("beforeend", `<button type="button" class="dfil${filtro === "finanzas" ? " active" : ""}" data-dfil="finanzas"><i class="fa-solid fa-chart-line"></i> Finanzas <span>${finN}</span>${finPend ? `<span class="dfil-pend">${finPend} por cobrar</span>` : ""}</button>`);
   if (filtro === "finanzas") { $("demoList").innerHTML = finHTMLAll(); return; }
   const html = SEC.filter(([k]) => secc[k].length && (filtro === "todas" || filtro === k))
     .map(([k, l, ic, hint]) => `<section class="dsec">
@@ -1321,25 +1321,26 @@ $("demoFilters").addEventListener("click", (e) => { const b = e.target.closest("
 /* ============================================================
    FINANZAS: quién puede usar la app de /finanzas/app/
    Cada cuenta nueva se registra sola como "pendiente" en finanzasAcceso/<uid>
-   { estado: pendiente|activo|pausado, email, nombre, ts, vigencia:"AAAA-MM-DD", venceTs, activadoEl, pausadoEl, notas }
+   { estado: pendiente|prueba|activo|pausado, email, nombre, ts, vigencia:"AAAA-MM-DD", venceTs, activadoEl, pausadoEl, notas }
    Tú la activas cuando paga (con fecha de vigencia). Las reglas de Firebase impiden guardar datos
    si no está activa o ya venció. Nunca lees los números de sus negocios, solo el acceso.
 ============================================================ */
-const finEstado = (a) => (a.estado === "activo" ? (Number(a.venceTs) > Date.now() ? "activo" : "vencido") : a.estado === "pausado" ? "pausado" : "pendiente");
-const FIN_LBL = { pendiente: "Por activar", activo: "Activa", vencido: "Vencida", pausado: "Pausada" };
-const FIN_CLS = { pendiente: "demo", activo: "activa", vencido: "pausada", pausado: "pausada" };
+const finEstado = (a) => (a.estado === "activo" || a.estado === "prueba" ? (Number(a.venceTs) > Date.now() ? a.estado : "vencido") : a.estado === "pausado" ? "pausado" : "pendiente");
+const FIN_LBL = { pendiente: "Por activar", prueba: "En prueba", activo: "Activa", vencido: "Vencida", pausado: "Pausada" };
+const FIN_CLS = { pendiente: "demo", prueba: "demo", activo: "activa", vencido: "pausada", pausado: "pausada" };
 function finItemHTML(uid, a) {
   const st = finEstado(a), nom = a.nombre || a.email || "Sin nombre";
-  const v = a.vigencia ? vigInfo(a.vigencia) : null;
-  const vig = (st === "activo" || st === "vencido") && v ? ` · <span class="vig ${v.cls}">${st === "vencido" ? "Venció" : "Vence"} ${fdate(a.vigencia)}${v.cls !== "ok" && st === "activo" ? ` (${v.t.toLowerCase()})` : ""}</span>` : "";
-  const act = { pendiente: ["Activar", "bolt", "btn-dark"], activo: ["Vigencia", "calendar-check", "btn-light"], vencido: ["Renovar", "rotate", "btn-dark"], pausado: ["Reactivar", "play", "btn-dark"] }[st];
+  const vigIso = a.vigencia || (a.venceTs ? isoLocal(new Date(a.venceTs)) : "");
+  const v = vigIso ? vigInfo(vigIso) : null;
+  const vig = (st === "activo" || st === "prueba" || st === "vencido") && v ? ` · <span class="vig ${v.cls}">${st === "vencido" ? "Venció" : st === "prueba" ? "Prueba hasta" : "Vence"} ${fdate(vigIso)}${v.cls !== "ok" && st !== "vencido" ? ` (${v.t.toLowerCase()})` : ""}</span>` : "";
+  const act = { pendiente: ["Activar", "bolt", "btn-dark"], prueba: ["Activar", "bolt", "btn-dark"], activo: ["Vigencia", "calendar-check", "btn-light"], vencido: ["Renovar", "rotate", "btn-dark"], pausado: ["Reactivar", "play", "btn-dark"] }[st];
   return `<div class="demo-item">
       <div class="demo-logo" style="background:#1a1714">${esc(nom[0].toUpperCase())}</div>
       <div><div class="demo-name">${esc(nom)}<span class="status ${FIN_CLS[st]}">${FIN_LBL[st]}</span></div>
         <div class="demo-meta">${esc(a.email || "")}${a.ts ? ` · se registró ${fcorta(a.ts)}` : ""}${vig}${a.notas ? ` · <i class="fa-regular fa-note-sticky"></i> ${esc(a.notas.slice(0, 60))}` : ""}</div></div>
       <div class="demo-actions">
         <button class="btn ${act[2]}" data-finact="${esc(uid)}"><i class="fa-solid fa-${act[1]}"></i> ${act[0]}</button>
-        ${st === "activo" ? `<button class="btn btn-ghost" data-finpause="${esc(uid)}"><i class="fa-solid fa-circle-pause"></i> Pausar</button>` : ""}
+        ${st === "activo" || st === "prueba" ? `<button class="btn btn-ghost" data-finpause="${esc(uid)}"><i class="fa-solid fa-circle-pause"></i> Pausar</button>` : ""}
       </div>
     </div>`;
 }
@@ -1350,6 +1351,7 @@ function finHTMLAll() {
   const by = (st) => all.filter(([, a]) => finEstado(a) === st);
   const SECS = [
     ["pendiente", "Por activar", "fa-hourglass-half", "Ya se registraron; activa su acceso cuando paguen.", by("pendiente").sort((x, y) => (y[1].ts || 0) - (x[1].ts || 0))],
+    ["prueba", "En prueba (14 días)", "fa-flask", "Se registraron solos. Escríbeles antes de que termine su prueba.", by("prueba").sort((x, y) => (x[1].venceTs || 0) - (y[1].venceTs || 0))],
     ["activo", "Activas", "fa-circle-check", "Ordenadas por vencimiento: arriba las que hay que cobrar primero.", by("activo").sort((x, y) => (x[1].venceTs || 0) - (y[1].venceTs || 0))],
     ["vencido", "Vencidas", "fa-clock", "Ya no pueden guardar datos hasta que renueves.", by("vencido")],
     ["pausado", "Pausadas", "fa-circle-pause", "Las pausaste tú.", by("pausado")],
@@ -1367,7 +1369,7 @@ function openFin(uid) {
   $("finSub").textContent = a.email || "";
   const def = st === "activo" && a.vigencia ? addMonths(a.vigencia, 1) : addMonths("", 1);
   $("finBody").innerHTML = `<section class="om-sec">
-      <h4>${st === "activo" ? "Cambiar la vigencia" : st === "pendiente" ? "Activar acceso" : "Volver a activar"}</h4>
+      <h4>${st === "activo" ? "Cambiar la vigencia" : st === "pendiente" || st === "prueba" ? "Activar acceso (ya pagó)" : "Volver a activar"}</h4>
       <p class="hint">Hasta qué día está pagada. Ese día todavía puede usar la app; al siguiente ya no puede guardar.</p>
       <div class="field-label">Pagado hasta</div>${vigPicker("fVig", def)}
       <label>Notas <span class="muted">(opcional: cuánto paga, cómo, a qué día cobrar)</span><textarea id="fNotas" rows="2" maxlength="500">${esc(a.notas || "")}</textarea></label>

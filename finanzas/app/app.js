@@ -160,19 +160,21 @@ function detener() {
 }
 function accesoVigente(a, user) {
   if ((user?.email || "").toLowerCase() === ADMIN_EMAIL) return true;
-  return !!a && a.estado === "activo" && Number(a.venceTs) > Date.now();
+  return !!a && (a.estado === "activo" || a.estado === "prueba") && Number(a.venceTs) > Date.now();
 }
 async function crearSolicitud(user) {
   // Un momento para que el nombre (updateProfile) alcance a guardarse antes de registrar la solicitud
   await new Promise((r) => setTimeout(r, 900));
   try {
-    await set(ref(db, `finanzasAcceso/${user.uid}`), { estado: "pendiente", email: user.email || "", nombre: (auth.currentUser?.displayName || "").slice(0, 60), ts: serverTimestamp() });
+    // Cada cuenta nueva arranca con 14 días de prueba (las reglas solo permiten esto al crearla, una vez)
+    await set(ref(db, `finanzasAcceso/${user.uid}`), { estado: "prueba", venceTs: Date.now() + 14 * 86400000, email: user.email || "", nombre: (auth.currentUser?.displayName || "").slice(0, 60), ts: serverTimestamp() });
   } catch (err) { toast(errorTexto(err)); }
 }
 function pintarBloqueo(a, user) {
   const email = user.email || "";
   let titulo = "Tu cuenta está lista", texto = "Falta activarla. Escríbenos por WhatsApp para activar tu acceso y empezar a capturar tus meses.";
   if (a && a.estado === "pausado") { titulo = "Tu acceso está en pausa"; texto = "Escríbenos para reactivarlo y seguir capturando tus meses."; }
+  else if (a && a.estado === "prueba") { titulo = "Terminó tu prueba de 14 días"; texto = "Esperamos que te haya servido ver tus números. Tus datos siguen guardados: escríbenos para activar tu acceso y seguir capturando."; }
   else if (a && a.estado === "activo") { titulo = "Tu acceso venció"; texto = `Tu acceso llegó hasta el ${fFecha(a.venceTs)}. Escríbenos para renovarlo y seguir capturando.`; }
   $("#bloq-titulo").textContent = titulo; $("#bloq-texto").textContent = texto;
   $("#bloq-wa").href = PLAN_WA(email);
@@ -183,8 +185,10 @@ function aplicarAcceso(a, user) {
   if (!ok) { if (S.offNegocios) { S.offNegocios(); S.offNegocios = null; } if (S.offMeses) { S.offMeses(); S.offMeses = null; } pintarBloqueo(a, user); return; }
   const aviso = $("#aviso-vence"), dias = a && a.venceTs ? Math.ceil((a.venceTs - Date.now()) / 86400000) : null;
   const esAdmin = (user.email || "").toLowerCase() === ADMIN_EMAIL;
-  aviso.hidden = esAdmin || dias === null || dias > 5;
-  if (!aviso.hidden) aviso.innerHTML = `Tu acceso vence el ${esc(fFecha(a.venceTs))}. <a href="${PLAN_WA(user.email || "")}" target="_blank" rel="noopener">Escríbenos para renovarlo</a>.`;
+  const prueba = a && a.estado === "prueba";
+  aviso.hidden = esAdmin || dias === null || (!prueba && dias > 5);
+  if (!aviso.hidden && prueba) aviso.innerHTML = `Estás en tu prueba gratis: te ${dias === 1 ? "queda 1 día" : `quedan ${dias} días`} (hasta el ${esc(fFecha(a.venceTs))}). <a href="${PLAN_WA(user.email || "")}" target="_blank" rel="noopener">Escríbenos para activar tu acceso</a>.`;
+  else if (!aviso.hidden) aviso.innerHTML = `Tu acceso vence el ${esc(fFecha(a.venceTs))}. <a href="${PLAN_WA(user.email || "")}" target="_blank" rel="noopener">Escríbenos para renovarlo</a>.`;
   if (!S.offNegocios) iniciarApp();
 }
 function iniciarApp() {
