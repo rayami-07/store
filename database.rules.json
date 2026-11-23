@@ -545,6 +545,114 @@
           ".validate": false
         }
       }
+    },
+    "prospeccion": {
+      "config": {
+        ".read": "auth != null",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')"
+      },
+      "vendedores": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+        "$uid": {
+          ".read": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+          ".validate": "newData.hasChildren(['email'])",
+          "nombre": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "email": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "wa": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "activo": {
+            ".validate": "newData.isBoolean()"
+          },
+          "creado": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      },
+      "contadores": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+        "$uid": {
+          ".read": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+          ".write": "(auth != null && auth.uid === $uid) || (auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+          "$dia": {
+            ".validate": "$dia.matches(/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/) && newData.isNumber() && newData.val() >= 0 && newData.val() <= 500"
+          }
+        }
+      },
+      "leads": {
+        ".read": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && root.child('prospeccion/vendedores/' + auth.uid + '/activo').val() === true)",
+        ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com')",
+        ".indexOn": [
+          "estado",
+          "asignadoA"
+        ],
+        "$id": {
+          ".write": "(auth != null && auth.token.email === 'raulbenitez563@gmail.com') || (auth != null && root.child('prospeccion/vendedores/' + auth.uid + '/activo').val() === true && data.exists() && newData.exists() && newData.child('nombre').val() === data.child('nombre').val() && newData.child('tel').val() === data.child('tel').val() && ((data.child('estado').val() === 'libre' && newData.child('estado').val() === 'tomado' && newData.child('asignadoA').val() === auth.uid) || (data.child('asignadoA').val() === auth.uid && (newData.child('asignadoA').val() === auth.uid || newData.child('estado').val() === 'libre'))))",
+          ".validate": "newData.hasChildren(['nombre','estado'])",
+          "nombre": {
+            ".validate": "newData.isString() && newData.val().length <= 120"
+          },
+          "tel": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "giro": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "web": {
+            ".validate": "newData.isString() && newData.val().length <= 20"
+          },
+          "dir": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "maps": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "sitio": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "resenas": {
+            ".validate": "newData.isNumber()"
+          },
+          "calif": {
+            ".validate": "newData.isNumber()"
+          },
+          "zona": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "estado": {
+            ".validate": "newData.isString() && newData.val().matches(/^(libre|tomado|interesado|no|sinwa|nocontesto|cliente)$/)"
+          },
+          "asignadoA": {
+            ".validate": "newData.isString() && newData.val().length <= 40"
+          },
+          "asignadoNombre": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "asignadoEl": {
+            ".validate": "newData.isNumber()"
+          },
+          "cerradoEl": {
+            ".validate": "newData.isNumber()"
+          },
+          "nota": {
+            ".validate": "newData.isString() && newData.val().length <= 300"
+          },
+          "importadoEl": {
+            ".validate": "newData.isNumber()"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }
