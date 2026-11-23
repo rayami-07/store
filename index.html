@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>RAYAMI Tiendas · Páginas web, leads y análisis para tu negocio</title>
-  <meta name="description" content="Página web para tu negocio, CRM para dar seguimiento a tus leads y cotizar, y un panel de análisis para saber de dónde vienen tus clientes y cuánto vendes." />
+  <title>RAYAMI Tiendas | Tu tienda en línea con pedidos a WhatsApp</title>
+  <meta name="description" content="Tienda en línea para negocios de Cuautitlán Izcalli y alrededores: tus productos con precio y los pedidos ordenados a tu WhatsApp. Desde $60 al mes." />
   <meta name="theme-color" content="#ffffff" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800;900&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,700&display=swap" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@900&family=Archivo:wdth,wght@62..125,400..800&display=swap" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
   <link rel="stylesheet" href="site.css?v=5" />
+  <link rel="stylesheet" href="home.css?v=1" />
   <!-- Google tag (gtag.js) -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-GR83B3NZX9"></script>
   <script>
@@ -36,17 +37,16 @@
   </div>
 </header>
 
-<main>
-  <section class="wrap hero">
-    <div>
-      <h1>Una página web que <span class="rot">trae clientes</span></h1>
-      <p class="lede">Tu página con tus productos, tus precios y tu logo. Los clientes que preguntan o piden te llegan a WhatsApp, los registras y les das seguimiento en tu CRM, y en un panel ves de dónde vienen y cuánto vendes.</p>
-      <div class="hero-btns">
-        <a class="btn btn-wa wa-link" data-msg="Hola, quiero que me armen una muestra gratis de mi tienda en línea"><i class="fa-brands fa-whatsapp"></i> Quiero mi muestra gratis</a>
-        <a class="btn btn-line" href="servicios/">Ver servicios</a>
-        <a class="btn btn-line" href="leads-y-crm/">Ver el CRM</a>
+<main class="home">
+  <section class="wrap h-hero">
+    <div class="h-copy">
+      <h1>Deja de mandar tu catálogo foto por foto.</h1>
+      <p class="h-lede">Soy Raúl, de Cuautitlán Izcalli. Le hago su tienda en línea a negocios como el tuyo: tus productos con precio y tu logo, y los pedidos te llegan ordenados a tu WhatsApp.</p>
+      <div class="h-actions">
+        <a class="btn btn-wa wa-link" data-msg="Hola Raúl, quiero ver una muestra de mi tienda en línea"><i class="fa-brands fa-whatsapp"></i> Pídeme una muestra</a>
+        <a class="h-link" href="precios/">Desde $60 al mes, ver precios</a>
       </div>
-      <p class="hero-note">Te armamos una muestra con tu nombre y tu logo para que la veas antes de decidir.</p>
+      <p class="h-small">La muestra es gratis. Te la armo con el nombre de tu negocio para que la pruebes en tu celular antes de pagar.</p>
     </div>
 
     <div class="phone-col">
@@ -57,40 +57,93 @@
         <button data-giro="belleza" aria-pressed="false">Belleza</button>
       </div>
       <div class="phone"><iframe id="demo" title="Ejemplo de tienda en línea"></iframe></div>
-      <p class="phone-hint">Es un ejemplo real: toca productos, elige tallas y arma un pedido.</p>
+      <p class="phone-hint">Es una tienda de ejemplo que sí funciona. Tócala y arma un pedido.</p>
     </div>
   </section>
 
-  <section class="wrap" id="felices">
-    <h2>Negocios contentos con su página</h2>
-    <p class="lede" style="margin-top:12px">Esto es lo que consiguen los negocios que ya se organizaron.</p>
-    <div class="happy"><a class="hcard rv" href="servicios/pagina-web/"><img loading="lazy" decoding="async" alt="Ya tiene su página web" onerror="this.parentNode.remove()" src="https://images.unsplash.com/photo-1753351052363-53ce102830eb?auto=format&fit=crop&w=700&h=875&q=70" /><span class="hcap">Foto ilustrativa</span><div><b>Ya tiene su página web</b><span>Sus clientes piden por WhatsApp, a cualquier hora.</span></div></a><a class="hcard rv" href="leads-y-crm/"><img loading="lazy" decoding="async" alt="Ya organizó su CRM" onerror="this.parentNode.remove()" src="https://images.unsplash.com/photo-1753351056301-73dbe05f84a8?auto=format&fit=crop&w=700&h=875&q=70" /><span class="hcap">Foto ilustrativa</span><div><b>Ya organizó su CRM</b><span>No se le pierde ningún cliente interesado.</span></div></a><a class="hcard rv" href="servicios/anuncios-google/"><img loading="lazy" decoding="async" alt="Ya tiene anuncios" onerror="this.parentNode.remove()" src="https://images.unsplash.com/photo-1786912029764-944951f895df?auto=format&fit=crop&w=700&h=875&q=70" /><span class="hcap">Foto ilustrativa</span><div><b>Ya tiene anuncios</b><span>Lo encuentran cuando buscan lo que vende.</span></div></a></div>
-  </section>
-
-  <section class="wrap" id="restaurantes">
-    <h2>¿Tienes restaurante o vendes comida?</h2>
-    <p class="lede">Úsalo como te convenga. Tus meseras siguen igual.</p>
-    <div class="topics">
-      <div class="topic"><i class="fa-solid fa-utensils"></i><h3>Menú y promos para ver desde casa</h3><p>Tus clientes ven platillos, precios y promociones antes de ir. No hay pago de por medio.</p></div>
-      <div class="topic"><i class="fa-solid fa-bag-shopping"></i><h3>Pedidos para llevar</h3><p>El cliente arma su pedido y te llega ordenado a tu WhatsApp. Para que no prepares comida que luego no recogen, el cliente transfiere primero y te manda su comprobante; con eso lo preparas.</p></div>
-      <div class="topic"><i class="fa-solid fa-motorcycle"></i><h3>Domicilio</h3><p>Si tienes repartidor, funciona igual: el cliente arma su pedido, transfiere, te manda su comprobante y tú lo mandas preparar y entregar.</p></div>
-    </div>
-    <p class="extras-note"><i class="fa-solid fa-qrcode"></i> Además te dejamos tu QR listo para imprimir, para que tus clientes vean el menú desde su mesa.</p>
-  </section>
-
-  <section class="wrap" id="explora">
-    <h2>Así trabaja con tu negocio</h2>
-    <div class="brace"><div class="b-root rv">Tu negocio</div><svg class="b-big" viewBox="0 0 20 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 1 C9 1 9 8 9 16 V36 C9 44 5 49 1 50 C5 51 9 56 9 64 V84 C9 92 9 99 18 99"/></svg><div class="b-rows"><div class="b-row rv"><div class="b-title">Te encuentran<small>Que te vean</small></div><svg class="b-sm" viewBox="0 0 20 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 1 C9 1 9 8 9 16 V36 C9 44 5 49 1 50 C5 51 9 56 9 64 V84 C9 92 9 99 18 99"/></svg><div class="b-chips"><a href="servicios/perfil-google/">Perfil de Google</a><a href="servicios/anuncios-google/">Anuncios</a><a href="servicios/qr/">Código QR</a></div></div><div class="b-row rv"><div class="b-title">Te compran<small>Que pidan fácil</small></div><svg class="b-sm" viewBox="0 0 20 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 1 C9 1 9 8 9 16 V36 C9 44 5 49 1 50 C5 51 9 56 9 64 V84 C9 92 9 99 18 99"/></svg><div class="b-chips"><a href="servicios/pagina-web/">Página web</a><a href="servicios/pedidos-whatsapp/">Pedidos por WhatsApp</a></div></div><div class="b-row rv"><div class="b-title">Controlas<small>Que sepas cómo vas</small></div><svg class="b-sm" viewBox="0 0 20 100" preserveAspectRatio="none" aria-hidden="true"><path d="M18 1 C9 1 9 8 9 16 V36 C9 44 5 49 1 50 C5 51 9 56 9 64 V84 C9 92 9 99 18 99"/></svg><div class="b-chips"><a href="leads-y-crm/">Leads y CRM</a><a href="analisis/">Análisis</a><a href="servicios/inventario/">Inventario</a></div></div></div></div>
-    <p style="margin-top:28px;display:flex;gap:12px;flex-wrap:wrap"><a class="btn btn-line" href="servicios/">Ver todos los servicios</a><a class="btn btn-line" href="precios/">Ver precios</a></p>
-  </section>
-
-  <section class="close">
-    <div class="wrap close-in">
-      <div>
-        <h2>Mira tu tienda antes de decidir</h2>
-        <p>Mándanos el nombre de tu negocio y tu logo. Te enviamos una muestra para que la pruebes en tu celular.</p>
+  <section class="h-band" aria-labelledby="t-chats">
+    <div class="wrap">
+      <h2 id="t-chats">Así cambia tu WhatsApp</h2>
+      <div class="chats">
+        <figure class="chat">
+          <figcaption>Hoy</figcaption>
+          <div class="chat-body">
+            <p class="b in">Hola, ¿me pasas precios?</p>
+            <p class="b out">Claro, ahí te van 👇</p>
+            <p class="b out photos"><span></span><span></span><span></span><span></span><em>+11 fotos</em></p>
+            <p class="b in">¿El de la tercera foto cuánto?</p>
+            <p class="b in">¿Y hay en talla 7?</p>
+            <p class="b in">Mejor luego te escribo</p>
+            <p class="note">Contestaste 5 mensajes y no vendiste nada.</p>
+          </div>
+        </figure>
+        <figure class="chat now">
+          <figcaption>Con tu tienda</figcaption>
+          <div class="chat-body">
+            <p class="b in order">Hola Tacos Don Beto, quiero hacer este pedido:<br><br>- Taco al pastor x4: $100<br>- Gringa x1: $65<br>- Agua de horchata x1: $30<br><br><b>Total: $195</b><br><br>Nombre: Karla<br>Entrega: Para recoger<br>Pago: Transferencia (te envío el comprobante)</p>
+            <p class="b out">¡Listo Karla! En 20 min está 🌮</p>
+            <p class="note">Un mensaje, el pedido completo y el total ya sumado.</p>
+          </div>
+        </figure>
       </div>
-      <a class="btn btn-wa wa-link" data-msg="Hola, quiero ver la muestra de mi tienda. Mi negocio se llama: "><i class="fa-brands fa-whatsapp"></i> Pedir mi muestra</a>
+    </div>
+  </section>
+
+  <section class="wrap h-section" aria-labelledby="t-incluye">
+    <h2 id="t-incluye">Qué te hago</h2>
+    <div class="groups">
+      <div>
+        <h3>Para que te encuentren</h3>
+        <ul>
+          <li><a href="servicios/perfil-google/">Perfil de Google</a>: que salgas en Maps cuando buscan lo que vendes.</li>
+          <li><a href="servicios/anuncios-google/">Anuncios en Google</a> para la gente de tu zona.</li>
+          <li><a href="servicios/qr/">Código QR</a> para tu mostrador, tus mesas o tus volantes.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Para que te pidan fácil</h3>
+        <ul>
+          <li><a href="servicios/pagina-web/">Tu página o catálogo</a>, con tu dominio propio si lo quieres.</li>
+          <li><a href="servicios/pedidos-whatsapp/">Pedidos por WhatsApp</a>, ya sumados y con los datos de entrega.</li>
+          <li><a href="servicios/clientes-frecuentes/">Tarjeta de sellos</a> para que tus clientes regresen.</li>
+        </ul>
+      </div>
+      <div>
+        <h3>Para que sepas cómo vas</h3>
+        <ul>
+          <li><a href="leads-y-crm/">Lista de clientes</a> para dar seguimiento a quien te preguntó.</li>
+          <li><a href="analisis/">Análisis</a>: de dónde llegan y qué se vende más.</li>
+          <li><a href="servicios/inventario/">Inventario</a> que se descuenta solo al vender.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="h-more"><a href="servicios/">Ver todos los servicios</a></p>
+  </section>
+
+  <section class="wrap h-section h-food" id="restaurantes" aria-labelledby="t-food">
+    <h2 id="t-food">¿Vendes comida?</h2>
+    <p class="h-lede">Tus meseras siguen igual. La tienda te sirve para lo de fuera del local:</p>
+    <dl class="food">
+      <div><dt>Menú desde casa</dt><dd>Tus clientes ven platillos, precios y promociones antes de ir.</dd></div>
+      <div><dt>Pedidos para llevar</dt><dd>El cliente transfiere, te manda su comprobante y con eso preparas. Así no te quedas con pedidos que nadie recoge.</dd></div>
+      <div><dt>Domicilio</dt><dd>Si tienes repartidor, funciona igual y tú decides a dónde entregas.</dd></div>
+    </dl>
+    <p class="h-small"><i class="fa-solid fa-qrcode"></i> Te dejo también tu QR listo para imprimir, para que vean el menú desde la mesa.</p>
+  </section>
+
+  <section class="wrap h-section" aria-labelledby="t-pasos">
+    <h2 id="t-pasos">Cómo empezamos</h2>
+    <ol class="pasos">
+      <li><b>Me escribes por WhatsApp</b> con el nombre de tu negocio y, si tienes, tu logo.</li>
+      <li><b>Te mando tu muestra</b> con algunos de tus productos para que la pruebes en tu celular.</li>
+      <li><b>Si te gusta, la activamos.</b> Subes tus productos desde tu panel y compartes tu link.</li>
+    </ol>
+  </section>
+
+  <section class="h-close">
+    <div class="wrap h-close-in">
+      <p>¿Le damos una probada con tu negocio?</p>
+      <a class="btn btn-wa wa-link" data-msg="Hola Raúl, quiero ver la muestra de mi tienda. Mi negocio se llama: "><i class="fa-brands fa-whatsapp"></i> Escríbeme al 55 8107 4978</a>
     </div>
   </section>
 </main>
@@ -158,15 +211,12 @@
     addEventListener("keydown", (e) => { if (e.key === "Escape") closeAll(); });
   })();
   (function () {
-    const bar = document.createElement("div"); bar.className = "progress"; document.body.appendChild(bar);
-    addEventListener("scroll", () => { const h = document.documentElement; bar.style.width = (h.scrollTop / Math.max(1, h.scrollHeight - h.clientHeight) * 100) + "%"; }, { passive: true });
-    const sel = ".case,.feat,.scard,.step,.topic,.svc,.qr-item,.price-card,.faq details,section h2,.who,.embudo,.page-head .lede,.rv";
-    const els = document.querySelectorAll(sel);
-    if (!("IntersectionObserver" in window)) return;
-    els.forEach((e, i) => { e.classList.add("rv"); e.style.setProperty("--d", ((i % 4) * 0.08) + "s"); });
-    const io = new IntersectionObserver((en) => en.forEach((x) => { if (x.isIntersecting) { x.target.classList.add("in"); io.unobserve(x.target); } }), { threshold: .12 });
-    els.forEach((e) => io.observe(e));
-    document.querySelectorAll(".mock-wrap").forEach((m) => { m.classList.add("in"); });
+    // Una sola animación: el pedido llega cuando la sección se ve
+    const now = document.querySelector(".chat.now");
+    if (!now || !("IntersectionObserver" in window) || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    now.classList.add("wait");
+    const io = new IntersectionObserver((en) => { if (en[0].isIntersecting) { now.classList.add("go"); io.disconnect(); } }, { threshold: .5 });
+    io.observe(now);
   })();
 </script>
 </body>

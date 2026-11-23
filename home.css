@@ -1,0 +1,92 @@
+/* Inicio (solo la página principal). Se carga después de site.css. */
+.home {
+  --h-font: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --chat-bg: #efeae2;
+  --bubble-in: #ffffff;
+  --bubble-out: #d9fdd3;
+  font-family: var(--h-font);
+}
+.home h1, .home h2, .home h3 { font-family: var(--h-font); text-transform: none; letter-spacing: 0; }
+.home h2 { font-size: clamp(30px, 3.6vw, 44px); font-weight: 800; font-stretch: 112%; line-height: 1.05; letter-spacing: -.01em; }
+.home h3 { font-size: 19px; font-weight: 700; line-height: 1.25; }
+
+/* Hero */
+.h-hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr); gap: 56px; align-items: center; padding-block: 64px 72px; }
+.h-hero h1 { font-size: clamp(42px, 5.6vw, 76px); font-weight: 800; font-stretch: 118%; line-height: .98; letter-spacing: -.025em; max-width: 12ch; }
+.h-lede { font-size: 20px; line-height: 1.5; color: #3d3833; max-width: 34em; margin-top: 24px; }
+.h-actions { display: flex; align-items: center; gap: 24px; flex-wrap: wrap; margin-top: 32px; }
+.h-link { color: var(--ink); font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 5px; text-decoration-color: var(--orange); }
+.h-link:hover { text-decoration-color: var(--ink); }
+.h-small { font-size: 15px; color: var(--muted); margin-top: 18px; max-width: 34em; }
+.h-small i { color: var(--ink); margin-right: 6px; }
+.home .phone-hint { font-size: 14px; }
+
+/* Antes / ahora en WhatsApp */
+.h-band { background: var(--ink); color: #fff; padding-block: 72px; }
+.h-band h2 { color: #fff; }
+.chats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 32px; }
+.chat { margin: 0; border-radius: 18px; overflow: hidden; background: var(--chat-bg); color: #111b21; }
+.chat figcaption { background: #f0f2f5; padding: 14px 20px; font-weight: 700; font-size: 15px; border-bottom: 1px solid #e1ddd6; }
+.chat.now figcaption { background: var(--wa); color: #fff; border-color: var(--wa); }
+.chat-body { padding: 20px; display: flex; flex-direction: column; gap: 8px; min-height: 100%; }
+.b { margin: 0; max-width: 82%; padding: 8px 12px; border-radius: 10px; font-size: 15.5px; line-height: 1.4; box-shadow: 0 1px .5px rgba(11,20,26,.13); }
+.b.in { background: var(--bubble-in); align-self: flex-start; border-top-left-radius: 2px; }
+.b.out { background: var(--bubble-out); align-self: flex-end; border-top-right-radius: 2px; }
+.b.photos { display: grid; grid-template-columns: repeat(2, 64px); gap: 4px; padding: 5px; position: relative; }
+.b.photos span { height: 64px; border-radius: 6px; background: #b9c6b4; }
+.b.photos span:nth-child(2) { background: #c8b9a4; }
+.b.photos span:nth-child(3) { background: #a9b8c4; }
+.b.photos em { position: absolute; right: 5px; bottom: 5px; width: 64px; height: 64px; border-radius: 6px; background: rgba(0,0,0,.45); color: #fff; font-style: normal; font-weight: 700; font-size: 14px; display: grid; place-items: center; }
+.b.order { max-width: 92%; font-size: 15px; }
+.note { margin: 14px 0 0; font-size: 15px; font-weight: 600; color: #54656f; }
+.chat.now .note { color: #0b6b33; }
+
+/* Una sola animación: llega el pedido */
+.chat.now.wait .b, .chat.now.wait .note { opacity: 0; transform: translateY(8px); }
+.chat.now.go .b, .chat.now.go .note { opacity: 1; transform: none; transition: opacity .35s ease, transform .35s ease; }
+.chat.now.go .b.out { transition-delay: .9s; }
+.chat.now.go .note { transition-delay: 1.4s; }
+
+/* Secciones */
+.h-section { padding-block: 72px 0; }
+.groups { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin-top: 28px; }
+.groups ul { list-style: none; padding: 0; margin: 12px 0 0; display: grid; gap: 12px; }
+.groups li { font-size: 16px; line-height: 1.5; color: #3d3833; padding-left: 16px; position: relative; }
+.groups li::before { content: ""; position: absolute; left: 0; top: .62em; width: 7px; height: 7px; border-radius: 50%; background: var(--orange); }
+.groups a { color: var(--ink); font-weight: 700; text-decoration: none; border-bottom: 2px solid var(--line); }
+.groups a:hover { border-color: var(--orange); }
+.h-more { margin-top: 28px; }
+.h-more a { color: var(--ink); font-weight: 600; text-underline-offset: 4px; }
+
+.h-food .h-lede { margin-top: 12px; }
+.food { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; margin: 28px 0 0; }
+.food dt { font-weight: 700; font-size: 18px; }
+.food dd { margin: 6px 0 0; color: #3d3833; line-height: 1.5; }
+.h-food .h-small { margin-top: 28px; }
+
+.pasos { list-style: none; counter-reset: p; padding: 0; margin: 28px 0 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
+.pasos li { counter-increment: p; line-height: 1.5; color: #3d3833; }
+.pasos li::before { content: counter(p); display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--ink); font-weight: 800; color: var(--ink); margin-bottom: 14px; }
+.pasos b { color: var(--ink); display: block; font-size: 18px; margin-bottom: 4px; }
+
+.h-close { margin-top: 88px; background: var(--orange-wash); border-top: 1px solid #ffe0c7; }
+.h-close-in { display: flex; align-items: center; justify-content: space-between; gap: 24px; flex-wrap: wrap; padding-block: 40px; }
+.h-close-in p { margin: 0; font-size: clamp(22px, 2.6vw, 30px); font-weight: 800; font-stretch: 112%; }
+
+.home a:focus-visible, .home button:focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; }
+
+@media (max-width: 920px) {
+  .h-hero { grid-template-columns: 1fr; gap: 40px; padding-block: 40px 56px; }
+  .chats, .groups, .food, .pasos { grid-template-columns: 1fr; gap: 28px; }
+  .h-band { padding-block: 56px; }
+  .h-section { padding-block: 56px 0; }
+}
+@media (max-width: 520px) {
+  .h-lede { font-size: 18px; }
+  .h-actions { gap: 16px; }
+  .h-actions .btn { width: 100%; }
+  .chat-body { padding: 14px; }
+  .h-close-in .btn { width: 100%; }
+}
+.home section.h-close { padding: 0; }
+.home section.h-band { padding-inline: 0; }
