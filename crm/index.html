@@ -335,6 +335,18 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       </div>
 
       <div>
+        <h2>Buscar negocios nuevos</h2>
+        <p class="sub">Busca en Google Maps y los negocios con teléfono se guardan solos en tu lista (los repetidos se saltan).</p>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <div class="field" style="flex:2;min-width:180px"><label for="prbTipo">Tipo de negocio</label><input id="prbTipo" placeholder="Ej. barberías, restaurantes, ferreterías" autocomplete="off"></div>
+          <div class="field" style="flex:2;min-width:180px"><label for="prbZona">Ciudad o zona</label><input id="prbZona" placeholder="Ej. Cuautitlán Izcalli, Estado de México" autocomplete="off"></div>
+          <div class="field" style="flex:1;min-width:110px"><label for="prbCant">Cuántos</label><select id="prbCant"><option value="20">Hasta 20</option><option value="40">Hasta 40</option><option value="60" selected>Hasta 60</option></select></div>
+        </div>
+        <div class="row"><button class="btn primary" type="button" id="prbGo">Buscar y guardar</button></div>
+        <p class="sub" id="prbRes"></p>
+      </div>
+
+      <div>
         <h2>Todos los negocios</h2>
         <p class="sub">Filtra por giro, zona o estado y escríbeles tú. Al tocar WhatsApp se abre el mensaje y el negocio queda registrado como contactado (ya no le toca a ningún vendedor).</p>
         <div class="field"><label for="prfBus">Buscar (nombre, colonia, ciudad o teléfono)</label><input id="prfBus" placeholder="Ej. Izcalli, Lindavista, barbería" autocomplete="off"></div>
@@ -2216,6 +2228,80 @@ function prPintarTodo(){
   el.querySelectorAll("[data-pr-ok]").forEach(b=>b.onclick = ()=>prCerrar(b.dataset.prOk));
   prPintarTodos();
 }
+
+/* ---------- Buscar negocios nuevos (Google Places) ---------- */
+// Llave de Google restringida a Places API y a rayamistore.com. Se pega aquí al crearla.
+const PR_PLACES_KEY = "";
+const PR_BUS_TOPE = 50;   // búsquedas por día (aviso de este lado; el tope real está en Google Cloud)
+const PR_REDES = ["facebook.", "instagram.", "linktr.ee", "wa.me", "whatsapp.", "tiktok.", "linkedin.", "twitter.", "x.com", "youtube.", "beacons.ai"];
+function prbBusquedasHoy(){ try{ const o = JSON.parse(localStorage.getItem("prbBus") || "{}"); return o.d === hoy() ? o.n : 0; }catch(e){ return 0; } }
+function prbSumaBusqueda(){ try{ localStorage.setItem("prbBus", JSON.stringify({ d: hoy(), n: prbBusquedasHoy() + 1 })); }catch(e){} }
+function prbTel(l){
+  const d = String(l.nationalPhoneNumber || l.internationalPhoneNumber || "").replace(/\D/g, "");
+  return d.length >= 10 ? d.slice(-10) : "";
+}
+function prbWeb(uri){
+  if(!uri) return "No";
+  const h = String(uri).toLowerCase();
+  return PR_REDES.some(r=>h.includes(r)) ? "Solo redes" : "Sí";
+}
+function prbZona(l){
+  const c = (l.addressComponents || []).find(x=>(x.types || []).some(t=>["sublocality_level_1", "sublocality", "neighborhood"].includes(t)));
+  return c ? String(c.longText || "").slice(0, 60) : "";
+}
+$("#prbGo").addEventListener("click", async ()=>{
+  const res = $("#prbRes"), tipo = $("#prbTipo").value.trim(), zona = $("#prbZona").value.trim(), cant = Number($("#prbCant").value) || 20;
+  if(!PR_PLACES_KEY){ res.textContent = "Falta activar la llave de Google en el CRM. Ya casi: avisa y la pongo."; return; }
+  if(tipo.length < 3 || zona.length < 3){ res.textContent = "Escribe el tipo de negocio y la ciudad o zona."; return; }
+  if(prbBusquedasHoy() >= PR_BUS_TOPE){ res.textContent = `Llegaste al tope de ${PR_BUS_TOPE} búsquedas de hoy. Sigue mañana.`; return; }
+  const btn = $("#prbGo"); btn.disabled = true; res.textContent = "Buscando en Google Maps…";
+  try{
+    const campos = "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.addressComponents,nextPageToken";
+    let token = "", lugares = [];
+    while(lugares.length < cant){
+      const body = { textQuery: `${tipo} en ${zona}`, languageCode: "es", regionCode: "MX", pageSize: 20 };
+      if(token) body.pageToken = token;
+      const r = await fetch("https://places.googleapis.com/v1/places:searchText", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Goog-Api-Key": PR_PLACES_KEY, "X-Goog-FieldMask": campos },
+        body: JSON.stringify(body)
+      });
+      prbSumaBusqueda();
+      if(!r.ok){
+        const e = await r.json().catch(()=>({}));
+        throw new Error(e?.error?.message || ("Google respondió " + r.status));
+      }
+      const d = await r.json();
+      lugares = lugares.concat(d.places || []);
+      token = d.nextPageToken || "";
+      if(!token) break;
+    }
+    lugares = lugares.slice(0, cant);
+    const yaHay = new Set(prLeads.map(l=>l.id));
+    const ups = {}; let nuevos = 0, repetidos = 0, sinTel = 0;
+    const giro = (tipo.charAt(0).toUpperCase() + tipo.slice(1)).slice(0, 60);
+    for(const l of lugares){
+      const tel = prbTel(l), nombre = String(l.displayName?.text || "").trim().slice(0, 120);
+      if(!nombre || !tel){ sinTel++; continue; }
+      const id = "n" + tel;
+      if(yaHay.has(id) || ups["prospeccion/leads/" + id]){ repetidos++; continue; }
+      const o = { nombre, tel, giro, estado: "libre", importadoEl: Date.now(), web: prbWeb(l.websiteUri) };
+      if(l.websiteUri) o.sitio = String(l.websiteUri).slice(0, 300);
+      if(l.formattedAddress) o.dir = String(l.formattedAddress).slice(0, 200);
+      if(l.googleMapsUri) o.maps = String(l.googleMapsUri).slice(0, 300);
+      const z = prbZona(l); if(z) o.zona = z;
+      if(Number.isFinite(l.userRatingCount) && l.userRatingCount > 0) o.resenas = l.userRatingCount;
+      if(Number.isFinite(l.rating) && l.rating > 0) o.calif = l.rating;
+      ups["prospeccion/leads/" + id] = o;
+      nuevos++;
+    }
+    if(nuevos) await update(ref(fdb), ups);
+    res.textContent = `Google encontró ${lugares.length}. ${nuevos} nuevos guardados, ${repetidos} ya los tenías, ${sinTel} sin teléfono.`;
+    toast(nuevos ? "Negocios guardados" : "Nada nuevo");
+  }catch(e){
+    res.textContent = "No se pudo buscar: " + String(e?.message || e).slice(0, 160);
+  }finally{ btn.disabled = false; }
+});
 
 /* ---------- Todos los negocios: filtros y envío directo de Raúl ---------- */
 let prfMax = 40;
