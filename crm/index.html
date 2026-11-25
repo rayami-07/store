@@ -335,6 +335,21 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       </div>
 
       <div>
+        <h2>Todos los negocios</h2>
+        <p class="sub">Filtra por giro, zona o estado y escríbeles tú. Al tocar WhatsApp se abre el mensaje y el negocio queda registrado como contactado (ya no le toca a ningún vendedor).</p>
+        <div class="field"><label for="prfBus">Buscar (nombre, colonia, ciudad o teléfono)</label><input id="prfBus" placeholder="Ej. Izcalli, Lindavista, barbería" autocomplete="off"></div>
+        <div class="row" style="flex-wrap:wrap;gap:8px">
+          <div class="field" style="flex:1;min-width:140px"><label for="prfGiro">Giro</label><select id="prfGiro"></select></div>
+          <div class="field" style="flex:1;min-width:140px"><label for="prfZona">Zona / colonia</label><select id="prfZona"></select></div>
+          <div class="field" style="flex:1;min-width:140px"><label for="prfEstado">Estado</label><select id="prfEstado"></select></div>
+          <div class="field" style="flex:1;min-width:140px"><label for="prfWeb">Página web</label><select id="prfWeb"><option value="">Todos</option><option value="no">Sin página web</option><option value="si">Con página web</option></select></div>
+        </div>
+        <p class="sub" id="prfRes"></p>
+        <div class="list" id="prfLista"></div>
+        <div class="row"><button class="btn" type="button" id="prfMas" hidden>Ver más</button></div>
+      </div>
+
+      <div>
         <h2>Hoy por vendedor</h2>
         <div class="tablewrap"><table id="prTabla"></table></div>
       </div>
@@ -1960,7 +1975,7 @@ Síganos en Facebook: https://www.facebook.com/share/1FAkDa8H6k/
 
 ¿Le interesaría una cotización sin compromiso?
 Si prefiere no recibir mensajes, responda NO.`;
-const PR_ESTADOS = { libre:"Sin contactar", tomado:"Apartado", interesado:"Le interesó", no:"No le interesa", sinwa:"Sin WhatsApp", nocontesto:"No contestó", cliente:"Ya en el CRM" };
+const PR_ESTADOS = { libre:"Sin contactar", tomado:"Apartado", interesado:"Le interesó", no:"No le interesa", sinwa:"Sin WhatsApp", nocontesto:"Contactado, sin respuesta", cliente:"Ya en el CRM" };
 
 let prCfg = { mensaje: PR_MSG_DEF, waRaul: PR_WA_RAUL };
 let prLead = null, prUnsubs = [], prLeads = [], prVends = [], prCont = {}, prAppAlta = null;
@@ -2199,7 +2214,84 @@ function prPintarTodo(){
   }).join("") : `<div class="empty">Todavía nadie te ha pasado un interesado.</div>`;
   el.querySelectorAll("[data-pr-crm]").forEach(b=>b.onclick = ()=>prAlCrm(b.dataset.prCrm));
   el.querySelectorAll("[data-pr-ok]").forEach(b=>b.onclick = ()=>prCerrar(b.dataset.prOk));
+  prPintarTodos();
 }
+
+/* ---------- Todos los negocios: filtros y envío directo de Raúl ---------- */
+let prfMax = 40;
+function prfOpciones(sel, valores, todos, conteo){
+  const el = $(sel), actual = el.value;
+  const ops = [`<option value="">${todos}</option>`].concat(valores.map(v=>`<option value="${esc(v)}">${esc(v)}${conteo ? " (" + conteo[v] + ")" : ""}</option>`));
+  el.innerHTML = ops.join("");
+  if(actual && valores.includes(actual)) el.value = actual;
+}
+function prPintarTodos(){
+  if(!esAdmin) return;
+  const cuenta = campo => {
+    const c = {};
+    prLeads.forEach(l=>{ const v = String(l[campo] || "").trim(); if(v) c[v] = (c[v] || 0) + 1; });
+    return c;
+  };
+  const cg = cuenta("giro"), cz = cuenta("zona");
+  prfOpciones("#prfGiro", Object.keys(cg).sort((a,b)=>cg[b]-cg[a]), "Todos", cg);
+  prfOpciones("#prfZona", Object.keys(cz).sort((a,b)=>cz[b]-cz[a]), "Todas", cz);
+  const ee = $("#prfEstado"), eAct = ee.value;
+  if(!ee.options.length){
+    ee.innerHTML = `<option value="">Todos</option>` + Object.entries(PR_ESTADOS).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("");
+    ee.value = "libre";
+  } else ee.value = eAct;
+
+  const bus = prNorm($("#prfBus").value), g = $("#prfGiro").value, z = $("#prfZona").value, e = $("#prfEstado").value, w = $("#prfWeb").value;
+  const lista = prLeads.filter(l=>{
+    if(g && l.giro !== g) return false;
+    if(z && l.zona !== z) return false;
+    if(e && l.estado !== e) return false;
+    if(w){ const tiene = !["no", "solo redes", ""].includes(prNorm(l.web)); if((w === "si") !== tiene) return false; }
+    if(bus && !prNorm([l.nombre, l.dir, l.zona, l.tel, l.giro].join(" ")).includes(bus)) return false;
+    return true;
+  }).sort((a,b)=>String(a.nombre || "").localeCompare(String(b.nombre || ""), "es"));
+  $("#prfRes").textContent = `${lista.length} negocio${lista.length === 1 ? "" : "s"} con estos filtros (de ${prLeads.length}).`;
+  const ver = lista.slice(0, prfMax);
+  $("#prfLista").innerHTML = ver.length ? ver.map(l=>{
+    const wa = waLink(l.tel, prMsgDe(l));
+    const contacto = l.estado !== "libre" && l.asignadoNombre ? ` · ${esc(l.asignadoNombre)}${l.cerradoEl ? " el " + esc(fmtDT(new Date(l.cerradoEl).toISOString())) : ""}` : "";
+    return `<div class="card" style="--stage:${l.estado === "libre" ? "var(--line)" : "var(--warn)"};cursor:default">
+      <span class="name">${esc(l.nombre || "—")}</span>
+      <span class="pill">${esc(PR_ESTADOS[l.estado] || l.estado || "")}</span>
+      <span class="meta">${[esc(l.giro || ""), esc(l.zona || ""), l.tel ? ("Tel: " + esc(l.tel)) : "Sin teléfono"].filter(Boolean).join(" · ")}${contacto}</span>
+      ${l.dir ? `<span class="meta">${esc(l.dir)}</span>` : ""}
+      <span class="row" style="grid-column:1/-1;margin-top:8px">
+        ${wa ? `<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener" data-prf-wa="${esc(l.id)}">WhatsApp</a>` : `<span class="sub">Sin teléfono válido</span>`}
+        ${l.maps ? `<a class="btn" href="${esc(l.maps)}" target="_blank" rel="noopener">Maps</a>` : ""}
+      </span>
+    </div>`;
+  }).join("") : `<div class="empty">No hay negocios con estos filtros.</div>`;
+  $("#prfMas").hidden = lista.length <= prfMax;
+}
+async function prfRegistrar(id){
+  const l = prLeads.find(x=>x.id === id); if(!l || !usuario) return;
+  try{
+    await get(ref(fdb, `prospeccion/leads/${id}`));   // calienta el caché para la transacción
+    const r = await runTransaction(ref(fdb, `prospeccion/leads/${id}`), cur=>{
+      if(!cur) return cur;
+      const ahora = Date.now();
+      if(cur.estado === "libre" || cur.estado === "tomado"){
+        return { ...cur, estado: "nocontesto", asignadoA: usuario.uid, asignadoNombre: "Raúl", asignadoEl: ahora, cerradoEl: ahora };
+      }
+      return { ...cur, cerradoEl: ahora };
+    });
+    if(l.estado === "libre" || l.estado === "tomado") await prSumarContador();
+    toast("Registrado: contactado");
+  }catch(e){ toast("Se abrió WhatsApp pero no se pudo registrar. Revisa tu conexión."); }
+}
+$("#prfLista").addEventListener("click", ev=>{
+  const a = ev.target.closest("[data-prf-wa]"); if(!a) return;
+  const l = prLeads.find(x=>x.id === a.dataset.prfWa);
+  if(l && l.estado !== "libre" && l.asignadoNombre && !confirm(`Ya lo contactó ${l.asignadoNombre}. ¿Escribirle otra vez?`)){ ev.preventDefault(); return; }
+  prfRegistrar(a.dataset.prfWa);
+});
+["prfBus","prfGiro","prfZona","prfEstado","prfWeb"].forEach(id=>$("#" + id).addEventListener(id === "prfBus" ? "input" : "change", ()=>{ prfMax = 40; prPintarTodos(); }));
+$("#prfMas").addEventListener("click", ()=>{ prfMax += 40; prPintarTodos(); });
 
 function prPintarVends(){
   const el = $("#prListVend");
