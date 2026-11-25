@@ -337,11 +337,16 @@ td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
       <div>
         <h2>Buscar negocios nuevos</h2>
         <p class="sub">Busca en Google Maps y los negocios con teléfono se guardan solos en tu lista (los repetidos se saltan).</p>
-        <div class="row" style="flex-wrap:wrap;gap:8px">
-          <div class="field" style="flex:2;min-width:180px"><label for="prbTipo">Tipo de negocio</label><input id="prbTipo" placeholder="Ej. barberías, restaurantes, ferreterías" autocomplete="off"></div>
-          <div class="field" style="flex:2;min-width:180px"><label for="prbZona">Ciudad o zona</label><input id="prbZona" placeholder="Ej. Cuautitlán Izcalli, Estado de México" autocomplete="off"></div>
-          <div class="field" style="flex:1;min-width:110px"><label for="prbCant">Cuántos</label><select id="prbCant"><option value="20">Hasta 20</option><option value="40">Hasta 40</option><option value="60" selected>Hasta 60</option></select></div>
+        <div class="field"><label>Tipos de negocio (marca los que quieras)</label>
+          <div id="prbGiros" style="display:flex;flex-wrap:wrap;gap:6px"><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Barberías"> Barberías</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Restaurantes"> Restaurantes</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Taquerías"> Taquerías</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Cafeterías"> Cafeterías</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Estéticas y salones"> Estéticas y salones</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Ferreterías"> Ferreterías</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Papelerías"> Papelerías</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Farmacias"> Farmacias</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Tiendas de ropa"> Tiendas de ropa</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Talleres mecánicos"> Talleres mecánicos</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Refaccionarias"> Refaccionarias</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Dentistas"> Dentistas</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Gimnasios"> Gimnasios</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Veterinarias"> Veterinarias</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Pastelerías"> Pastelerías</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Lavanderías"> Lavanderías</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Tiendas de abarrotes"> Tiendas de abarrotes</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbG" value="Escuelas y academias"> Escuelas y academias</label></div>
+          <input id="prbTipo" placeholder="Otros tipos, separados por coma (ej. joyerías, ópticas)" autocomplete="off" style="margin-top:6px"></div>
+        <div class="field"><label>Ciudades o zonas (marca las que quieras)</label>
+          <div id="prbZonas" style="display:flex;flex-wrap:wrap;gap:6px"><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Cuautitlán Izcalli"> Cuautitlán Izcalli</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Cuautitlán"> Cuautitlán</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Tultitlán"> Tultitlán</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Tlalnepantla"> Tlalnepantla</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Atizapán de Zaragoza"> Atizapán de Zaragoza</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Naucalpan"> Naucalpan</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Coacalco"> Coacalco</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Ecatepec"> Ecatepec</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Nezahualcóyotl"> Nezahualcóyotl</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Toluca"> Toluca</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Ciudad de México"> Ciudad de México</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Guadalajara"> Guadalajara</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Monterrey"> Monterrey</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Puebla"> Puebla</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Querétaro"> Querétaro</label><label style="display:inline-flex;align-items:center;gap:4px;padding:4px 9px;border:1px solid var(--line);border-radius:14px;font-size:13px;cursor:pointer"><input type="checkbox" name="prbZ" value="Mérida"> Mérida</label></div>
+          <input id="prbZona" placeholder="Otras ciudades o colonias, separadas por coma (ej. Lomas de Cuautitlán, Cumbria)" autocomplete="off" style="margin-top:6px"></div>
+        <div class="row" style="flex-wrap:wrap;gap:8px;align-items:end">
+          <div class="field" style="flex:1;min-width:140px"><label for="prbCant">Cuántos por cada búsqueda</label><select id="prbCant"><option value="20">Hasta 20</option><option value="40">Hasta 40</option><option value="60" selected>Hasta 60</option></select></div>
         </div>
+        <p class="sub" id="prbPlan"></p>
         <div class="row"><button class="btn primary" type="button" id="prbGo">Buscar y guardar</button></div>
         <p class="sub" id="prbRes"></p>
       </div>
@@ -2249,58 +2254,79 @@ function prbZona(l){
   const c = (l.addressComponents || []).find(x=>(x.types || []).some(t=>["sublocality_level_1", "sublocality", "neighborhood"].includes(t)));
   return c ? String(c.longText || "").slice(0, 60) : "";
 }
+function prbLista(){
+  const marc = n=>[...document.querySelectorAll(`input[name="${n}"]:checked`)].map(x=>x.value);
+  const extra = id=>$(id).value.split(",").map(x=>x.trim()).filter(x=>x.length >= 3);
+  const uniq = a=>[...new Set(a)];
+  return { tipos: uniq(marc("prbG").concat(extra("#prbTipo"))), zonas: uniq(marc("prbZ").concat(extra("#prbZona"))) };
+}
+function prbPlan(){
+  const { tipos, zonas } = prbLista(), cant = Number($("#prbCant").value) || 20;
+  const n = tipos.length * zonas.length, pet = n * Math.ceil(cant / 20);
+  $("#prbPlan").textContent = n ? `${tipos.length} tipo(s) × ${zonas.length} zona(s) = ${n} búsquedas (hasta ${pet} consultas a Google; hoy llevas ${prbBusquedasHoy()} de ${PR_BUS_TOPE}).` : "";
+}
+$("#prbGiros").addEventListener("change", prbPlan); $("#prbZonas").addEventListener("change", prbPlan);
+$("#prbTipo").addEventListener("input", prbPlan); $("#prbZona").addEventListener("input", prbPlan); $("#prbCant").addEventListener("change", prbPlan);
 $("#prbGo").addEventListener("click", async ()=>{
-  const res = $("#prbRes"), tipo = $("#prbTipo").value.trim(), zona = $("#prbZona").value.trim(), cant = Number($("#prbCant").value) || 20;
-  if(!PR_PLACES_KEY){ res.textContent = "Falta activar la llave de Google en el CRM. Ya casi: avisa y la pongo."; return; }
-  if(tipo.length < 3 || zona.length < 3){ res.textContent = "Escribe el tipo de negocio y la ciudad o zona."; return; }
-  if(prbBusquedasHoy() >= PR_BUS_TOPE){ res.textContent = `Llegaste al tope de ${PR_BUS_TOPE} búsquedas de hoy. Sigue mañana.`; return; }
-  const btn = $("#prbGo"); btn.disabled = true; res.textContent = "Buscando en Google Maps…";
+  const res = $("#prbRes"), cant = Number($("#prbCant").value) || 20;
+  const { tipos, zonas } = prbLista();
+  if(!PR_PLACES_KEY){ res.textContent = "Falta activar la llave de Google en el CRM."; return; }
+  if(!tipos.length || !zonas.length){ res.textContent = "Marca o escribe al menos un tipo de negocio y una ciudad o zona."; return; }
+  const combos = []; for(const t of tipos) for(const z of zonas) combos.push([t, z]);
+  if(combos.length > 12){ res.textContent = `Son ${combos.length} búsquedas. Máximo 12 a la vez; quita algunas opciones.`; return; }
+  const pet = combos.length * Math.ceil(cant / 20);
+  if(prbBusquedasHoy() + pet > PR_BUS_TOPE){ res.textContent = `Esto usaría ~${pet} consultas y hoy llevas ${prbBusquedasHoy()} de ${PR_BUS_TOPE}. Reduce opciones o sigue mañana.`; return; }
+  const btn = $("#prbGo"); btn.disabled = true;
+  const campos = "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.addressComponents,nextPageToken";
+  const yaHay = new Set(prLeads.map(l=>l.id));
+  const ups = {}; let nuevos = 0, repetidos = 0, sinTel = 0, vistos = 0, i = 0;
   try{
-    const campos = "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.addressComponents,nextPageToken";
-    let token = "", lugares = [];
-    while(lugares.length < cant){
-      const body = { textQuery: `${tipo} en ${zona}`, languageCode: "es", regionCode: "MX", pageSize: 20 };
-      if(token) body.pageToken = token;
-      const r = await fetch("https://places.googleapis.com/v1/places:searchText", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "X-Goog-Api-Key": PR_PLACES_KEY, "X-Goog-FieldMask": campos },
-        body: JSON.stringify(body)
-      });
-      prbSumaBusqueda();
-      if(!r.ok){
-        const e = await r.json().catch(()=>({}));
-        throw new Error(e?.error?.message || ("Google respondió " + r.status));
+    for(const [tipo, zona] of combos){
+      i++; res.textContent = `Buscando ${i} de ${combos.length}: ${tipo} en ${zona}…`;
+      let token = "", lugares = [];
+      while(lugares.length < cant){
+        const body = { textQuery: `${tipo} en ${zona}`, languageCode: "es", regionCode: "MX", pageSize: 20 };
+        if(token) body.pageToken = token;
+        const r = await fetch("https://places.googleapis.com/v1/places:searchText", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "X-Goog-Api-Key": PR_PLACES_KEY, "X-Goog-FieldMask": campos },
+          body: JSON.stringify(body)
+        });
+        prbSumaBusqueda();
+        if(!r.ok){
+          const e = await r.json().catch(()=>({}));
+          throw new Error(e?.error?.message || ("Google respondió " + r.status));
+        }
+        const d = await r.json();
+        lugares = lugares.concat(d.places || []);
+        token = d.nextPageToken || "";
+        if(!token) break;
       }
-      const d = await r.json();
-      lugares = lugares.concat(d.places || []);
-      token = d.nextPageToken || "";
-      if(!token) break;
-    }
-    lugares = lugares.slice(0, cant);
-    const yaHay = new Set(prLeads.map(l=>l.id));
-    const ups = {}; let nuevos = 0, repetidos = 0, sinTel = 0;
-    const giro = (tipo.charAt(0).toUpperCase() + tipo.slice(1)).slice(0, 60);
-    for(const l of lugares){
-      const tel = prbTel(l), nombre = String(l.displayName?.text || "").trim().slice(0, 120);
-      if(!nombre || !tel){ sinTel++; continue; }
-      const id = "n" + tel;
-      if(yaHay.has(id) || ups["prospeccion/leads/" + id]){ repetidos++; continue; }
-      const o = { nombre, tel, giro, estado: "libre", importadoEl: Date.now(), web: prbWeb(l.websiteUri) };
-      if(l.websiteUri) o.sitio = String(l.websiteUri).slice(0, 300);
-      if(l.formattedAddress) o.dir = String(l.formattedAddress).slice(0, 200);
-      if(l.googleMapsUri) o.maps = String(l.googleMapsUri).slice(0, 300);
-      const z = prbZona(l); if(z) o.zona = z;
-      if(Number.isFinite(l.userRatingCount) && l.userRatingCount > 0) o.resenas = l.userRatingCount;
-      if(Number.isFinite(l.rating) && l.rating > 0) o.calif = l.rating;
-      ups["prospeccion/leads/" + id] = o;
-      nuevos++;
+      lugares = lugares.slice(0, cant); vistos += lugares.length;
+      const giro = (tipo.charAt(0).toUpperCase() + tipo.slice(1)).slice(0, 60);
+      for(const l of lugares){
+        const tel = prbTel(l), nombre = String(l.displayName?.text || "").trim().slice(0, 120);
+        if(!nombre || !tel){ sinTel++; continue; }
+        const id = "n" + tel;
+        if(yaHay.has(id) || ups["prospeccion/leads/" + id]){ repetidos++; continue; }
+        const o = { nombre, tel, giro, estado: "libre", importadoEl: Date.now(), web: prbWeb(l.websiteUri) };
+        if(l.websiteUri) o.sitio = String(l.websiteUri).slice(0, 300);
+        if(l.formattedAddress) o.dir = String(l.formattedAddress).slice(0, 200);
+        if(l.googleMapsUri) o.maps = String(l.googleMapsUri).slice(0, 300);
+        const z = prbZona(l) || zona.slice(0, 60); if(z) o.zona = z;
+        if(Number.isFinite(l.userRatingCount) && l.userRatingCount > 0) o.resenas = l.userRatingCount;
+        if(Number.isFinite(l.rating) && l.rating > 0) o.calif = l.rating;
+        ups["prospeccion/leads/" + id] = o;
+        nuevos++;
+      }
     }
     if(nuevos) await update(ref(fdb), ups);
-    res.textContent = `Google encontró ${lugares.length}. ${nuevos} nuevos guardados, ${repetidos} ya los tenías, ${sinTel} sin teléfono.`;
+    res.textContent = `Google encontró ${vistos}. ${nuevos} nuevos guardados, ${repetidos} repetidos, ${sinTel} sin teléfono.`;
     toast(nuevos ? "Negocios guardados" : "Nada nuevo");
   }catch(e){
-    res.textContent = "No se pudo buscar: " + String(e?.message || e).slice(0, 160);
-  }finally{ btn.disabled = false; }
+    if(nuevos){ try{ await update(ref(fdb), ups); }catch(_){} }
+    res.textContent = `Se detuvo: ${String(e?.message || e).slice(0, 140)}. Guardados hasta ahora: ${nuevos}.`;
+  }finally{ btn.disabled = false; prbPlan(); }
 });
 
 /* ---------- Todos los negocios: filtros y envío directo de Raúl ---------- */
@@ -2346,6 +2372,8 @@ function prPintarTodos(){
       <span class="pill">${esc(PR_ESTADOS[l.estado] || l.estado || "")}</span>
       <span class="meta">${[esc(l.giro || ""), esc(l.zona || ""), l.tel ? ("Tel: " + esc(l.tel)) : "Sin teléfono"].filter(Boolean).join(" · ")}${contacto}</span>
       ${l.dir ? `<span class="meta">${esc(l.dir)}</span>` : ""}
+      <span class="meta">${[l.calif ? ("★ " + esc(l.calif) + (l.resenas ? " (" + esc(l.resenas) + " reseñas)" : "")) : "Sin reseñas", "Web: " + esc(l.web || "—"), "Correo: no lo da Google"].join(" · ")}</span>
+      ${l.sitio ? `<span class="meta"><a href="${esc(l.sitio)}" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:underline">${esc(String(l.sitio).replace(/^https?:\/\/(www\.)?/, "").slice(0, 60))}</a></span>` : ""}
       <span class="row" style="grid-column:1/-1;margin-top:8px">
         ${wa ? `<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener" data-prf-wa="${esc(l.id)}">WhatsApp</a>` : `<span class="sub">Sin teléfono válido</span>`}
         ${l.maps ? `<a class="btn" href="${esc(l.maps)}" target="_blank" rel="noopener">Maps</a>` : ""}
