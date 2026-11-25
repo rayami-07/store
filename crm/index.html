@@ -2231,7 +2231,7 @@ function prPintarTodo(){
 
 /* ---------- Buscar negocios nuevos (Google Places) ---------- */
 // Llave de Google restringida a Places API y a rayamistore.com. Se pega aquí al crearla.
-const PR_PLACES_KEY = "";
+const PR_PLACES_KEY = "AIzaSyC9lEVserhFfTeZnDV8U2CQdSqOulD_iI8";
 const PR_BUS_TOPE = 50;   // búsquedas por día (aviso de este lado; el tope real está en Google Cloud)
 const PR_REDES = ["facebook.", "instagram.", "linktr.ee", "wa.me", "whatsapp.", "tiktok.", "linkedin.", "twitter.", "x.com", "youtube.", "beacons.ai"];
 function prbBusquedasHoy(){ try{ const o = JSON.parse(localStorage.getItem("prbBus") || "{}"); return o.d === hoy() ? o.n : 0; }catch(e){ return 0; } }
