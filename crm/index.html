@@ -2313,7 +2313,7 @@ $("#prbGo").addEventListener("click", async ()=>{
         if(l.websiteUri) o.sitio = String(l.websiteUri).slice(0, 300);
         if(l.formattedAddress) o.dir = String(l.formattedAddress).slice(0, 200);
         if(l.googleMapsUri) o.maps = String(l.googleMapsUri).slice(0, 300);
-        const z = prbZona(l) || zona.slice(0, 60); if(z) o.zona = z;
+        let z = prbZona(l); if(!z || /^[\d\s-]+$/.test(z)) z = zona.slice(0, 60); if(z) o.zona = z;
         if(Number.isFinite(l.userRatingCount) && l.userRatingCount > 0) o.resenas = l.userRatingCount;
         if(Number.isFinite(l.rating) && l.rating > 0) o.calif = l.rating;
         ups["prospeccion/leads/" + id] = o;
