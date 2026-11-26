@@ -2000,6 +2000,15 @@ Síganos en Facebook: https://www.facebook.com/share/1FAkDa8H6k/
 
 ¿Le interesaría una cotización sin compromiso?
 Si prefiere no recibir mensajes, responda NO.`;
+const PR_COLORES = {
+  libre:      { borde:"var(--line)", fondo:"", pill:"" },
+  tomado:     { borde:"var(--warn)", fondo:"var(--warn-soft)", pill:"background:var(--warn);color:#fff" },
+  nocontesto: { borde:"var(--warn)", fondo:"var(--warn-soft)", pill:"background:var(--warn);color:#fff" },
+  interesado: { borde:"var(--good)", fondo:"var(--accent-soft)", pill:"background:var(--good);color:#fff" },
+  cliente:    { borde:"var(--good)", fondo:"var(--accent-soft)", pill:"background:var(--good);color:#fff" },
+  no:         { borde:"var(--bad)", fondo:"var(--bad-soft)", pill:"background:var(--bad);color:#fff" },
+  sinwa:      { borde:"var(--bad)", fondo:"var(--bad-soft)", pill:"background:var(--bad);color:#fff" }
+};
 const PR_ESTADOS = { libre:"Sin contactar", tomado:"Apartado", interesado:"Le interesó", no:"No le interesa", sinwa:"Sin WhatsApp", nocontesto:"Contactado, sin respuesta", cliente:"Ya en el CRM" };
 
 let prCfg = { mensaje: PR_MSG_DEF, waRaul: PR_WA_RAUL };
@@ -2045,7 +2054,7 @@ function iniciarProspeccion(){
   $("#tabProspec").hidden = false;
   $("#prAdmin").hidden = !esAdmin;
   $("#prVendBox").hidden = esAdmin;
-  $("#tileLibres").hidden = !esAdmin;
+  $("#tileLibres").hidden = true;
   $("#tileInt").hidden = !esAdmin;
   $("#prPasado").hidden = true;
   if(!esAdmin) $("#prQuien").textContent = `Entraste como ${usuario?.email || ""}`;
@@ -2414,7 +2423,7 @@ function prPintarTodos(){
   const ee = $("#prfEstado"), eAct = ee.value;
   if(!ee.options.length){
     ee.innerHTML = `<option value="">Todos</option>` + Object.entries(PR_ESTADOS).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("");
-    ee.value = "libre";
+    ee.value = "";
   } else ee.value = eAct;
 
   const bus = prNorm($("#prfBus").value), g = $("#prfGiro").value, z = $("#prfZona").value, e = $("#prfEstado").value, w = $("#prfWeb").value;
@@ -2432,16 +2441,19 @@ function prPintarTodos(){
   $("#prfLista").innerHTML = ver.length ? ver.map(l=>{
     const wa = waLink(l.tel, prMsgDe(l));
     const contacto = l.estado !== "libre" && l.asignadoNombre ? ` · ${esc(l.asignadoNombre)}${l.cerradoEl ? " el " + esc(fmtDT(new Date(l.cerradoEl).toISOString())) : ""}` : "";
-    return `<div class="card" style="--stage:${l.estado === "libre" ? "var(--line)" : "var(--warn)"};cursor:default">
+    const col = PR_COLORES[l.estado] || PR_COLORES.libre;
+    return `<div class="card" style="--stage:${col.borde};${col.fondo ? "background:" + col.fondo + ";" : ""}cursor:default">
       <span class="name">${esc(l.nombre || "—")}</span>
-      <span class="pill">${esc(PR_ESTADOS[l.estado] || l.estado || "")}</span>
+      <span class="pill" style="${col.pill}">${esc(PR_ESTADOS[l.estado] || l.estado || "")}</span>
       <span class="meta">${[esc(l.giro || ""), esc(l.zona || ""), l.tel ? ("Tel: " + esc(l.tel)) : "Sin teléfono"].filter(Boolean).join(" · ")}${contacto}</span>
       ${l.dir ? `<span class="meta">${esc(l.dir)}</span>` : ""}
       <span class="meta">${[l.calif ? ("★ " + esc(l.calif) + (l.resenas ? " (" + esc(l.resenas) + " reseñas)" : "")) : "Sin reseñas", "Web: " + esc(l.web || "—"), "Correo: no lo da Google"].join(" · ")}</span>
       ${l.sitio ? `<span class="meta"><a href="${esc(l.sitio)}" target="_blank" rel="noopener" style="color:var(--ink);text-decoration:underline">${esc(String(l.sitio).replace(/^https?:\/\/(www\.)?/, "").slice(0, 60))}</a></span>` : ""}
       <span class="row" style="grid-column:1/-1;margin-top:8px">
-        ${wa ? `<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener" data-prf-wa="${esc(l.id)}">WhatsApp</a>` : `<span class="sub">Sin teléfono válido</span>`}
+        ${l.estado === "sinwa" ? `<span class="sub">Marcado sin WhatsApp</span>` : (wa ? `<a class="btn wa" href="${esc(wa)}" target="_blank" rel="noopener" data-prf-wa="${esc(l.id)}">WhatsApp</a>` : `<span class="sub">Sin teléfono válido</span>`)}
         ${l.maps ? `<a class="btn" href="${esc(l.maps)}" target="_blank" rel="noopener">Maps</a>` : ""}
+        ${l.estado === "libre" || l.estado === "nocontesto" ? `<button class="btn" type="button" data-prf-sinwa="${esc(l.id)}">Sin WhatsApp</button>` : ""}
+        ${l.estado !== "libre" ? `<button class="btn" type="button" data-prf-libre="${esc(l.id)}">Deshacer</button>` : ""}
       </span>
     </div>`;
   }).join("") : `<div class="empty">No hay negocios con estos filtros.</div>`;
@@ -2463,7 +2475,23 @@ async function prfRegistrar(id){
     toast("Registrado: contactado");
   }catch(e){ toast("Se abrió WhatsApp pero no se pudo registrar. Revisa tu conexión."); }
 }
+async function prfEstadoDe(id, estado){
+  if(!usuario) return;
+  try{
+    await get(ref(fdb, `prospeccion/leads/${id}`));
+    await runTransaction(ref(fdb, `prospeccion/leads/${id}`), cur=>{
+      if(!cur) return cur;
+      const o = { ...cur, estado };
+      if(estado === "libre"){ delete o.asignadoA; delete o.asignadoNombre; delete o.asignadoEl; delete o.cerradoEl; delete o.nota; }
+      else { const ahora = Date.now(); o.asignadoA = usuario.uid; o.asignadoNombre = "Raúl"; o.asignadoEl = ahora; o.cerradoEl = ahora; }
+      return o;
+    });
+    toast(estado === "libre" ? "Regresó a sin contactar" : "Marcado: sin WhatsApp");
+  }catch(e){ toast("No se pudo guardar. Revisa tu conexión."); }
+}
 $("#prfLista").addEventListener("click", ev=>{
+  const b1 = ev.target.closest("[data-prf-sinwa]"); if(b1){ prfEstadoDe(b1.dataset.prfSinwa, "sinwa"); return; }
+  const b2 = ev.target.closest("[data-prf-libre]"); if(b2){ if(confirm("¿Regresarlo a sin contactar?")) prfEstadoDe(b2.dataset.prfLibre, "libre"); return; }
   const a = ev.target.closest("[data-prf-wa]"); if(!a) return;
   const l = prLeads.find(x=>x.id === a.dataset.prfWa);
   if(l && l.estado !== "libre" && l.asignadoNombre && !confirm(`Ya lo contactó ${l.asignadoNombre}. ¿Escribirle otra vez?`)){ ev.preventDefault(); return; }
