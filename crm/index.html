@@ -2006,8 +2006,28 @@ let prCfg = { mensaje: PR_MSG_DEF, waRaul: PR_WA_RAUL };
 let prLead = null, prUnsubs = [], prLeads = [], prVends = [], prCont = {}, prAppAlta = null;
 
 const prYo = () => esAdmin ? "Raúl" : (CTX.vendNombre || (usuario?.email || "").split("@")[0] || "Vendedor");
-const prMsgDe = l => String(prCfg.mensaje || PR_MSG_DEF).split("{negocio}").join(l?.nombre || "su negocio");
 const prNorm = s => String(s ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+// Mensajes según lo que tiene el negocio (si Raúl edita el mensaje general en Más, ese se usa para todos).
+const PR_PIE = `
+
+Web: https://rayamistore.com
+Síganos en Facebook: https://www.facebook.com/share/1FAkDa8H6k/
+
+Si prefiere no recibir mensajes, responda NO.`;
+const PR_COMIDA = /restaurante|taquer|cafeter|pizzer|panader|pasteler|loncher|fonda|marisc|hamburgues|helader|\bbar(es)?\b|cervecer|tortiller|carnicer|fruter|comida|antojit|taco|cocina/;
+function prSaludo(){ const h = new Date().getHours(); return h < 12 ? "Hola, buenos días." : (h < 19 ? "Hola, buenas tardes." : "Hola, buenas noches."); }
+function prMensajeSegun(l){
+  const n = l?.nombre || "su negocio", web = prNorm(l?.web), comida = PR_COMIDA.test(prNorm(l?.giro));
+  const ini = `${prSaludo()} Vi su negocio ${n} en Google Maps`;
+  if(web === "no") return `${ini} y noto que aún no tiene página web. Somos RAYAMI Store: le armamos su página o catálogo con productos o servicios, ubicación y un botón para que sus clientes le escriban directo por WhatsApp. ¿Le gustaría ver un ejemplo hecho para su negocio, sin compromiso?` + PR_PIE;
+  if(web === "solo redes") return `${ini} y veo que sus clientes lo encuentran por redes sociales. Somos RAYAMI Store: le armamos su propia página o tienda con catálogo y pedidos por WhatsApp, para que lo encuentren en Google y no dependa de una sola red. ¿Le muestro un ejemplo para su negocio, sin compromiso?` + PR_PIE;
+  if(web === "si" && comida) return `${ini} y ya cuenta con página web, qué bien. Somos RAYAMI Store y ayudamos a restaurantes y negocios de comida a recibir pedidos ordenados por WhatsApp con menú QR por mesa, y a saber cuánto ganan de verdad con control de finanzas. ¿Le interesa ver cómo funcionaría en ${n}?` + PR_PIE;
+  if(web === "si") return `${ini} y ya cuenta con página web, qué bien. Somos RAYAMI Store y ayudamos a negocios como el suyo a que ningún cliente se quede sin respuesta: CRM con cotizador y seguimiento a prospectos, y control de finanzas para saber cuánto gana de verdad. ¿Le muestro un ejemplo, sin compromiso?` + PR_PIE;
+  return String(prCfg.mensaje || PR_MSG_DEF).split("{negocio}").join(n);
+}
+const prMsgDe = l => (prCfg.mensaje && prCfg.mensaje !== PR_MSG_DEF)
+  ? String(prCfg.mensaje).split("{negocio}").join(l?.nombre || "su negocio")
+  : prMensajeSegun(l);
 
 // El vendedor de prospección solo ve esta pantalla
 function mostrarAppVendedor(){
