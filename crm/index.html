@@ -2454,6 +2454,7 @@ function prPintarTodos(){
         ${l.maps ? `<a class="btn" href="${esc(l.maps)}" target="_blank" rel="noopener">Maps</a>` : ""}
         ${l.estado === "libre" || l.estado === "nocontesto" ? `<button class="btn" type="button" data-prf-sinwa="${esc(l.id)}">Sin WhatsApp</button>` : ""}
         ${l.estado !== "libre" ? `<button class="btn" type="button" data-prf-libre="${esc(l.id)}">Deshacer</button>` : ""}
+        <button class="btn" type="button" data-prf-act="${esc(l.id)}" title="Vuelve a consultar este negocio en Google Maps (1 solicitud)">Actualizar</button>
       </span>
     </div>`;
   }).join("") : `<div class="empty">No hay negocios con estos filtros.</div>`;
@@ -2475,6 +2476,51 @@ async function prfRegistrar(id){
     toast("Registrado: contactado");
   }catch(e){ toast("Se abrió WhatsApp pero no se pudo registrar. Revisa tu conexión."); }
 }
+async function prfActualizar(id, btn){
+  const l = prLeads.find(x=>x.id === id); if(!l) return;
+  if(!PR_PLACES_KEY){ toast("Falta la llave de Google."); return; }
+  if(prbBusquedasHoy() >= PR_BUS_TOPE){ toast(`Llegaste al tope de ${PR_BUS_TOPE} solicitudes de hoy.`); return; }
+  const txt0 = btn.textContent; btn.disabled = true; btn.textContent = "Consultando…";
+  try{
+    const campos = "places.id,places.displayName,places.formattedAddress,places.nationalPhoneNumber,places.internationalPhoneNumber,places.websiteUri,places.googleMapsUri,places.rating,places.userRatingCount,places.businessStatus";
+    const r = await fetch("https://places.googleapis.com/v1/places:searchText", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Goog-Api-Key": PR_PLACES_KEY, "X-Goog-FieldMask": campos },
+      body: JSON.stringify({ textQuery: `${l.nombre} ${l.dir || l.zona || ""}`.trim(), languageCode: "es", regionCode: "MX", pageSize: 3 })
+    });
+    prbSumaBusqueda();
+    if(!r.ok){ const e = await r.json().catch(()=>({})); throw new Error(e?.error?.message || ("Google respondió " + r.status)); }
+    const lugares = (await r.json()).places || [];
+    const nn = prNorm(l.nombre).slice(0, 8);
+    const p = lugares.find(x=>prbTel(x) && prbTel(x) === l.tel) || lugares.find(x=>nn.length >= 4 && prNorm(x.displayName?.text).includes(nn));
+    if(!p){ toast("No lo encontré en Google Maps. Puede haber cerrado o cambiado de nombre."); return; }
+    const cambios = [];
+    const nuevo = { ...l }; delete nuevo.id;
+    const web = prbWeb(p.websiteUri);
+    if(web !== (l.web || "")){ cambios.push("web: " + web); nuevo.web = web; }
+    if((p.websiteUri || "") !== (l.sitio || "")){ if(p.websiteUri) nuevo.sitio = String(p.websiteUri).slice(0, 300); else delete nuevo.sitio; }
+    if(p.formattedAddress && p.formattedAddress.slice(0, 200) !== l.dir){ cambios.push("dirección"); nuevo.dir = p.formattedAddress.slice(0, 200); }
+    if(p.googleMapsUri) nuevo.maps = String(p.googleMapsUri).slice(0, 300);
+    if(Number.isFinite(p.rating) && p.rating > 0 && p.rating !== l.calif){ cambios.push("calificación " + p.rating); nuevo.calif = p.rating; }
+    if(Number.isFinite(p.userRatingCount) && p.userRatingCount > 0 && p.userRatingCount !== l.resenas){ cambios.push("reseñas " + p.userRatingCount); nuevo.resenas = p.userRatingCount; }
+    let idNuevo = id;
+    const tel = prbTel(p);
+    if(tel && tel !== l.tel){
+      idNuevo = "n" + tel;
+      if(prLeads.some(x=>x.id === idNuevo)){ toast(`El teléfono cambió a ${tel}, pero ya lo tienes en otro negocio. Revísalo.`); return; }
+      cambios.push("teléfono " + tel); nuevo.tel = tel;
+    }
+    if(p.businessStatus === "CLOSED_PERMANENTLY"){ cambios.push("cerrado definitivamente"); nuevo.nota = "Cerrado definitivamente en Google Maps"; if(nuevo.estado === "libre") nuevo.estado = "no"; }
+    if(idNuevo !== id){
+      await update(ref(fdb), { ["prospeccion/leads/" + id]: null, ["prospeccion/leads/" + idNuevo]: limpio(nuevo) });
+    } else {
+      await set(ref(fdb, `prospeccion/leads/${id}`), limpio(nuevo));
+    }
+    toast(cambios.length ? "Actualizado: " + cambios.join(", ") : "Sin cambios en Google Maps");
+  }catch(e){
+    toast("No se pudo actualizar: " + String(e?.message || e).slice(0, 80));
+  }finally{ btn.disabled = false; btn.textContent = txt0; }
+}
 async function prfEstadoDe(id, estado){
   if(!usuario) return;
   try{
@@ -2490,6 +2536,7 @@ async function prfEstadoDe(id, estado){
   }catch(e){ toast("No se pudo guardar. Revisa tu conexión."); }
 }
 $("#prfLista").addEventListener("click", ev=>{
+  const b0 = ev.target.closest("[data-prf-act]"); if(b0){ prfActualizar(b0.dataset.prfAct, b0); return; }
   const b1 = ev.target.closest("[data-prf-sinwa]"); if(b1){ prfEstadoDe(b1.dataset.prfSinwa, "sinwa"); return; }
   const b2 = ev.target.closest("[data-prf-libre]"); if(b2){ if(confirm("¿Regresarlo a sin contactar?")) prfEstadoDe(b2.dataset.prfLibre, "libre"); return; }
   const a = ev.target.closest("[data-prf-wa]"); if(!a) return;
